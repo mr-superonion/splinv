@@ -4,27 +4,25 @@ import fitsio
 import numpy as np
 import kmapUtilities as kUtil
 
-ksDir       =   'ksResult'
+isim        =   '4-smooth08'
+ksDir       =   'ksResult%s/' %(isim)
 if not os.path.exists(ksDir):
     os.mkdir(ksDir)
-simDir      =   './simulation'
+
+simDir      =   'simulation%s/' %(isim.split('-')[0])
 assert os.path.exists(simDir),\
     "do not have input simulation files"
+sigmaSmooth =   0.8
 
-kappaMap    =   fitsio.read(os.path.join(simDir,'kMap_true.fits'))
-g1Map       =   fitsio.read(os.path.join(simDir,'g1Map_true.fits'))
-g2Map       =   fitsio.read(os.path.join(simDir,'g2Map_true.fits'))
-mskMap      =   fitsio.read(os.path.join(simDir,'maskMap.fits'))
-ny,nx       =   g1Map.shape
-nxy         =   max(nx,ny)*2
-g1Map       =   kUtil.zeroPad(g1Map,nxy)
-g2Map       =   kUtil.zeroPad(g2Map,nxy)
-mskMap      =   kUtil.zeroPad(mskMap,nxy)
-kE_KS,kB_KS =   kUtil.ksInverse(g1Map,g2Map,mskMap)
-kE_KS       =   kUtil.zeroPad_Inverse(kE_KS,nx,ny)
-kB_KS       =   kUtil.zeroPad_Inverse(kB_KS,nx,ny)
-fitsio.write(os.path.join(ksDir,'kappaMap_KS_E.fits'),kE_KS)
-fitsio.write(os.path.join(ksDir,'kappaMap_KS_B.fits'),kB_KS)
-fitsio.write(os.path.join(ksDir,'kappaMap_KS_E_res.fits'),kE_KS-kappaMap)
-
+ngList      =   [64,128,256]
+for ngrid in ngList: #(pix)
+    smoPix      =   sigmaSmooth/32.*ngrid
+    kappaMap    =   fitsio.read(os.path.join(simDir,'kMap_true%s.fits' %(ngrid)))
+    g1Map       =   fitsio.read(os.path.join(simDir,'g1Map_grid%s.fits'%(ngrid)))
+    g2Map       =   fitsio.read(os.path.join(simDir,'g2Map_grid%s.fits'%(ngrid)))
+    nMap        =   fitsio.read(os.path.join(simDir,'numMap_grid%s.fits'%(ngrid)))
+    kE_KS,kB_KS =   kUtil.smooth_ksInverse(g1Map,g2Map,nMap,smoPix,0.2)
+    fitsio.write(os.path.join(ksDir,'kappaMap_KS_E_%s.fits'%(ngrid)),kE_KS)
+    fitsio.write(os.path.join(ksDir,'kappaMap_KS_B_%s.fits'%(ngrid)),kB_KS)
+    fitsio.write(os.path.join(ksDir,'kappaMap_KS_E_res_%s.fits'%(ngrid)),kE_KS-kappaMap)
 
