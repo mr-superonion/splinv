@@ -8,9 +8,9 @@ from multiprocessing import Pool
 
 
 def prepareHSCField16(fieldname):
-    if fieldname!='VVDS':
+    if fieldname    !=  'WIDE12H':
         return
-    onameRG =   './s16aPre/%s_RG.fits' %(fieldname)
+    onameRG = './s16aPre2D/%s_RG.fits' %(fieldname)
     colnames=   ['object_id','g1','g2','ra','dec']
     fnameRG =   '/work/xiangchong.li/work/S16AStandard/S16AStandardCalibrated/field/%s_calibrated.fits' %(fieldname)
     fnamePZ =   '/work/xiangchong.li/work/S16AStandard/S16AStandardV2/field/%s_pz.fits' %(fieldname)
@@ -39,7 +39,8 @@ def prepareHSCField16(fieldname):
 
 def main():
     pool    =   Pool(1)
-    fields  =   np.load('./dr1FieldTract.npy').item().keys() 
+    fields  =   np.load('/work/xiangchong.li/work/S16AFPFS/dr1FieldTract.npy').item().keys() 
+    print(fields)
     pool.map(prepareHSCField16,fields)
     return
 

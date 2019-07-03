@@ -5,8 +5,25 @@ import galsim
 import numpy as np
 from astropy.table import Table
 
+def getS16aZ(nobj):
+    z_bins  =   fitsio.read('/work/xiangchong.li/work/S16AStandard/S16A_pz_pdf/mlz/target_wide_s16a_wide12h_9832.0.P.fits',ext=2)['BINS']
+    pdf     =   fitsio.read('/work/xiangchong.li/work/massMapSim/mlz_photoz_pdf_stack.fits')
+    pdf     =   pdf.astype(float)
+    nbin    =   len(pdf)
+    pdf     /=  np.sum(pdf)
+    cdf     =   np.empty(nbin,dtype=float)
+    np.cumsum(pdf,out=cdf)
+              
+    # Monte Carlo z
+    r       =   np.random.random(size=nobj)
+    tzmc    =   np.empty(nobj, dtype=float)
+    tzmc    =   np.interp(r, cdf, z_bins)
+    tzmc[tzmc<0.06]=0.06
+    return tzmc
 
-isim    =   4
+
+nhalo   =   1
+isim    =   5
 simDir  =   './simulation%s/' %(isim)
 if not os.path.exists(simDir):
     os.mkdir(simDir)
@@ -15,16 +32,17 @@ if not os.path.exists(simDir):
 size        =   32 #(arcmin)
 ns_per_arcmin=  40
 ns          =   int(size**2.*ns_per_arcmin+1)
-var_gErr    =   0.25
+var_gErr    =   0#0.25
 x_s         =   np.random.random(ns)*size-size/2.
 y_s         =   np.random.random(ns)*size-size/2.
-z_s         =   0.8 
+z_s         =   getS16aZ(ns)#0.8 
 kappa_s     =   np.zeros(ns)
 g1_s        =   np.zeros(ns)
 g2_s        =   np.zeros(ns)
 #Second sources for high resolution true map
 x_s2        =   np.random.random(ns*16)*size-size/2.
 y_s2        =   np.random.random(ns*16)*size-size/2.
+z_s2        =   getS16aZ(ns*16)
 kappa_s2    =   np.zeros(ns*16)
 
 #For halo
@@ -32,20 +50,20 @@ halos   =   []
 omega_m =   0.3
 omega_L =   0.7
 h_cos   =   0.7
-z_cl    =   0.05
+z_cl    =   np.array([0.05,0.12,0.1]) #redshift
 x_cl    =   np.array([0.,5.,-3.])*60. #arcsec
 y_cl    =   np.array([0.,8.,2.])*60.  #arcsec
 M_200   =   np.array([1.e14,1.8e13,7.e12])*h_cos #(M_sun/h)
-for i in range(3):#we use three halos
+for i in range(nhalo):#we use three halos
     pos_cl  =   galsim.PositionD(x_cl[i],y_cl[i])
-    conc    =   6.02*(M_200[i]/1.E13)**(-0.12)*(1.47/(1.+z_cl))**(0.16)
+    conc    =   6.02*(M_200[i]/1.E13)**(-0.12)*(1.47/(1.+z_cl[i]))**(0.16)
     halo    =   galsim.nfw_halo.NFWHalo(mass= M_200[i],
-            conc=conc, redshift= z_cl,
+            conc=conc, redshift= z_cl[i],
             halo_pos=pos_cl ,omega_m= omega_m,
             omega_lam= omega_L)
     kappa_s_0   =   halo.getConvergence(pos=(x_s,y_s),z_s=z_s,units = "arcmin")
     g1_s_0,g2_s_0=  halo.getShear(pos=(x_s,y_s),z_s=z_s,units = "arcmin",reduced=False)
-    kappa_s2_0  =   halo.getConvergence(pos=(x_s2,y_s2),z_s=z_s,units = "arcmin")
+    kappa_s2_0  =   halo.getConvergence(pos=(x_s2,y_s2),z_s=z_s2,units = "arcmin")
     kappa_s =   kappa_s+ kappa_s_0
     g1_s    =   g1_s+ g1_s_0
     g2_s    =   g2_s+ g2_s_0
