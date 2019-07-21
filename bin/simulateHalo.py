@@ -18,11 +18,10 @@ def getS16aZ(nobj):
     r       =   np.random.random(size=nobj)
     tzmc    =   np.empty(nobj, dtype=float)
     tzmc    =   np.interp(r, cdf, z_bins)
-    tzmc[tzmc<0.06]=0.06
     return tzmc
 
 
-nhalo   =   1
+rangHalo=   range(2,3)
 isim    =   5
 simDir  =   './simulation%s/' %(isim)
 if not os.path.exists(simDir):
@@ -32,7 +31,7 @@ if not os.path.exists(simDir):
 size        =   32 #(arcmin)
 ns_per_arcmin=  40
 ns          =   int(size**2.*ns_per_arcmin+1)
-var_gErr    =   0#0.25
+var_gErr    =   0.25
 x_s         =   np.random.random(ns)*size-size/2.
 y_s         =   np.random.random(ns)*size-size/2.
 z_s         =   getS16aZ(ns)#0.8 
@@ -50,11 +49,11 @@ halos   =   []
 omega_m =   0.3
 omega_L =   0.7
 h_cos   =   0.7
-z_cl    =   np.array([0.05,0.12,0.1]) #redshift
+z_cl    =   np.array([0.05,0.26,0.51]) #redshift
 x_cl    =   np.array([0.,5.,-3.])*60. #arcsec
 y_cl    =   np.array([0.,8.,2.])*60.  #arcsec
-M_200   =   np.array([1.e14,1.8e13,7.e12])*h_cos #(M_sun/h)
-for i in range(nhalo):#we use three halos
+M_200   =   np.array([1.e14,1.8e14,7.e13])*h_cos #(M_sun/h)
+for i in rangHalo:#we use three halos
     pos_cl  =   galsim.PositionD(x_cl[i],y_cl[i])
     conc    =   6.02*(M_200[i]/1.E13)**(-0.12)*(1.47/(1.+z_cl[i]))**(0.16)
     halo    =   galsim.nfw_halo.NFWHalo(mass= M_200[i],

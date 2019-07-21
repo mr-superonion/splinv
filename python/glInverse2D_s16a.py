@@ -169,7 +169,6 @@ class glInverse2D_s16aBatchTask(BatchPoolTask):
             fieldOut.update({'pix_scale':pix_scale})
             fitsio.write(outFname+'2',data=outMap[shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
         return
-    
         
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):

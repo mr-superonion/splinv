@@ -5,7 +5,7 @@ import numpy as np
 from configparser import SafeConfigParser
 
 isim        =   5  
-lbd         =   4
+lbd         =   5
 glDir       =   'glResult%s-lambda%s/'%(isim,lbd)
 dimen       =   '3D'
 if not os.path.exists(glDir):
@@ -20,7 +20,7 @@ parser = SafeConfigParser()
 configName  =   '/work/xiangchong.li/superonionGW/code/kappaMap_Private/config/s16a%sConfig.ini' %(dimen)
 parser.read(configName)
 
-ngList  =   [32]
+ngList  =   [64]
 for ngrid in ngList: #(pix)
     configName2 =   os.path.join(glDir,'s16aConfig%s_%d.ini' %(dimen,ngrid/2))
     size    =   64
@@ -28,6 +28,7 @@ for ngrid in ngList: #(pix)
     parser.set('field','pixel_size','%s' % pix_scale)
     parser.set('field','npix','%s' % ngrid)
     parser.set('field','units','arcmin')
+    parser.set('field','nlp','16')
     parser.set('survey','center_ra','%s' % (-pix_scale/2.))
     parser.set('survey','center_dec','%s' % (-pix_scale/2.))
     parser.set('survey','units','arcmin')
@@ -36,6 +37,11 @@ for ngrid in ngList: #(pix)
     parser.set('survey','zsig_min','0')
     parser.set('survey','zsig_max','0')
     parser.set('parameters','lambda','%s' % (lbd))
+    parser.set('parameters','nrandom','100')
+    parser.set('parameters','niter','500')
+    parser.set('parameters','niter_debias','0')
+    parser.set('parameters','nreweights','0')
+    parser.set('parameters','nscales','7')
     with open(configName2, 'w') as configfile:
         parser.write(configfile)
     outFname    =   'kappaMap_GL_E_%s.fits' %(int(ngrid/2))

@@ -136,13 +136,11 @@ class glInverse3D_s16aBatchTask(BatchPoolTask):
         inFname     =   './s16aPre2D/%s_RG.fits' %fieldName  
         fieldOut    =   self.getFieldInfo(fieldName,pix_scale)
         raCen,decCen,size,ngridX,ngridY,ngrid   =   fieldOut.values()
-        """
         mskFname    =   os.path.join(glDir,'msk_%s.fits'  %(fieldName))
         if not os.path.exists(mskFname):
             catRG   =   fitsio.read(inFname)
             mskMap  =   self.makeMaskMap(raCen,decCen,pix_scale,ngrid,catRG)
             fitsio.write(mskFname,mskMap)
-        """
         outFname    =   'kappaMap_GL_E_%s.fits' %(fieldName)
         outFname    =   os.path.join(glDir,outFname)
         if not os.path.exists(outFname):
@@ -152,24 +150,35 @@ class glInverse3D_s16aBatchTask(BatchPoolTask):
             parser.read(configName)
             parser.set('field','pixel_size','%s' % pix_scale)
             parser.set('field','npix','%s' % ngrid)
+            parser.set('field','nlp','1')
             parser.set('survey','size','%s' % size)
             parser.set('survey','center_ra','%s' % raCen)
             parser.set('survey','center_dec','%s' % decCen)
+            parser.set('survey','zsig_min','0')
+            parser.set('survey','zsig_max','0')
             parser.set('parameters','lambda','%s' % lbd)
+            parser.set('parameters','nrandom','100')
+            parser.set('parameters','niter','500')
+            parser.set('parameters','nreweights','0')
             with open(configName2, 'w') as configfile:
                 parser.write(configfile)
             binDir      =   '/work/xiangchong.li/superonionGW/packages/Glimpse/build'
             os.system('%s/glimpse %s %s %s' %(binDir,configName2,inFname,outFname))
-        """
+        else:
+            self.log.info('already have output files')
         if os.path.exists(mskFname) and os.path.exists(outFname) :
             mskMap  =   fitsio.read(mskFname)
             outMap  =   fitsio.read(outFname)
-            outMap  =   outMap*mskMap
             shiftX  =   int((ngrid-ngridX)//2)
             shiftY  =   int((ngrid-ngridY)//2)
             fieldOut.update({'pix_scale':pix_scale})
-            fitsio.write(outFname+'2',data=outMap[shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
-        """
+            if len(outMap.shape)==2:
+                outMap  =   outMap*mskMap
+                fitsio.write(outFname+'2',data=outMap[shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
+            if len(outMap.shape)==3:
+                for iz in range(outMap.shape[0]):
+                    outMap[iz,:,:]  =   outMap[iz,:,:]*mskMap
+                fitsio.write(outFname+'2',data=outMap[:,shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
         return
     
         
