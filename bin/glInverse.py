@@ -2,7 +2,7 @@
 import os
 import fitsio
 import numpy as np
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 isim        =   5  
 lbd         =   5
@@ -16,7 +16,7 @@ assert os.path.exists(simDir),\
     "do not have input simulation files"
 inSrc       =   os.path.join(simDir,'src.fits')
 
-parser = SafeConfigParser()
+parser = ConfigParser()
 configName  =   '/work/xiangchong.li/superonionGW/code/kappaMap_Private/config/s16a%sConfig.ini' %(dimen)
 parser.read(configName)
 

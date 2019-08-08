@@ -43,14 +43,14 @@ from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
 
-class glInverse3D_s16aBatchConfig(pexConfig.Config):
+class sparse3D_s16aBatchConfig(pexConfig.Config):
     lambdaR     =   pexConfig.Field(dtype=float, default=4, doc="regulation term lambda")
     pix_scale   =   pexConfig.Field(dtype=float, default=1./60, doc="pixel scale of the output mass map")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
 
 
-class glInverse3D_s16aRunner(TaskRunner):
+class sparse3D_s16aRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         return [(ref, kwargs) for ref in range(1)] 
@@ -59,10 +59,10 @@ def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
 
-class glInverse3D_s16aBatchTask(BatchPoolTask):
-    ConfigClass = glInverse3D_s16aBatchConfig
-    RunnerClass = glInverse3D_s16aRunner
-    _DefaultName = "glInverse3D_s16aBatch"
+class sparse3D_s16aBatchTask(BatchPoolTask):
+    ConfigClass = sparse3D_s16aBatchConfig
+    RunnerClass = sparse3D_s16aRunner
+    _DefaultName = "sparse3D_s16aBatch"
 
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
@@ -80,7 +80,7 @@ class glInverse3D_s16aBatchTask(BatchPoolTask):
         if not os.path.exists(glDir):
             os.mkdir(glDir)
         fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
-        pool    =   Pool("glInverse3D_s16aBatch")
+        pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
         pool.storeSet(lbd=lbd)
         pool.storeSet(pix_scale=self.config.pix_scale)

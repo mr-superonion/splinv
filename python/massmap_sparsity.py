@@ -1,6 +1,32 @@
 import numpy as np
+import cosmology
 import astropy.io.fits as pyfits
 from halo_wavelet import * 
+
+
+def zMeanBin(zMin,dz,nz):
+    return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
+    
+
+def soft_thresholding(dum,thresholds):
+    return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
+
+def firm_thresholding(dum,thresholds):
+    mask    =   (abs(dum)<= thresholds)
+    dum[mask]=  0.
+    mask    =   (abs(dum)>thresholds)
+    mask    =   mask&(abs(dum)<= 2*thresholds)
+    dum[mask]=  np.sign(dum[mask])*(2*np.abs(dum[mask])-thresholds[mask])
+    return dum
+
+def my_thresholding(dum,thresholds):
+    mask    =   (abs(dum)<= thresholds)
+    dum[mask]=  0.
+    mask    =   (abs(dum)>thresholds)
+    dum[mask]=  np.sign(dum[mask])*(abs(dum[mask])-thresholds[mask]**2./abs(dum[mask]))
+    return dum
+
+
 
 class massmap_ks2D():
     def __init__(self,ny,nx):
@@ -43,7 +69,7 @@ class massmap_ks2D():
 
 
 class massmap_sparsity_2D():
-    def __init__(self,shearR,nMap,nframe=4,lbd=4):
+    def __init__(self,shearR,nMap,nframe=4,lbd=4,doDebug=False):
         self.lbd   = lbd
         ny,nx      = shearR.shape
         self.shape = (nframe,ny,nx)
@@ -59,7 +85,9 @@ class massmap_sparsity_2D():
         self.nMap  = nMap
         self.mask  = (nMap>0.1).astype(np.int)
         self.sigmaA= self.prox_sigmaA(100,0.25)#np.zeros(self.shape)#
-        pyfits.writeto('sigmaAlpha.fits',self.sigmaA,overwrite=True)
+        self.doDebug=    doDebug
+        if self.doDebug:
+            pyfits.writeto('sigmaAlpha.fits',self.sigmaA,overwrite=True)
         
         
         self.alphaR= np.zeros(self.shape)
@@ -78,12 +106,11 @@ class massmap_sparsity_2D():
             g2Sim=np.random.randn(self.ny,self.nx)*sigMap
             shearSim= g1Sim+np.complex128(1j)*g2Sim
             kappaFSim = self.ks2D.itransform(shearSim,inFou=False,outFou=True)
-            alphaRSim = -self.star2D.iconjugate(kappaFSim,inFou=True,outFou=False).real
+            alphaRSim = -self.star2D.itranspose(kappaFSim,inFou=True,outFou=False).real
             outData = outData+alphaRSim**2.
         outData=np.sqrt(outData/niter)
         return outData
         
-    
     
     def spectrum_norm(self):
         norm=0.
@@ -92,21 +119,22 @@ class massmap_sparsity_2D():
             normTmp = np.sqrt(np.sum(alphaTmp**2.))
             alphaTmp= alphaTmp/normTmp
             kappaTmp= self.star2D.itransform(alphaTmp,inFou=False,outFou=False)
-            alphaTmp2= self.star2D.iconjugate(kappaTmp,inFou=False,outFou=False)
+            alphaTmp2= self.star2D.itranspose(kappaTmp,inFou=False,outFou=False)
             normTmp2= np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
         self.mu    = 1./norm/1.3
+        print('mu = %s' %self.mu)
         return
         
     def gradient(self):
         shearRTmp  = self.ks2D.transform(self.kappaR,inFou=False,outFou=False)*self.mask
         shearRRes  = self.shearR-shearRTmp
         dkappaF    = self.ks2D.itransform(shearRRes,inFou=False,outFou=True)
-        dalphaR    = -self.star2D.iconjugate(dkappaF,inFou=True,outFou=False).real
+        dalphaR    = -self.star2D.itranspose(dkappaF,inFou=True,outFou=False).real
         return dalphaR
     
-    def run_main_iteration(self,niter,doPlot=False):
+    def run_main_iteration(self,niter):
         tn=0
         for irun in range(niter):
             #save old kappaFou
@@ -123,12 +151,418 @@ class massmap_sparsity_2D():
             self.kappaR= self.star2D.itransform(self.alphaR,inFou=False,outFou=False)
             if (irun+1)%10==0:
                 print('iteration: %d' %(irun))
-                if doPlot:
+                if self.doDebug:
                     pyfits.writeto('kappaR_%d.fits' %(irun),self.kappaR.real,overwrite=True)
                     pyfits.writeto('dalphaR_%d.fits' %(irun),dalphaR.real,overwrite=True)
                     pyfits.writeto('alphaR_%d.fits' %(irun),self.alphaR.real,overwrite=True)
         return
     
     def process(self):
-        self.run_main_iteration(100,doPlot=False)
+        self.run_main_iteration(100)
+        return
+
+class massmap_sparsity_3D():
+    def __init__(self,sources,nframe=4,lbd=5,doDebug=False):
+        self.doDebug =   doDebug
+        self.lbd    =   lbd
+        self.nframe =   nframe
+        self.nreweight=   5
+        #lens z axis
+        zlMin       =   0.02
+        zlscale     =   0.05
+        self.nlp    =   20
+        self.zlBin  =   zMeanBin(zlMin,zlscale,self.nlp)
+
+        #transverse plane
+        xMin        =   -32.
+        yMin        =   -32.
+        scale       =   0.5#(arcmin/pix)
+        self.ny     =   128
+        self.nx     =   128
+        #source z axis
+        self.nz     =   8
+        zMin        =   0.05
+        zscale      =   0.25
+        if self.nz ==1:
+            zMin    =   0.
+            zscale  =   4.
+        self.zsBin  =   zMeanBin(zMin,zscale,self.nz)
+        self.shapeS =   (self.nz,self.ny,self.nx)   
+        self.shapeL =   (self.nlp,self.ny,self.nx)   
+        self.shapeA =   (self.nlp,nframe,self.ny,self.nx)
+        
+        self.cosmo  =   cosmology.Cosmo(H0=70) 
+        self.lensing_kernel(zlBin,zsBin)
+        
+        #prepare shear and mask
+        self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
+        g1Map       =   np.zeros(self.shapeS)
+        g2Map       =   np.zeros(self.shapeS)
+        for ss in sources:
+            ix  =   int((ss['ra']-xMin)//scale)
+            iy  =   int((ss['dec']-yMin)//scale)
+            iz  =   int((ss['z']-zMin)//zscale)
+            if iz>=0 and iz<self.nz:
+                g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
+                g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
+                self.nMap[iz,iy,ix]=   self.nMap[iz,iy,ix]+1.
+        self.mask       =   (self.nMap>0.1)
+        g1Map[self.mask]=   g1Map[self.mask]/self.nMap[self.mask]
+        g2Map[self.mask]=   g2Map[self.mask]/self.nMap[self.mask]
+        self.shearR =   g1Map+np.complex128(1j)*g2Map
+        pyfits.writeto('g1Map.fits',g1Map,overwrite=True)
+        pyfits.writeto('g2Map.fits',g2Map,overwrite=True)
+        pyfits.writeto('nMap.fits',self.nMap,overwrite=True)
+        
+        #make subtasks
+        self.star2D =   starlet2D(gen=2,nframe=nframe,ny=self.ny,nx=self.nx)
+        self.ks2D   =   massmap_ks2D(self.ny,self.nx)
+        self.spectrum_norm()
+        self.prox_sigmaA(100,0.25)#np.zeros(self.shape)#
+        self.alphaR=    np.zeros(self.shapeA)
+        self.deltaR=    np.zeros(self.shapeL)
+        return
+    
+    def lensing_kernel(self,zlbin,zsbin):
+        self.lensKernel =   np.zeros((self.nz,self.nlp))
+        self.lpWeight   =   np.zeros(self.nlp)
+        for i,zs in enumerate(zsbin):
+            self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)
+            self.lpWeight=  self.lpWeight+(self.lensKernel[i,:])**2.
+        self.lpWeight   =   np.sqrt(self.lpWeight)
+        self.lensKernel =   self.lensKernel/self.lpWeight
+        self.lpWeight   =   self.lpWeight/(zlbin[1]-zlbin[0])
+        if self.doDebug:
+            pyfits.writeto('lensKernel.fits',self.lensKernel,overwrite=True)
+            pyfits.writeto('lpWeight.fits',self.lpWeight,overwrite=True)
+        return
+
+    def main_forward(self,alphaRIn):
+        shearOut    =   np.zeros(self.shapeS).astype(np.complex128)
+        for zl in range(self.nlp):
+            deltaFZl=   self.star2D.itransform(alphaRIn[zl,:,:,:],inFou=False)
+            shearRZl=   self.ks2D.transform(deltaFZl,outFou=False)  
+            shearOut+=  (self.lensKernel[:,zl,None,None]*shearRZl)
+        shearOut    =   shearOut*(self.mask.astype(np.int))
+        return shearOut
+
+    def main_transpose(self,shearRIn):
+        deltaFTmp       =   np.zeros(self.shapeL).astype(np.complex128)
+        for zs in range(self.nz):
+            kappaFZs    =   self.ks2D.itransform(shearRIn[zs],inFou=False)
+            deltaFTmp  +=   (self.lensKernel[zs,:,None,None]*kappaFZs)
+        alphaRO         =   np.empty(self.shapeA)
+        for zl in range(self.nlp):
+            alphaRO[zl,:,:,:]=self.star2D.itranspose(deltaFTmp[zl],outFou=False).real
+        return alphaRO
+
+
+    def prox_sigmaA(self,niter,sigma):
+        outData =   np.zeros(self.shapeA)
+        sigMap  =   np.zeros(self.shapeS)
+        sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
+        for irun in range(niter):
+            np.random.seed(irun)
+            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+            shearSim=   g1Sim+np.complex128(1j)*g2Sim
+            alphaRSim=  self.main_transpose(shearSim)
+            outData +=  alphaRSim**2.
+        self.sigmaA =   np.sqrt(outData/niter)*self.mu
+        pyfits.writeto('sigmaAlpha.fits',self.sigmaA,overwrite=True)
+        return outData
+
+    def update_thresholds(self):
+        mask    =   (abs(self.alphaR)>self.thresholds)
+        self.thresholds[mask]= self.thresholds[mask]**2./self.alphaR[mask]
+        return
+
+    def spectrum_norm(self):
+        norm=0.
+        for irun in range(100):
+            np.random.seed(irun)
+            alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)+np.random.random()*100
+            normTmp =   np.sqrt(np.sum(alphaTmp**2.))
+            alphaTmp=   alphaTmp/normTmp
+            shearTmp=   self.main_forward(alphaTmp) 
+            alphaTmp2=  self.main_transpose(shearTmp) 
+            normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
+            if normTmp2>norm:
+                norm=normTmp2
+        self.mu    = 1./norm/1.3
+        print('mu = %s' %self.mu)
+        return
+        
+    def gradient(self):
+        shearRTmp   =   self.main_forward(self.alphaR)   
+        self.shearRRes   =   self.shearR-shearRTmp
+        dalphaR     =   -self.main_transpose(self.shearRRes) 
+        return dalphaR
+    
+
+    def reconstruct(self):
+        #update deltaR
+        for zl in range(self.nlp):
+            self.deltaR[zl]= self.star2D.itransform(self.alphaR[zl],inFou=False,outFou=False)*self.lpWeight[zl]
+            
+        return
+
+    def run_main_iteration(self,iup,niter,threM='ST'):
+        tn=0
+        for irun in range(niter):
+            #save old kappaFou
+            dalphaR =   -self.mu*self.gradient().real
+            dum     =   self.alphaR.real+dalphaR
+            if threM=='FT':
+                dum  = firm_thresholding(dum,self.thresholds) 
+            elif threM=='ST':
+                dum  = soft_thresholding(dum,self.thresholds) 
+            elif threM=='MT':
+                dum  = my_thresholding(dum,self.thresholds) 
+            #update tn and get ratio
+            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
+            ratio= (tn-1.)/tnTmp
+            tn   = tnTmp
+            self.alphaR=dum+(ratio*(dum-self.alphaR))
+            self.alphaR[:,0,:,:]=0.
+            if (irun+1)%20==0:
+                print('iteration: %d' %(irun))
+                if self.doDebug:
+                    print('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
+                    self.reconstruct()
+                    pyfits.writeto('deltaR_%d_%d.fits' %(iup,irun),self.deltaR.real,overwrite=True)
+                    pyfits.writeto('dalphaR_%d_%d.fits' %(iup,irun),dalphaR.real,overwrite=True)
+                    pyfits.writeto('alphaR_%d_%d.fits' %(iup,irun),self.alphaR.real,overwrite=True)
+        return
+    
+    
+    def process(self):
+        self.thresholds  =   self.lbd*self.sigmaA
+        for iup in range(self.nreweight):
+            threM   =   'ST'
+            self.run_main_iteration(iup,100,threM)
+            self.update_thresholds()
+        self.reconstruct()
+        return
+
+class massmap_sparsity_3D_2():
+    def __init__(self,sources,parser):
+        self.doDebug=   parser.getboolean('sparse','doDebug')
+        self.lbd    =   parser.getfloat('sparse','lbd')
+        self.nframe =   parser.getint('sparse','nframe')
+        self.nMax   =   parser.getint('sparse','nMax')
+        self.maxR   =   parser.getint('sparse','maxR')
+
+        #transverse plane
+        xMin        =   parser.getfloat('transPlane','xMin')
+        yMin        =   parser.getfloat('transPlane','yMin')
+        scale       =   parser.getfloat('transPlane','scale')
+        self.ny     =   parser.getint('transPlane','ny')
+        self.nx     =   parser.getint('transPlane','nx')
+        
+        #lens z axis
+        zlMin       =   parser.getfloat('lensZ','zlMin')
+        zlscale     =   parser.getfloat('lensZ','zlscale')
+        self.nlp    =   parser.getint('lensZ','nlp')
+        zlBin       =   zMeanBin(zlMin,zlscale,self.nlp)
+        #source z axis
+        zMin        =   parser.getfloat('sourceZ','zMin')
+        zscale      =   parser.getfloat('sourceZ','zscale')
+        self.nz     =   parser.getint('sourceZ','nz')
+        zsBin       =   zMeanBin(zMin,zscale,self.nz)
+        
+        
+        self.shapeS =   (self.nz,self.ny,self.nx)   
+        self.shapeL =   (self.nlp,self.ny,self.nx)   
+        self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
+        
+        self.cosmo  =   cosmology.Cosmo(H0=70) 
+        self.lensing_kernel(zlBin,zsBin)
+        
+        #prepare shear and mask
+        self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
+        g1Map       =   np.zeros(self.shapeS)
+        g2Map       =   np.zeros(self.shapeS)
+        for ss in sources:
+            ix  =   int((ss['ra']-xMin)//scale)
+            iy  =   int((ss['dec']-yMin)//scale)
+            iz  =   int((ss['z']-zMin)//zscale)
+            if iz>=0 and iz<self.nz:
+                g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
+                g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
+                self.nMap[iz,iy,ix]=   self.nMap[iz,iy,ix]+1.
+        self.mask       =   (self.nMap>0.1)
+        g1Map[self.mask]=   g1Map[self.mask]/self.nMap[self.mask]
+        g2Map[self.mask]=   g2Map[self.mask]/self.nMap[self.mask]
+        self.shearR =   g1Map+np.complex128(1j)*g2Map
+        if self.doDebug:
+            pyfits.writeto('g1Map.fits',g1Map,overwrite=True)
+            pyfits.writeto('g2Map.fits',g2Map,overwrite=True)
+            pyfits.writeto('nMap.fits',self.nMap,overwrite=True)
+        
+        #make subtasks
+        self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
+        self.ks2D   =   massmap_ks2D(self.ny,self.nx)
+        self.spectrum_norm()
+        self.prox_sigmaA(100,0.25)#np.zeros(self.shape)#
+        self.alphaR =   np.zeros(self.shapeA)
+        self.deltaR =   np.zeros(self.shapeL)
+        return
+    
+    def lensing_kernel(self,zlbin,zsbin):
+        self.lensKernel =   np.zeros((self.nz,self.nlp))
+        self.lpWeight   =   np.zeros(self.nlp)
+        for i,zs in enumerate(zsbin):
+            self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)
+            self.lpWeight=  self.lpWeight+(self.lensKernel[i,:])**2.
+        self.lpWeight   =   np.sqrt(self.lpWeight)
+        self.lensKernel =   self.lensKernel/self.lpWeight
+        self.lpWeight   =   self.lpWeight/(zlbin[1]-zlbin[0])
+        if self.doDebug:
+            pyfits.writeto('lensKernel.fits',self.lensKernel,overwrite=True)
+            pyfits.writeto('lpWeight.fits',self.lpWeight,overwrite=True)
+        return
+
+    def main_forward(self,alphaRIn):
+        shearOut    =   np.zeros(self.shapeS).astype(np.complex128)
+        for zl in range(self.nlp):
+            deltaFZl=   self.star2D.itransform(alphaRIn[zl,:,:,:],inFou=False)
+            shearRZl=   self.ks2D.transform(deltaFZl,outFou=False)  
+            shearOut+=  (self.lensKernel[:,zl,None,None]*shearRZl)
+        shearOut    =   shearOut*(self.mask.astype(np.int))
+        return shearOut
+
+    def main_transpose(self,shearRIn):
+        deltaFTmp       =   np.zeros(self.shapeL).astype(np.complex128)
+        for zs in range(self.nz):
+            kappaFZs    =   self.ks2D.itransform(shearRIn[zs],inFou=False)
+            deltaFTmp  +=   (self.lensKernel[zs,:,None,None]*kappaFZs)
+        alphaRO         =   np.empty(self.shapeA)
+        for zl in range(self.nlp):
+            alphaRO[zl,:,:,:]=self.star2D.itranspose(deltaFTmp[zl],outFou=False).real
+        return alphaRO
+
+    def prox_sigmaA(self,niter,sigma):
+        outData =   np.zeros(self.shapeA)
+        sigMap  =   np.zeros(self.shapeS)
+        sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
+        for irun in range(niter):
+            np.random.seed(irun)
+            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+            shearSim=   g1Sim+np.complex128(1j)*g2Sim
+            alphaRSim=  self.main_transpose(shearSim)
+            outData +=  alphaRSim**2.
+        self.sigmaA =   np.sqrt(outData/niter)*self.mu
+        if self.doDebug:
+            pyfits.writeto('sigmaAlpha.fits',self.sigmaA,overwrite=True)
+        return outData
+
+    def determine_thresholds(self,dalphaR):
+        lbdArray=   np.ones(self.shapeA)*self.lbd
+        snrR    =   np.abs(dalphaR)/self.sigmaA
+        indexR  =   np.argsort(snrR,None)[::-1]
+        zyxArray=   np.empty((self.nMax,3),dtype=int)
+        #mask the growing region
+        maskXY  =   np.ones((self.ny,self.nx),dtype=bool)
+        for imax in range(self.nMax):
+            itry    =   0
+            while True:
+                iId =   np.unravel_index(indexR[itry],self.shapeA)
+                iz  =   iId[0]
+                iy  =   iId[-2]
+                ix  =   iId[-1]
+                idY =   np.arange(iy-self.maxR,iy+self.maxR+1)[:,None]
+                idX =   np.arange(ix-self.maxR,ix+self.maxR+1)[None,:]
+                if maskXY[iy,ix]:
+                    maskXY[idY,idX]=False
+                    break
+                itry+=  1
+            s1  =   snrR[iId]
+            s2  =   np.sort(snrR[:,:,idY,idX],None)[-2]
+            lbdArray[:,:,idY,idX]=np.maximum(lbdArray[:,:,idY,idX],(s1+s2)/2.)
+            self.minSnr =  min((s1+s2)/2.,self.minSnr)
+            zyxArray[imax,:]=np.array([iz,iy,ix])
+        lbdArray    =   np.maximum(lbdArray,self.minSnr)
+        #only grow in one redshift plane
+        for imax in range(self.nMax):
+            iz  =   zyxArray[imax,0]
+            iy  =   zyxArray[imax,1]
+            ix  =   zyxArray[imax,2]
+            idY =   np.arange(iy-self.maxR,iy+self.maxR+1)[:,None]
+            idX =   np.arange(ix-self.maxR,ix+self.maxR+1)[None,:]
+            lbdArray[iz,:,idY,idX]=self.lbd
+        self.lbdArray   =   lbdArray  
+        self.thresholds =   lbdArray*self.sigmaA
+        return
+
+    def spectrum_norm(self):
+        norm=0.
+        for irun in range(100):
+            np.random.seed(irun)
+            alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)+np.random.random()*100
+            normTmp =   np.sqrt(np.sum(alphaTmp**2.))
+            alphaTmp=   alphaTmp/normTmp
+            shearTmp=   self.main_forward(alphaTmp) 
+            alphaTmp2=  self.main_transpose(shearTmp) 
+            normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
+            if normTmp2>norm:
+                norm=normTmp2
+        self.mu    = 1./norm/1.3
+        print('mu = %s' %self.mu)
+        return
+        
+    def gradient(self):
+        shearRTmp   =   self.main_forward(self.alphaR)   
+        self.shearRRes   =   self.shearR-shearRTmp
+        dalphaR     =   -self.main_transpose(self.shearRRes) 
+        return dalphaR
+    
+
+    def reconstruct(self):
+        #update deltaR
+        for zl in range(self.nlp):
+            self.deltaR[zl]= self.star2D.itransform(self.alphaR[zl],inFou=False,outFou=False)*self.lpWeight[zl]
+            
+        return
+
+    def run_main_iteration(self,iup,niter,threM='ST'):
+        tn=0
+        self.minSnr  =   10000.
+        for irun in range(niter):
+            #save old kappaFou
+            dalphaR =   -self.mu*self.gradient().real
+            if self.minSnr>self.lbd:
+                self.determine_thresholds(dalphaR)
+            dum     =   self.alphaR.real+dalphaR
+            if threM=='FT':
+                dum  = firm_thresholding(dum,self.thresholds) 
+            elif threM=='ST':
+                dum  = soft_thresholding(dum,self.thresholds) 
+            elif threM=='MT':
+                dum  = my_thresholding(dum,self.thresholds) 
+            #update tn and get ratio
+            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
+            ratio= (tn-1.)/tnTmp
+            tn   = tnTmp
+            self.alphaR=dum+(ratio*(dum-self.alphaR))
+            self.alphaR[:,0,:,:]=0.
+            if (irun+1)%20==0:
+                print('iteration: %d' %(irun))
+                if self.doDebug:
+                    print('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
+                    self.reconstruct()
+                    pyfits.writeto('deltaR_%d_%d.fits' %(iup,irun),self.deltaR.real,overwrite=True)
+                    pyfits.writeto('alphaR_%d_%d.fits' %(iup,irun),self.alphaR.real,overwrite=True)
+                    pyfits.writeto('lbdR_%d_%d.fits' %(iup,irun),self.lbdArray.real,overwrite=True)
+        return
+    
+    def process(self):
+        self.thresholdsMin  =   self.lbd*self.sigmaA
+        threM   =   'FT'
+        self.run_main_iteration(0,100,threM)
+        self.reconstruct()
+        return
+
+    def write(self):
         return

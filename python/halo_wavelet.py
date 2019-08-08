@@ -79,7 +79,7 @@ class starlet2D():
             dataOut[iframe,:,:]=dataTmp
         return dataOut
     
-    def conjugate(self,dataIn,inFou=True,outFou=True):
+    def transpose(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==self.shape
         dataOut=np.zeros((self.ny,self.nx)).astype(np.complex)
         for iframe in range(self.nframe):
@@ -103,7 +103,7 @@ class starlet2D():
             dataOut=np.fft.ifft2(dataOut).real
         return dataOut
     
-    def iconjugate(self,dataIn,inFou=True,outFou=True):
+    def itranspose(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==(self.ny,self.nx)
         dataOut=np.empty(self.shape)
         if not inFou:
