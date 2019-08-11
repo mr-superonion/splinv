@@ -75,39 +75,15 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
     
     @abortOnError
     def run(self,Id):
-        lbd     =   self.config.lambdaR
-        glDir   =   './s16a3D/lambda_%s/' % lbd
-        if not os.path.exists(glDir):
-            os.mkdir(glDir)
         fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
         pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
-        pool.storeSet(lbd=lbd)
-        pool.storeSet(pix_scale=self.config.pix_scale)
+        #pool.storeSet()
+        #pool.storeSet()
         # Run the code with Pool
         pool.map(self.process,fieldList)
         return
 
-    def getFieldInfo(self,fieldName,pix_scale):
-        fieldInfo=  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item()[fieldName]
-        raMin   =   fieldInfo['raMin']
-        raMax   =   fieldInfo['raMax']
-        raCen   =   (raMin+raMax)/2.-pix_scale/2.
-        decMin  =   fieldInfo['decMin']
-        decMax  =   fieldInfo['decMax']
-        decCen  =   (decMin+decMax)/2.-pix_scale/2.
-        sizeX   =   raMax-raMin
-        sizeY   =   decMax-decMin
-        ngridX  =   np.int(sizeX/pix_scale)
-        ngridY  =   np.int(sizeY/pix_scale)
-        if ngridX%2  !=  0:
-            ngridX  =   ngridX+1
-        if ngridY%2  !=  0:
-            ngridY  =   ngridY+1
-        ngrid   =   max(ngridX,ngridY)
-        size    =   pix_scale*ngrid
-        outDict =   {'raCent':raCen,'decCent':decCen,'size':size,'ngridX':ngridX,'ngridY':ngridY,'ngrid':ngrid}
-        return outDict 
 
 
     def makeMaskMap(self,raCen,decCen,pix_scale,ngrid,catRG):
@@ -128,11 +104,6 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         if fieldName!= 'VVDS':
             return
         self.log.info('processing field: %s' %fieldName)
-        lbd         =   cache.lbd
-        pix_scale   =   cache.pix_scale
-        glDir   =   './s16a3D/lambda_%s/' % lbd
-        if not os.path.exists(glDir):
-            os.mkdir(glDir)
         inFname     =   './s16aPre2D/%s_RG.fits' %fieldName  
         fieldOut    =   self.getFieldInfo(fieldName,pix_scale)
         raCen,decCen,size,ngridX,ngridY,ngrid   =   fieldOut.values()
@@ -144,41 +115,9 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         outFname    =   'kappaMap_GL_E_%s.fits' %(fieldName)
         outFname    =   os.path.join(glDir,outFname)
         if not os.path.exists(outFname):
-            configName  =   '/work/xiangchong.li/superonionGW/code/kappaMap_Private/config/s16a3DConfig.ini'
-            configName2 =   os.path.join(glDir,'s16aConfig_%s.ini' %fieldName)
-            parser = SafeConfigParser()
-            parser.read(configName)
-            parser.set('field','pixel_size','%s' % pix_scale)
-            parser.set('field','npix','%s' % ngrid)
-            parser.set('field','nlp','1')
-            parser.set('survey','size','%s' % size)
-            parser.set('survey','center_ra','%s' % raCen)
-            parser.set('survey','center_dec','%s' % decCen)
-            parser.set('survey','zsig_min','0')
-            parser.set('survey','zsig_max','0')
-            parser.set('parameters','lambda','%s' % lbd)
-            parser.set('parameters','nrandom','100')
-            parser.set('parameters','niter','500')
-            parser.set('parameters','nreweights','0')
-            with open(configName2, 'w') as configfile:
-                parser.write(configfile)
-            binDir      =   '/work/xiangchong.li/superonionGW/packages/Glimpse/build'
-            os.system('%s/glimpse %s %s %s' %(binDir,configName2,inFname,outFname))
+        
         else:
             self.log.info('already have output files')
-        if os.path.exists(mskFname) and os.path.exists(outFname) :
-            mskMap  =   fitsio.read(mskFname)
-            outMap  =   fitsio.read(outFname)
-            shiftX  =   int((ngrid-ngridX)//2)
-            shiftY  =   int((ngrid-ngridY)//2)
-            fieldOut.update({'pix_scale':pix_scale})
-            if len(outMap.shape)==2:
-                outMap  =   outMap*mskMap
-                fitsio.write(outFname+'2',data=outMap[shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
-            if len(outMap.shape)==3:
-                for iz in range(outMap.shape[0]):
-                    outMap[iz,:,:]  =   outMap[iz,:,:]*mskMap
-                fitsio.write(outFname+'2',data=outMap[:,shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
         return
     
         
