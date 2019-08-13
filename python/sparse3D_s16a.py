@@ -23,9 +23,10 @@
 # python lib
 import os
 import time
-import fitsio
 import numpy as np
-from configparser import SafeConfigParser
+import astropy.io.fits as pyfits
+from configparser import ConfigParser
+from sparseBase import massmap_sparsity_3D_2
 
 # lsst pipe basic
 import lsst.pex.config as pexConfig
@@ -44,8 +45,7 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 
 
 class sparse3D_s16aBatchConfig(pexConfig.Config):
-    lambdaR     =   pexConfig.Field(dtype=float, default=4, doc="regulation term lambda")
-    pix_scale   =   pexConfig.Field(dtype=float, default=1./60, doc="pixel scale of the output mass map")
+    outDir  =   pexConfig.Field(dtype=str, default='./s16a3D2/', doc="The output directory")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
 
@@ -78,44 +78,33 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
         pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
-        #pool.storeSet()
-        #pool.storeSet()
+        outDir  =   self.config.outDir
+        pool.storeSet(outDir=outDir)
         # Run the code with Pool
-        pool.map(self.process,fieldList)
+        configList= os.popen('ls %s/ |grep ini |grep -v inverse'%outDir).readlines()
+        pool.map(self.process,configList)
         return
 
-
-
-    def makeMaskMap(self,raCen,decCen,pix_scale,ngrid,catRG):
-        xMin    =   raCen   -   pix_scale*ngrid/2
-        yMin    =   decCen  -   pix_scale*ngrid/2
-        ra      =   catRG['ra']
-        dec     =   catRG['dec']
-        maskMap =   np.zeros((ngrid,ngrid))
-        for nra,ndec in zip(ra,dec):
-            raBin   =   int((nra-xMin)/pix_scale)
-            decBin  =   int((ndec-yMin)/pix_scale)
-            maskMap[decBin,raBin]  =   maskMap[decBin,raBin]+1
-        maskMap =   (maskMap>=2).astype(int)
-        return maskMap
-
-
-    def process(self,cache,fieldName):
-        if fieldName!= 'VVDS':
+    def process(self,cache,configName):
+        outDir      =   cache.outDir
+        if 'VVDS' not in configName:
             return
+        configName  =   configName[:-1]
+        configName2 =   configName.split('.')[0][7:] 
+        fieldName   =   configName2.split('_')[1]
         self.log.info('processing field: %s' %fieldName)
         inFname     =   './s16aPre2D/%s_RG.fits' %fieldName  
-        fieldOut    =   self.getFieldInfo(fieldName,pix_scale)
-        raCen,decCen,size,ngridX,ngridY,ngrid   =   fieldOut.values()
-        mskFname    =   os.path.join(glDir,'msk_%s.fits'  %(fieldName))
-        if not os.path.exists(mskFname):
-            catRG   =   fitsio.read(inFname)
-            mskMap  =   self.makeMaskMap(raCen,decCen,pix_scale,ngrid,catRG)
-            fitsio.write(mskFname,mskMap)
-        outFname    =   'kappaMap_GL_E_%s.fits' %(fieldName)
-        outFname    =   os.path.join(glDir,outFname)
+        sources     =   pyfits.getdata(inFname)
+        outFname    =   'kappaMap_%s.fits' %(configName2)
+        outFname    =   os.path.join(outDir,outFname)
+
         if not os.path.exists(outFname):
-        
+            parser      =   ConfigParser()
+            parser.read(os.path.join(outDir,configName))
+            sparse3D    =   massmap_sparsity_3D_2(sources,parser)
+            sparse3D.process()
+            massMap     =   sparse3D.deltaR.real
+            pyfits.writeto(outFname,massMap,overwrite=True)
         else:
             self.log.info('already have output files')
         return

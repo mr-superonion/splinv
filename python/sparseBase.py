@@ -2,7 +2,16 @@ import numpy as np
 import cosmology
 import astropy.io.fits as pyfits
 from halo_wavelet import * 
+import lsst.log
 
+def rotCatalog(e1, e2, phi=None):
+    if phi  ==  None:
+        phi = 2.0 * np.pi * np.random.rand(len(e1))
+    cs = np.cos(phi)
+    ss = np.sin(phi)
+    e1_rot = e1 * cs + e2 * ss
+    e2_rot = (-1.0) * e1 * ss + e2 * cs
+    return e1_rot, e2_rot
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -347,6 +356,16 @@ class massmap_sparsity_3D():
 
 class massmap_sparsity_3D_2():
     def __init__(self,sources,parser):
+        #file
+        if parser.has_option('file','root'):
+            self.root   =   parser.get('file','root')
+        else:
+            self.root   =   './'
+        if parser.has_option('file','fieldN'):
+            self.fieldN =   parser.get('file','fieldN')
+        else:
+            fieldN  =   ''
+        #sparse
         self.doDebug=   parser.getboolean('sparse','doDebug')
         self.lbd    =   parser.getfloat('sparse','lbd')
         self.nframe =   parser.getint('sparse','nframe')
@@ -354,13 +373,25 @@ class massmap_sparsity_3D_2():
         self.maxR   =   parser.getint('sparse','maxR')
 
         #transverse plane
+        if parser.has_option('transPlane','raname'):
+            raname      =   parser.get('transPlane','raname')
+        else:
+            raname      =   'ra'
+        if parser.has_option('transPlane','decname'):
+            decname     =   parser.get('transPlane','decname')
+        else:
+            decname      =   'dec'
         xMin        =   parser.getfloat('transPlane','xMin')
         yMin        =   parser.getfloat('transPlane','yMin')
         scale       =   parser.getfloat('transPlane','scale')
-        self.ny     =   parser.getint('transPlane','ny')
-        self.nx     =   parser.getint('transPlane','nx')
+        self.ny     =   parser.getint('transPlane'  ,'ny')
+        self.nx     =   parser.getint('transPlane'  ,'nx')
         
         #lens z axis
+        if parser.has_option('lensZ','zname'):
+            zname       =   parser.get('lensZ','zname')
+        else:
+            zname       =   'z'
         zlMin       =   parser.getfloat('lensZ','zlMin')
         zlscale     =   parser.getfloat('lensZ','zlscale')
         self.nlp    =   parser.getint('lensZ','nlp')
@@ -370,7 +401,6 @@ class massmap_sparsity_3D_2():
         zscale      =   parser.getfloat('sourceZ','zscale')
         self.nz     =   parser.getint('sourceZ','nz')
         zsBin       =   zMeanBin(zMin,zscale,self.nz)
-        
         
         self.shapeS =   (self.nz,self.ny,self.nx)   
         self.shapeL =   (self.nlp,self.ny,self.nx)   
@@ -384,14 +414,14 @@ class massmap_sparsity_3D_2():
         g1Map       =   np.zeros(self.shapeS)
         g2Map       =   np.zeros(self.shapeS)
         for ss in sources:
-            ix  =   int((ss['ra']-xMin)//scale)
-            iy  =   int((ss['dec']-yMin)//scale)
-            iz  =   int((ss['z']-zMin)//zscale)
+            ix  =   int((ss[raname]-xMin)//scale)
+            iy  =   int((ss[decname]-yMin)//scale)
+            iz  =   int((ss[zname]-zMin)//zscale)
             if iz>=0 and iz<self.nz:
                 g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
                 g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
                 self.nMap[iz,iy,ix]=   self.nMap[iz,iy,ix]+1.
-        self.mask       =   (self.nMap>0.1)
+        self.mask       =   (self.nMap>=0.1)
         g1Map[self.mask]=   g1Map[self.mask]/self.nMap[self.mask]
         g2Map[self.mask]=   g2Map[self.mask]/self.nMap[self.mask]
         self.shearR =   g1Map+np.complex128(1j)*g2Map
@@ -404,12 +434,14 @@ class massmap_sparsity_3D_2():
         self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
         self.spectrum_norm()
-        self.prox_sigmaA(100,0.25)#np.zeros(self.shape)#
+        gsAprox     =   False
+        self.prox_sigmaA(100,sources,gsAprox)#np.zeros(self.shape)#
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
         return
     
     def lensing_kernel(self,zlbin,zsbin):
+        lsst.log.info('Calculating lensing kernel')
         self.lensKernel =   np.zeros((self.nz,self.nlp))
         self.lpWeight   =   np.zeros(self.nlp)
         for i,zs in enumerate(zsbin):
@@ -442,18 +474,30 @@ class massmap_sparsity_3D_2():
             alphaRO[zl,:,:,:]=self.star2D.itranspose(deltaFTmp[zl],outFou=False).real
         return alphaRO
 
-    def prox_sigmaA(self,niter,sigma):
+    def prox_sigmaA(self,niter,sources,gsAprox):
+        lsst.log.info('Estimating sigma map')
         outData =   np.zeros(self.shapeA)
-        sigMap  =   np.zeros(self.shapeS)
-        sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
-        for irun in range(niter):
-            np.random.seed(irun)
-            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-            shearSim=   g1Sim+np.complex128(1j)*g2Sim
-            alphaRSim=  self.main_transpose(shearSim)
-            outData +=  alphaRSim**2.
-        self.sigmaA =   np.sqrt(outData/niter)*self.mu
+        if gsAprox:
+            sigma   =   np.std(np.append(sources['g1'],sources['g2']))
+            sigMap  =   np.zeros(self.shapeS)
+            sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
+            for irun in range(niter):
+                np.random.seed(irun)
+                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+                shearSim=   g1Sim+np.complex128(1j)*g2Sim
+                alphaRSim=  self.main_transpose(shearSim)
+                outData +=  alphaRSim**2.
+            self.sigmaA =   np.sqrt(outData/niter)*self.mu
+        else:
+            for irun in range(niter):
+                np.random.seed(irun)
+                g1Sim,g2Sim =   rotCatalog(sources['g1'],sources['g2'])
+                shearSim=   g1Sim+np.complex128(1j)*g2Sim
+                alphaRSim=  self.main_transpose(shearSim)
+                outData +=  alphaRSim**2.
+            self.sigmaA =   np.sqrt(outData/niter)*self.mu
+            return
         if self.doDebug:
             pyfits.writeto('sigmaAlpha.fits',self.sigmaA,overwrite=True)
         return outData
@@ -483,6 +527,7 @@ class massmap_sparsity_3D_2():
             lbdArray[:,:,idY,idX]=np.maximum(lbdArray[:,:,idY,idX],(s1+s2)/2.)
             self.minSnr =  min((s1+s2)/2.,self.minSnr)
             zyxArray[imax,:]=np.array([iz,iy,ix])
+        lsst.log.info('minSnr: %s ' %self.minSnr)
         lbdArray    =   np.maximum(lbdArray,self.minSnr)
         #only grow in one redshift plane
         for imax in range(self.nMax):
@@ -497,7 +542,7 @@ class massmap_sparsity_3D_2():
         return
 
     def spectrum_norm(self):
-        norm=0.
+        norm    =   0.
         for irun in range(100):
             np.random.seed(irun)
             alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)+np.random.random()*100
@@ -509,7 +554,7 @@ class massmap_sparsity_3D_2():
             if normTmp2>norm:
                 norm=normTmp2
         self.mu    = 1./norm/1.3
-        print('mu = %s' %self.mu)
+        lsst.log.info('mu = %s' %self.mu)
         return
         
     def gradient(self):
@@ -526,7 +571,7 @@ class massmap_sparsity_3D_2():
             
         return
 
-    def run_main_iteration(self,iup,niter,threM='ST'):
+    def run_main_iteration(self,iup,niter,threM='FT'):
         tn=0
         self.minSnr  =   10000.
         for irun in range(niter):
@@ -546,21 +591,21 @@ class massmap_sparsity_3D_2():
             ratio= (tn-1.)/tnTmp
             tn   = tnTmp
             self.alphaR=dum+(ratio*(dum-self.alphaR))
-            self.alphaR[:,0,:,:]=0.
-            if (irun+1)%20==0:
-                print('iteration: %d' %(irun))
+            #self.alphaR[:,0,:,:]=0.
+            if (irun+1)%50==0:
+                lsst.log.info('iteration: %d' %(irun))
                 if self.doDebug:
-                    print('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
+                    lsst.log.info('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
                     self.reconstruct()
                     pyfits.writeto('deltaR_%d_%d.fits' %(iup,irun),self.deltaR.real,overwrite=True)
                     pyfits.writeto('alphaR_%d_%d.fits' %(iup,irun),self.alphaR.real,overwrite=True)
                     pyfits.writeto('lbdR_%d_%d.fits' %(iup,irun),self.lbdArray.real,overwrite=True)
         return
     
-    def process(self):
+    def process(self,niter=1000):
         self.thresholdsMin  =   self.lbd*self.sigmaA
         threM   =   'FT'
-        self.run_main_iteration(0,100,threM)
+        self.run_main_iteration(0,niter,threM)
         self.reconstruct()
         return
 

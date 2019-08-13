@@ -38,24 +38,30 @@ def addInfoSparse(parser,lbd,fieldName):
                         'maxR'  :'%s' %maxR
                         }
     #transverse plane
+    raname      =   'ra'
+    decname     =   'dec'
     unit        =   'degree'
-    scale       =   0.05     #(degree/pix)
+    scale       =   0.05    #(degree/pix)
     xMin,yMin,nxy=  getFieldInfo(fieldName,scale)
     ny          =   nxy     #pixels
     nx          =   nxy     #pixels
 
-    parser['transPlane']={'unit':'%s'  %unit,
-                         'xMin' :'%s'  %xMin,
-                         'yMin' :'%s'  %yMin,
-                         'scale':'%s'  %scale,
-                         'ny'   :'%s'  %ny,
-                         'nx'   :'%s'  %nx}
+    parser['transPlane']={'raname':'%s'  %raname,
+                         'decname':'%s'  %decname,  
+                         'unit'   :'%s'  %unit,
+                         'xMin'   :'%s'  %xMin,
+                         'yMin'   :'%s'  %yMin,
+                         'scale'  :'%s'  %scale,
+                         'ny'     :'%s'  %ny,
+                         'nx'     :'%s'  %nx}
 
     #lens z axis
+    zname       =   'mlz_photoz_best'
     nlp         =   20
     zlMin       =   0.01
     zlscale     =   0.05
-    parser['lensZ']={'zlMin'    :'%s'  %zlMin,
+    parser['lensZ']={'zname'    :'%s'  %zname,
+                     'zlMin'    :'%s'  %zlMin,
                      'zlscale'  :'%s'  %zlscale,
                      'nlp'      :'%s'  %nlp}
 

@@ -28,7 +28,7 @@ import numpy as np
 import astropy.io.fits as pyfits
 from astropy.table import Table
 from configparser import ConfigParser
-from massmap_sparsity import massmap_sparsity_3D_2
+from sparseBase import massmap_sparsity_3D_2
 
 # lsst Tasks
 import lsst.daf.base as dafBase
@@ -71,7 +71,7 @@ class sparse3DTask(pipeBase.CmdLineTask):
         m_id        =   parser.getint('lens','m_id')             #arcsec
         M200        =   parser.getfloat('lens','m_200')          #redshift
         z_cl        =   parser.getfloat('lens','z_cl')           #arcsec
-        lbd         =   8
+        lbd         =   parser.getfloat('sparse','lbd')
         outFname    =   os.path.join(simDir,'kappaMap_3D_lbd%s_m%d_z%d.fits'%(lbd,m_id,z_id))
         if os.path.exists(outFname):
            massMap  =   pyfits.getdata(outFname) 
@@ -153,7 +153,7 @@ class sparse3DBatchTask(BatchPoolTask):
         configList= os.popen('ls %s/ |grep ini |grep -v inverse'%simDir).readlines()
         rows    =   pool.map(self.process,configList)
         tabOut  =   Table(rows=rows, names=('M200','z_cl','x','y','z'))
-        tabOut.write('detection_lbd8.csv')
+        tabOut.write('detection_lbd8.csv',overwrite=True)
         self.log.info('finish group %d'%(Id))
         return
         
