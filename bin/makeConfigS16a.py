@@ -27,10 +27,11 @@ def getFieldInfo(fieldName,pix_scale):
 def addInfoSparse(parser,lbd,fieldName):
     #sparse
     doDebug=    'no'
-    nframe =    4
+    nframe =    1
     nMax   =    1
-    maxR   =    5
+    maxR   =    2
 
+    #sparse
     parser['sparse']={  'doDebug':'%s'%doDebug,
                         'lbd'   :'%s' %lbd,
                         'nframe':'%s' %nframe,
@@ -90,5 +91,9 @@ if __name__=='__main__':
         configName  =   os.path.join(obsDir,'config_lbd%d_%s.ini' %(lbd,fieldName))
         parser  =   ConfigParser()
         parser  =   addInfoSparse(parser,lbd,fieldName)
+        #file
+        parser['file']= { 'root'    :'%s'%obsDir,
+                          'fieldN'  :'%s'%fieldName
+                          }
         with open(configName, 'w') as configfile:
             parser.write(configfile)
