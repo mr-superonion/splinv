@@ -5,14 +5,6 @@ import cosmology
 import astropy.io.fits as pyfits
 from halo_wavelet import * 
 
-def rotCatalog(e1, e2, phi=None):
-    if phi  ==  None:
-        phi = 2.0 * np.pi * np.random.rand(len(e1))
-    cs = np.cos(phi)
-    ss = np.sin(phi)
-    e1_rot = e1 * cs + e2 * ss
-    e2_rot = (-1.0) * e1 * ss + e2 * cs
-    return e1_rot, e2_rot
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -375,13 +367,13 @@ class massmap_sparsity_3D_2():
 
         #transverse plane
         if parser.has_option('transPlane','raname'):
-            raname      =   parser.get('transPlane','raname')
+            self.raname     =   parser.get('transPlane','raname')
         else:
-            raname      =   'ra'
+            self.raname     =   'ra'
         if parser.has_option('transPlane','decname'):
-            decname     =   parser.get('transPlane','decname')
+            self.decname    =   parser.get('transPlane','decname')
         else:
-            decname      =   'dec'
+            self.decname    =   'dec'
         xMin        =   parser.getfloat('transPlane','xMin')
         yMin        =   parser.getfloat('transPlane','yMin')
         scale       =   parser.getfloat('transPlane','scale')
@@ -390,9 +382,9 @@ class massmap_sparsity_3D_2():
         
         #lens z axis
         if parser.has_option('lensZ','zname'):
-            zname   =   parser.get('lensZ','zname')
+            self.zname      =   parser.get('lensZ','zname')
         else:
-            zname   =   'z'
+            self.zname      =   'z'
         zlMin       =   parser.getfloat('lensZ','zlMin')
         zlscale     =   parser.getfloat('lensZ','zlscale')
         self.nlp    =   parser.getint('lensZ','nlp')
@@ -432,9 +424,9 @@ class massmap_sparsity_3D_2():
             g1Map       =   np.zeros(self.shapeS)
             g2Map       =   np.zeros(self.shapeS)
             for ss in sources:
-                ix  =   int((ss[raname]-xMin)//scale)
-                iy  =   int((ss[decname]-yMin)//scale)
-                iz  =   int((ss[zname]-zMin)//zscale)
+                ix  =   int((ss[self.raname]-xMin)//scale)
+                iy  =   int((ss[self.decname]-yMin)//scale)
+                iz  =   int((ss[self.zname]-zMin)//zscale)
                 if iz>=0 and iz<self.nz:
                     g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
                     g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
@@ -460,7 +452,7 @@ class massmap_sparsity_3D_2():
         if os.path.exists(sigFname):
             self.sigmaA =   pyfits.getdata(sigFname) 
         else:
-            gsAprox     =   True
+            gsAprox     =   False
             self.prox_sigmaA(100,sources,gsAprox)#np.zeros(self.shape)#
             pyfits.writeto(sigFname,self.sigmaA)
         self.alphaR =   np.zeros(self.shapeA)
@@ -518,6 +510,7 @@ class massmap_sparsity_3D_2():
         lsst.log.info('Estimating sigma map')
         outData =   np.zeros(self.shapeA)
         if gsAprox:
+            lsst.log.info('using Gaussian approximation')
             sigma   =   np.std(np.append(sources['g1'],sources['g2']))
             sigMap  =   np.zeros(self.shapeS)
             sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
@@ -530,15 +523,33 @@ class massmap_sparsity_3D_2():
                 outData +=  alphaRSim**2.
             self.sigmaA =   np.sqrt(outData/niter)*self.mu
         else:
+            lsst.log.info('using mock catalog')
+            simSrcName  =   './s16aPre2D/%s_RG_mock.fits' %(self.fieldN)
+            simSrc      =   pyfits.getdata(simSrcName)
             for irun in range(niter):
-                np.random.seed(irun)
-                g1Sim,g2Sim =   rotCatalog(sources['g1'],sources['g2'])
+                raname  =   self.raname+'_%d' %irun
+                decname =   self.decname+'_%d'%irun
+                zname   =   self.zname+'_%d'  %irun
+                nSim    =   np.zeros(self.shapeS,dtype=np.int)  
+                g1Sim   =   np.zeros(self.shapeS)
+                g2Sim   =   np.zeros(self.shapeS)
+                for ss in simSrc:
+                    ix  =   int((ss[raname]-xMin)//scale)
+                    iy  =   int((ss[decname]-yMin)//scale)
+                    iz  =   int((ss[zname]-zMin)//zscale)
+                    if iz>=0 and iz<self.nz:
+                        g1Sim[iz,iy,ix]    =   g1Sim[iz,iy,ix]+ss['g1']
+                        g2Sim[iz,iy,ix]    =   g2Sim[iz,iy,ix]+ss['g2']
+                        nSim[iz,iy,ix]     =   nSim[iz,iy,ix]+1.
+                mask       =   (nSim>=0.1)
+                g1Sim[mask]=   g1Sim[mask]/nSim[mask]
+                g2Sim[mask]=   g2Sim[mask]/nSim[mask]
+
                 shearSim=   g1Sim+np.complex128(1j)*g2Sim
                 alphaRSim=  self.main_transpose(shearSim)
                 outData +=  alphaRSim**2.
             self.sigmaA =   np.sqrt(outData/niter)*self.mu
-            return
-        return outData
+        return
 
     def determine_thresholds(self,dalphaR):
         lbdArray=   np.ones(self.shapeA)*self.lbd
