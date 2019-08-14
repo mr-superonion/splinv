@@ -44,8 +44,10 @@ def prepareHSCField16(fieldname):
         tableNew.write(onameRG)
     else:
         tableNew=   astTab.Table.read(onameRG)
-    mnameRG =   './s16aPre2D/%s_RG_mock.fits' %(fieldname)
+    mnameRG     =   './s16aPre2D/%s_RG_mock.fits' %(fieldname)
     tableMock   =   astTab.Table()
+    tableMock['ra']  =   tableNew['ra']
+    tableMock['dec'] =   tableNew['dec']
     for imock in range(100):
         np.random.seed(imock)
         rnd     =   np.random.randn(len(tableNew))
@@ -56,7 +58,6 @@ def prepareHSCField16(fieldname):
         tableMock['g2_%d' %imock]  =   g2Sim
     tableMock.write(mnameRG)
     return
-
 
 def main():
     pool    =   Pool(1)

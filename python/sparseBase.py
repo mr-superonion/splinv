@@ -453,7 +453,7 @@ class massmap_sparsity_3D_2():
             self.sigmaA =   pyfits.getdata(sigFname) 
         else:
             gsAprox     =   False
-            self.prox_sigmaA(100,sources,gsAprox)#np.zeros(self.shape)#
+            self.prox_sigmaA(100,gsAprox)#np.zeros(self.shape)#
             pyfits.writeto(sigFname,self.sigmaA)
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
@@ -506,7 +506,7 @@ class massmap_sparsity_3D_2():
         return
     
     
-    def prox_sigmaA(self,niter,sources,gsAprox):
+    def prox_sigmaA(self,niter,gsAprox):
         lsst.log.info('Estimating sigma map')
         outData =   np.zeros(self.shapeA)
         if gsAprox:
@@ -527,8 +527,8 @@ class massmap_sparsity_3D_2():
             simSrcName  =   './s16aPre2D/%s_RG_mock.fits' %(self.fieldN)
             simSrc      =   pyfits.getdata(simSrcName)
             for irun in range(niter):
-                raname  =   self.raname+'_%d' %irun
-                decname =   self.decname+'_%d'%irun
+                raname  =   self.raname
+                decname =   self.decname
                 zname   =   self.zname+'_%d'  %irun
                 nSim    =   np.zeros(self.shapeS,dtype=np.int)  
                 g1Sim   =   np.zeros(self.shapeS)
@@ -538,8 +538,8 @@ class massmap_sparsity_3D_2():
                     iy  =   int((ss[decname]-yMin)//scale)
                     iz  =   int((ss[zname]-zMin)//zscale)
                     if iz>=0 and iz<self.nz:
-                        g1Sim[iz,iy,ix]    =   g1Sim[iz,iy,ix]+ss['g1']
-                        g2Sim[iz,iy,ix]    =   g2Sim[iz,iy,ix]+ss['g2']
+                        g1Sim[iz,iy,ix]    =   g1Sim[iz,iy,ix]+ss['g1_%d'%irun]
+                        g2Sim[iz,iy,ix]    =   g2Sim[iz,iy,ix]+ss['g2_%d'%irun]
                         nSim[iz,iy,ix]     =   nSim[iz,iy,ix]+1.
                 mask       =   (nSim>=0.1)
                 g1Sim[mask]=   g1Sim[mask]/nSim[mask]
