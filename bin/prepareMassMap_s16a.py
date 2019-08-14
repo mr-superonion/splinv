@@ -15,7 +15,7 @@ def rotCatalog(e1, e2, phi=None):
     return e1_rot, e2_rot
 
 def prepareHSCField16(fieldname):
-    if fieldname    !=  'WIDE12H':
+    if fieldname    ==  'AEGIS':
         return
     onameRG = './s16aPre2D/%s_RG.fits' %(fieldname)
     if not os.path.exists(onameRG):
