@@ -374,9 +374,9 @@ class massmap_sparsity_3D_2():
             self.decname    =   parser.get('transPlane','decname')
         else:
             self.decname    =   'dec'
-        xMin        =   parser.getfloat('transPlane','xMin')
-        yMin        =   parser.getfloat('transPlane','yMin')
-        scale       =   parser.getfloat('transPlane','scale')
+        self.xMin   =   parser.getfloat('transPlane','xMin')
+        self.yMin   =   parser.getfloat('transPlane','yMin')
+        self.scale  =   parser.getfloat('transPlane','scale')
         self.ny     =   parser.getint('transPlane'  ,'ny')
         self.nx     =   parser.getint('transPlane'  ,'nx')
         
@@ -390,10 +390,10 @@ class massmap_sparsity_3D_2():
         self.nlp    =   parser.getint('lensZ','nlp')
         zlBin       =   zMeanBin(zlMin,zlscale,self.nlp)
         #source z axis
-        zMin        =   parser.getfloat('sourceZ','zMin')
-        zscale      =   parser.getfloat('sourceZ','zscale')
+        self.zMin   =   parser.getfloat('sourceZ','zMin')
+        self.zscale =   parser.getfloat('sourceZ','zscale')
         self.nz     =   parser.getint('sourceZ','nz')
-        zsBin       =   zMeanBin(zMin,zscale,self.nz)
+        zsBin       =   zMeanBin(self.zMin,self.zscale,self.nz)
         
         self.shapeS =   (self.nz,self.ny,self.nx)   
         self.shapeL =   (self.nlp,self.ny,self.nx)   
@@ -418,15 +418,15 @@ class massmap_sparsity_3D_2():
             self.nMap   =   pyfits.getdata(nFname)
             g1Map       =   pyfits.getdata(g1Fname)
             g2Map       =   pyfits.getdata(g2Fname)
-            self.mask       =   (self.nMap>=0.1)
+            self.mask   =   (self.nMap>=0.1)
         else:
             self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
             g1Map       =   np.zeros(self.shapeS)
             g2Map       =   np.zeros(self.shapeS)
             for ss in sources:
-                ix  =   int((ss[self.raname]-xMin)//scale)
-                iy  =   int((ss[self.decname]-yMin)//scale)
-                iz  =   int((ss[self.zname]-zMin)//zscale)
+                ix  =   int((ss[self.raname]-self.xMin)//self.scale)
+                iy  =   int((ss[self.decname]-self.yMin)//self.scale)
+                iz  =   int((ss[self.zname]-self.zMin)//self.zscale)
                 if iz>=0 and iz<self.nz:
                     g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
                     g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
@@ -508,7 +508,7 @@ class massmap_sparsity_3D_2():
     
     def prox_sigmaA(self,niter,gsAprox):
         lsst.log.info('Estimating sigma map')
-        outData =   np.zeros(self.shapeA)
+        outData     =   np.zeros(self.shapeA)
         if gsAprox:
             lsst.log.info('using Gaussian approximation')
             sigma   =   np.std(np.append(sources['g1'],sources['g2']))
@@ -534,21 +534,20 @@ class massmap_sparsity_3D_2():
                 g1Sim   =   np.zeros(self.shapeS)
                 g2Sim   =   np.zeros(self.shapeS)
                 for ss in simSrc:
-                    ix  =   int((ss[raname]-xMin)//scale)
-                    iy  =   int((ss[decname]-yMin)//scale)
-                    iz  =   int((ss[zname]-zMin)//zscale)
+                    ix  =   int((ss[raname]-self.xMin)//self.scale)
+                    iy  =   int((ss[decname]-self.yMin)//self.scale)
+                    iz  =   int((ss[zname]-self.zMin)//self.zscale)
                     if iz>=0 and iz<self.nz:
                         g1Sim[iz,iy,ix]    =   g1Sim[iz,iy,ix]+ss['g1_%d'%irun]
                         g2Sim[iz,iy,ix]    =   g2Sim[iz,iy,ix]+ss['g2_%d'%irun]
                         nSim[iz,iy,ix]     =   nSim[iz,iy,ix]+1.
-                mask       =   (nSim>=0.1)
-                g1Sim[mask]=   g1Sim[mask]/nSim[mask]
-                g2Sim[mask]=   g2Sim[mask]/nSim[mask]
-
-                shearSim=   g1Sim+np.complex128(1j)*g2Sim
-                alphaRSim=  self.main_transpose(shearSim)
-                outData +=  alphaRSim**2.
-            self.sigmaA =   np.sqrt(outData/niter)*self.mu
+                mask        =   (nSim>=0.1)
+                g1Sim[mask] =   g1Sim[mask]/nSim[mask]
+                g2Sim[mask] =   g2Sim[mask]/nSim[mask]
+                shearSim    =   g1Sim+np.complex128(1j)*g2Sim
+                alphaRSim   =   self.main_transpose(shearSim)
+                outData     +=  alphaRSim**2.
+            self.sigmaA     =   np.sqrt(outData/niter)*self.mu
         return
 
     def determine_thresholds(self,dalphaR):
