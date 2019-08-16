@@ -524,27 +524,10 @@ class massmap_sparsity_3D_2():
             self.sigmaA =   np.sqrt(outData/niter)*self.mu
         else:
             lsst.log.info('using mock catalog')
-            simSrcName  =   './s16aPre2D/%s_RG_mock.fits' %(self.fieldN)
-            simSrc      =   pyfits.getdata(simSrcName)
+            simSrcName  =   './s16a3D2/mock_lbd8_%s.npy' %(self.fieldN)
+            simSrc      =   np.load(simSrcName)
             for irun in range(niter):
-                raname  =   self.raname
-                decname =   self.decname
-                zname   =   self.zname+'_%d'  %irun
-                nSim    =   np.zeros(self.shapeS)  
-                g1Sim   =   np.zeros(self.shapeS)
-                g2Sim   =   np.zeros(self.shapeS)
-                for ss in simSrc:
-                    ix  =   int((ss[raname]-self.xMin)//self.scale)
-                    iy  =   int((ss[decname]-self.yMin)//self.scale)
-                    iz  =   int((ss[zname]-self.zMin)//self.zscale)
-                    if iz>=0 and iz<self.nz:
-                        g1Sim[iz,iy,ix]    =   g1Sim[iz,iy,ix]+ss['g1_%d'%irun]
-                        g2Sim[iz,iy,ix]    =   g2Sim[iz,iy,ix]+ss['g2_%d'%irun]
-                        nSim[iz,iy,ix]     =   nSim[iz,iy,ix]+1.
-                mask        =   (nSim>=0.1)
-                g1Sim[mask] =   g1Sim[mask]/nSim[mask]
-                g2Sim[mask] =   g2Sim[mask]/nSim[mask]
-                shearSim    =   g1Sim+np.complex128(1j)*g2Sim
+                shearSim    =   simSrc[irun] 
                 alphaRSim   =   self.main_transpose(shearSim)
                 outData     +=  alphaRSim**2.
             self.sigmaA     =   np.sqrt(outData/niter)*self.mu

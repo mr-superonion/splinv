@@ -27,7 +27,7 @@ def getFieldInfo(fieldName,pix_scale):
 def addInfoSparse(parser,lbd,fieldName):
     #sparse
     doDebug=    'no'
-    nframe =    1
+    nframe =    4
     nMax   =    1
     maxR   =    2
 

@@ -74,7 +74,7 @@ class sparseMockCatBatchTask(BatchPoolTask):
         configName2 =   configName.split('.')[0][7:] 
         fieldName   =   configName2.split('_')[1]
         self.log.info('processing field: %s' %fieldName)
-        outFname    =   'mock_%s.fits' %(configName2)
+        outFname    =   'mock_%s.npy' %(configName2)
         outFname    =   os.path.join(outDir,outFname)
         pool        =   Pool("sparseMockCatBatch")
         pool.cacheClear()
@@ -86,7 +86,7 @@ class sparseMockCatBatchTask(BatchPoolTask):
         nSim        =   self.config.nSim
         shearAll    =   pool.map(self.process,range(nSim))
         self.log.info('writing outcome for field: %s' %fieldName)
-        shearAll    =   np.vstack(shearAll)
+        shearAll    =   np.array(shearAll)
         np.save(outFname,shearAll)
         return
 
