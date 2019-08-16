@@ -61,7 +61,7 @@ def addInfoSparse(parser,lbd,fieldName):
     nlp         =   20
     zlMin       =   0.01
     zlscale     =   0.05
-    parser['lensZ']={'zname'    :'%s'  %zname,
+    parser['lensZ']={
                      'zlMin'    :'%s'  %zlMin,
                      'zlscale'  :'%s'  %zlscale,
                      'nlp'      :'%s'  %nlp}
@@ -74,7 +74,9 @@ def addInfoSparse(parser,lbd,fieldName):
     else:
         zMin    =   0.
         zscale  =   4.
-    parser['sourceZ']={ 'zMin'  :   '%s'  %zMin,
+    parser['sourceZ']={ 
+                        'zname'    :'%s'  %zname,
+                        'zMin'  :   '%s'  %zMin,
                         'zscale':   '%s'  %zscale,
                         'nz'    :   '%s'  %nz}
     return parser

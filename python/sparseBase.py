@@ -381,15 +381,15 @@ class massmap_sparsity_3D_2():
         self.nx     =   parser.getint('transPlane'  ,'nx')
         
         #lens z axis
-        if parser.has_option('lensZ','zname'):
-            self.zname      =   parser.get('lensZ','zname')
-        else:
-            self.zname      =   'z'
         zlMin       =   parser.getfloat('lensZ','zlMin')
         zlscale     =   parser.getfloat('lensZ','zlscale')
         self.nlp    =   parser.getint('lensZ','nlp')
         zlBin       =   zMeanBin(zlMin,zlscale,self.nlp)
         #source z axis
+        if parser.has_option('sourceZ','zname'):
+            self.zname      =   parser.get('sourceZ','zname')
+        else:
+            self.zname      =   'z'
         self.zMin   =   parser.getfloat('sourceZ','zMin')
         self.zscale =   parser.getfloat('sourceZ','zscale')
         self.nz     =   parser.getint('sourceZ','nz')
@@ -530,7 +530,7 @@ class massmap_sparsity_3D_2():
                 raname  =   self.raname
                 decname =   self.decname
                 zname   =   self.zname+'_%d'  %irun
-                nSim    =   np.zeros(self.shapeS,dtype=np.int)  
+                nSim    =   np.zeros(self.shapeS)  
                 g1Sim   =   np.zeros(self.shapeS)
                 g2Sim   =   np.zeros(self.shapeS)
                 for ss in simSrc:
