@@ -27,16 +27,18 @@ def getFieldInfo(fieldName,pix_scale):
 def addInfoSparse(parser,lbd,fieldName):
     #sparse
     doDebug=    'no'
-    nframe =    4
+    nframe =    2
     nMax   =    1
     maxR   =    2
+    gsAprox=    'no'
 
     #sparse
     parser['sparse']={  'doDebug':'%s'%doDebug,
                         'lbd'   :'%s' %lbd,
                         'nframe':'%s' %nframe,
                         'nMax'  :'%s' %nMax,
-                        'maxR'  :'%s' %maxR
+                        'maxR'  :'%s' %maxR,
+                        'gsAprox':'%s'%gsAprox
                         }
     #transverse plane
     raname      =   'ra'

@@ -5,10 +5,8 @@ import cosmology
 import astropy.io.fits as pyfits
 from halo_wavelet import * 
 
-
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
-    
 
 def soft_thresholding(dum,thresholds):
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
@@ -364,6 +362,7 @@ class massmap_sparsity_3D_2():
         self.nframe =   parser.getint('sparse','nframe')
         self.nMax   =   parser.getint('sparse','nMax')
         self.maxR   =   parser.getint('sparse','maxR')
+        self.gsAprox=   parser.getboolean('sparse','gsAprox')
 
         #transverse plane
         if parser.has_option('transPlane','raname'):
@@ -419,6 +418,7 @@ class massmap_sparsity_3D_2():
             g1Map       =   pyfits.getdata(g1Fname)
             g2Map       =   pyfits.getdata(g2Fname)
             self.mask   =   (self.nMap>=0.1)
+            self.maskF      =   (np.sum(self.nMap,axis=0)>1.)
         else:
             self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
             g1Map       =   np.zeros(self.shapeS)
@@ -432,6 +432,7 @@ class massmap_sparsity_3D_2():
                     g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
                     self.nMap[iz,iy,ix]=   self.nMap[iz,iy,ix]+1.
             self.mask       =   (self.nMap>=0.1)
+            self.maskF      =   (np.sum(self.nMap,axis=0)>1.)
             g1Map[self.mask]=   g1Map[self.mask]/self.nMap[self.mask]
             g2Map[self.mask]=   g2Map[self.mask]/self.nMap[self.mask]
             pyfits.writeto(g1Fname,g1Map)
@@ -452,8 +453,7 @@ class massmap_sparsity_3D_2():
         if os.path.exists(sigFname):
             self.sigmaA =   pyfits.getdata(sigFname) 
         else:
-            gsAprox     =   False
-            self.prox_sigmaA(100,gsAprox)#np.zeros(self.shape)#
+            self.prox_sigmaA(100)#np.zeros(self.shape)#
             pyfits.writeto(sigFname,self.sigmaA)
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
@@ -502,14 +502,14 @@ class massmap_sparsity_3D_2():
             normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
-        self.mu    = 1./norm/1.3
+        self.mu    = 1./norm/1.1
         return
     
     
-    def prox_sigmaA(self,niter,gsAprox):
+    def prox_sigmaA(self,niter):
         lsst.log.info('Estimating sigma map')
         outData     =   np.zeros(self.shapeA)
-        if gsAprox:
+        if self.gsAprox:
             lsst.log.info('using Gaussian approximation')
             sigma   =   np.std(np.append(sources['g1'],sources['g2']))
             sigMap  =   np.zeros(self.shapeS)
@@ -531,6 +531,9 @@ class massmap_sparsity_3D_2():
                 alphaRSim   =   self.main_transpose(shearSim)
                 outData     +=  alphaRSim**2.
             self.sigmaA     =   np.sqrt(outData/niter)*self.mu
+            for izlp in range(self.nlp):
+                for iframe in range(self.nframe):
+                    self.sigmaA[izlp,iframe][~self.maskF]=np.max(self.sigmaA[izlp,iframe])
         return
 
     def determine_thresholds(self,dalphaR):
@@ -583,8 +586,10 @@ class massmap_sparsity_3D_2():
     def reconstruct(self):
         #update deltaR
         for zl in range(self.nlp):
-            self.deltaR[zl]= self.star2D.itransform(self.alphaR[zl],inFou=False,outFou=False)*self.lpWeight[zl]
-            
+            alphaRZ         =   self.alphaR[zl].copy()
+            alphaRZ[0,:,:]  =   0.
+            self.deltaR[zl] =   self.star2D.itransform(alphaRZ,inFou=False,outFou=False)*self.lpWeight[zl]
+            self.deltaR     =   self.deltaR*self.maskF.astype(float)
         return
 
     def run_main_iteration(self,iup,niter,threM='FT'):
