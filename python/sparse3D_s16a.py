@@ -45,10 +45,10 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 
 
 class sparse3D_s16aBatchConfig(pexConfig.Config):
-    outDir  =   pexConfig.Field(dtype=str, default='./s16a3D2/', doc="The output directory")
+    obsDir  =   pexConfig.Field(dtype=str, default='./s16a3D/3frames2Starlets/', doc="The output directory")
+    lbd  =   pexConfig.Field(dtype=float, default=3.5, doc="The lambda of the sparsity algorithm")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-
 
 class sparse3D_s16aRunner(TaskRunner):
     @staticmethod
@@ -78,37 +78,34 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
         pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
-        outDir  =   self.config.outDir
-        pool.storeSet(outDir=outDir)
+        obsDir  =   self.config.obsDir
+        lbd     =   self.config.lbd
+        pool.storeSet(obsDir=obsDir)
+        pool.storeSet(lbd=lbd)
         # Run the code with Pool
-        configList= os.popen('ls %s/ |grep ini |grep -v inverse'%outDir).readlines()
-        pool.map(self.process,configList)
+        pool.map(self.process,fieldList)
         return
 
-    def process(self,cache,configName):
-        outDir      =   cache.outDir
-        if 'VVDS' not in configName:
-            return
-        configName  =   configName[:-1]
-        configName2 =   configName.split('.')[0][7:] 
-        fieldName   =   configName2.split('_')[1]
+    def process(self,cache,fieldName):
+        obsDir      =   cache.obsDir
+        lbd         =   cache.lbd
         self.log.info('processing field: %s' %fieldName)
+        if fieldName != 'VVDS':
+            self.log.info('stop processing field: %s' %fieldName)
+            return
+
+        outDir      =   os.path.join(obsDir,'lambda%.1f'%lbd)
+        configName  =   'config_lbd%.1f_%s.ini' %(lbd,fieldName)
+        configName  =   os.path.join(outDir,configName)
+
         inFname     =   './s16aPre2D/%s_RG.fits' %fieldName  
         sources     =   pyfits.getdata(inFname)
-        outFname    =   'kappaMap_%s.fits' %(configName2)
-        outFname    =   os.path.join(outDir,outFname)
 
-        if not os.path.exists(outFname):
-            parser      =   ConfigParser()
-            parser.read(os.path.join(outDir,configName))
-            sparse3D    =   massmap_sparsity_3D_2(sources,parser)
-            sparse3D.process()
-            massMap     =   sparse3D.deltaR.real
-            pyfits.writeto(outFname,massMap,overwrite=True)
-        else:
-            self.log.info('already have output files')
-        return
-    
+        parser      =   ConfigParser()
+        parser.read(configName)
+        sparse3D    =   massmap_sparsity_3D_2(sources,parser)
+        sparse3D.process()
+        sparse3D.write()
         
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):

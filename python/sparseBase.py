@@ -304,7 +304,6 @@ class massmap_sparsity_3D():
         #update deltaR
         for zl in range(self.nlp):
             self.deltaR[zl]= self.star2D.itransform(self.alphaR[zl],inFou=False,outFou=False)*self.lpWeight[zl]
-            
         return
 
     def run_main_iteration(self,iup,niter,threM='ST'):
@@ -355,7 +354,13 @@ class massmap_sparsity_3D_2():
         if parser.has_option('file','fieldN'):
             self.fieldN =   parser.get('file','fieldN')
         else:
-            fieldN  =   ''
+            self.fieldN  =   ''
+        if parser.has_option('file','outDir'):
+            self.outDir =   parser.get('file','outDir')
+        else:
+            self.outDir =   self.root
+        outFname   =   'deltaMap_%s.fits' %(self.fieldN)
+        self.outFname   =   os.path.join(self.outDir,outFname)
         #sparse
         self.doDebug=   parser.getboolean('sparse','doDebug')
         self.lbd    =   parser.getfloat('sparse','lbd')
@@ -524,7 +529,7 @@ class massmap_sparsity_3D_2():
             self.sigmaA =   np.sqrt(outData/niter)*self.mu
         else:
             lsst.log.info('using mock catalog')
-            simSrcName  =   './s16a3D2/mock_lbd8_%s.npy' %(self.fieldN)
+            simSrcName  =   os.path.join(self.root,'mock_%s.npy' %(self.fieldN))
             simSrc      =   np.load(simSrcName)
             for irun in range(niter):
                 shearSim    =   simSrc[irun] 
@@ -615,8 +620,8 @@ class massmap_sparsity_3D_2():
             #self.alphaR[:,0,:,:]=0.
             if (irun+1)%50==0:
                 lsst.log.info('iteration: %d' %(irun))
+                lsst.log.info('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
                 if self.doDebug:
-                    lsst.log.info('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
                     self.reconstruct()
                     pyfits.writeto('deltaR_%d_%d.fits' %(iup,irun),self.deltaR.real,overwrite=True)
                     pyfits.writeto('alphaR_%d_%d.fits' %(iup,irun),self.alphaR.real,overwrite=True)
@@ -631,4 +636,5 @@ class massmap_sparsity_3D_2():
         return
 
     def write(self):
+        pyfits.writeto(self.outFname,self.deltaR.real,overwrite=True)
         return

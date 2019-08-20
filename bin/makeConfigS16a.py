@@ -15,9 +15,9 @@ def getFieldInfo(fieldName,pix_scale):
     centY   =   (decMax+decMin)/2.
     ngridX  =   np.int(sizeX/pix_scale)
     ngridY  =   np.int(sizeY/pix_scale)
-    if ngridX%2  !=  0:
+    if ngridX%2 !=  0:
         ngridX  =   ngridX+1
-    if ngridY%2  !=  0:
+    if ngridY%2 !=  0:
         ngridY  =   ngridY+1
     ngrid   =   max(ngridX,ngridY)
     raMin   =   centX-ngrid/2*pix_scale
@@ -27,7 +27,7 @@ def getFieldInfo(fieldName,pix_scale):
 def addInfoSparse(parser,lbd,fieldName):
     #sparse
     doDebug=    'no'
-    nframe =    2
+    nframe =    3
     nMax   =    1
     maxR   =    2
     gsAprox=    'no'
@@ -86,17 +86,21 @@ def addInfoSparse(parser,lbd,fieldName):
 
 
 if __name__=='__main__':
-    lbd     =   8
-    obsDir  =   's16a3D2'
+    lbd     =   3.
+    obsDir  =   's16a3D/3frames2Starlets/'
+    outDir  =   os.path.join(obsDir,'lambda%.1f'%lbd)
     if not os.path.exists(obsDir):
         os.mkdir(obsDir)
+    if not os.path.exists(outDir):
+        os.mkdir(outDir)
     fdNames =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys()
     for fieldName in fdNames:
-        configName  =   os.path.join(obsDir,'config_lbd%d_%s.ini' %(lbd,fieldName))
+        configName  =   os.path.join(outDir,'config_lbd%.1f_%s.ini' %(lbd,fieldName))
         parser  =   ConfigParser()
         parser  =   addInfoSparse(parser,lbd,fieldName)
         #file
         parser['file']= { 'root'    :'%s'%obsDir,
+                          'outDir'  :'%s'%outDir,
                           'fieldN'  :'%s'%fieldName
                           }
         with open(configName, 'w') as configfile:
