@@ -359,8 +359,6 @@ class massmap_sparsity_3D_2():
             self.outDir =   parser.get('file','outDir')
         else:
             self.outDir =   self.root
-        outFname   =   'deltaMap_%s.fits' %(self.fieldN)
-        self.outFname   =   os.path.join(self.outDir,outFname)
         #sparse
         self.doDebug=   parser.getboolean('sparse','doDebug')
         self.lbd    =   parser.getfloat('sparse','lbd')
@@ -368,6 +366,8 @@ class massmap_sparsity_3D_2():
         self.nMax   =   parser.getint('sparse','nMax')
         self.maxR   =   parser.getint('sparse','maxR')
         self.gsAprox=   parser.getboolean('sparse','gsAprox')
+        outFname   =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
+        self.outFname   =   os.path.join(self.outDir,outFname)
 
         #transverse plane
         if parser.has_option('transPlane','raname'):
