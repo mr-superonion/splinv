@@ -28,7 +28,7 @@ import numpy as np
 import astropy.io.fits as pyfits
 from astropy.table import Table
 from configparser import ConfigParser
-from sparseBase import massmap_sparsity_3D_2
+from sparseBase import massmapSparsityTask
 
 # lsst Tasks
 import lsst.daf.base as dafBase
@@ -77,7 +77,7 @@ class sparse3DTask(pipeBase.CmdLineTask):
            massMap  =   pyfits.getdata(outFname) 
         else:
             sources     =   pyfits.getdata(srcFname)
-            sparse3D    =   massmap_sparsity_3D_2(sources,parser)
+            sparse3D    =   massmapSparsityTask(sources,parser)
             sparse3D.process()
             massMap     =   sparse3D.deltaR.real
             pyfits.writeto(outFname,massMap,overwrite=True)

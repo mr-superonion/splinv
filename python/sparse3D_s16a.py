@@ -26,7 +26,7 @@ import time
 import numpy as np
 import astropy.io.fits as pyfits
 from configparser import ConfigParser
-from sparseBase import massmap_sparsity_3D_2
+from sparseBase import massmapSparsityTask
 
 # lsst pipe basic
 import lsst.pex.config as pexConfig
@@ -103,7 +103,7 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
 
         parser      =   ConfigParser()
         parser.read(configName)
-        sparse3D    =   massmap_sparsity_3D_2(sources,parser)
+        sparse3D    =   massmapSparsityTask(sources,parser)
         sparse3D.process()
         sparse3D.write()
         

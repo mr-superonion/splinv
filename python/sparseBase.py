@@ -111,7 +111,6 @@ class massmap_sparsity_2D():
         outData=np.sqrt(outData/niter)
         return outData
         
-    
     def spectrum_norm(self):
         norm=0.
         for irun in range(100):
@@ -344,7 +343,7 @@ class massmap_sparsity_3D():
         self.reconstruct()
         return
 
-class massmap_sparsity_3D_2():
+class massmapSparsityTask():
     def __init__(self,sources,parser):
         #file
         if parser.has_option('file','root'):
@@ -385,18 +384,21 @@ class massmap_sparsity_3D_2():
         self.nx     =   parser.getint('transPlane'  ,'nx')
         
         #lens z axis
+        self.nlp    =   parser.getint('lensZ','nlp')
         zlMin       =   parser.getfloat('lensZ','zlMin')
         zlscale     =   parser.getfloat('lensZ','zlscale')
-        self.nlp    =   parser.getint('lensZ','nlp')
+        if self.nlp<=1:
+            assert (zlMin<=0.01)&(zlscale>=4.), 'only one lens plane! (2D lensing)'
         zlBin       =   zMeanBin(zlMin,zlscale,self.nlp)
+
         #source z axis
         if parser.has_option('sourceZ','zname'):
             self.zname      =   parser.get('sourceZ','zname')
         else:
             self.zname      =   'z'
+        self.nz     =   parser.getint('sourceZ','nz')
         self.zMin   =   parser.getfloat('sourceZ','zMin')
         self.zscale =   parser.getfloat('sourceZ','zscale')
-        self.nz     =   parser.getint('sourceZ','nz')
         zsBin       =   zMeanBin(self.zMin,self.zscale,self.nz)
         
         self.shapeS =   (self.nz,self.ny,self.nx)   
@@ -409,12 +411,14 @@ class massmap_sparsity_3D_2():
         if os.path.exists(lensKName):
             self.lensKernel =   pyfits.getdata(lensKName)
             self.lpWeight   =   pyfits.getdata(lensWName)
+            assert self.lensKernel.shape==   (self.nz,self.nlp), 'load wrong lensing kernel'
+            assert len(self.lpWeight)   ==   self.nlp,'load wroing lpWeight'
         else:
             self.lensing_kernel(zlBin,zsBin)
             pyfits.writeto(lensKName,self.lensKernel)
             pyfits.writeto(lensWName,self.lpWeight)
         
-        #prepare shear and mask
+        #pixelize shear and mask
         g1Fname     =   os.path.join(self.root,'g1Map_%s.fits'%self.fieldN)
         g2Fname     =   os.path.join(self.root,'g2Map_%s.fits'%self.fieldN)
         nFname      =   os.path.join(self.root,'nMap_%s.fits'%self.fieldN)
@@ -422,8 +426,9 @@ class massmap_sparsity_3D_2():
             self.nMap   =   pyfits.getdata(nFname)
             g1Map       =   pyfits.getdata(g1Fname)
             g2Map       =   pyfits.getdata(g2Fname)
+            assert self.nMap.shape  ==   self.shapeS, 'load wrong pixelized shear'
             self.mask   =   (self.nMap>=0.1)
-            self.maskF      =   (np.sum(self.nMap,axis=0)>1.)
+            self.maskF  =   (np.sum(self.nMap,axis=0)>1.)
         else:
             self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
             g1Map       =   np.zeros(self.shapeS)
@@ -457,6 +462,7 @@ class massmap_sparsity_3D_2():
         sigFname    =   os.path.join(self.root,'sigmaAlpha_%s.fits' %self.fieldN)
         if os.path.exists(sigFname):
             self.sigmaA =   pyfits.getdata(sigFname) 
+            assert self.sigmaA.shape  ==   self.shapeA, 'load wrong pixelized shear'
         else:
             self.prox_sigmaA(100)#np.zeros(self.shape)#
             pyfits.writeto(sigFname,self.sigmaA)
