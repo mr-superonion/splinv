@@ -1,0 +1,78 @@
+\documentclass[twocolumn]{aastex62}
+\emergencystretch=1.em 
+\newcommand \figPath{../fig/}
+\newcommand \redColor{\color{red}}
+\renewcommand\labelenumi{(\roman{enumi})}
+\renewcommand\theenumi\labelenumi
+%\newcommand{\jcap}{JCAP}
+
+
+\usepackage{amsmath,amsthm,amsfonts,amssymb,bm}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{color}
+
+%\usepackage{subfigure}
+\usepackage{textcomp}
+\usepackage{epstopdf}
+\usepackage{natbib}
+\hypersetup{breaklinks}
+
+
+\begin{document}
+\title{}
+
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+
+\section{Method}
+
+\subsection{$3$D Weak lensing}
+
+Assuming a flat universe, the lensing convergence at redshift plane $z_s$ is
+\begin{equation}\label{lensing_1D_los_continue}
+\kappa(\vec{\theta},\chi_s)=\frac{3H_0^2 \Omega_M}{2c^2} \int_0^{\chi_s} d\chi_l \frac{\chi_l \chi_{sl}}{\chi_s}(1+z_l) \delta(\chi_l\vec{\theta},\chi_l),
+\end{equation}
+where $c$ is the speed of light, $z_l$ is the redshift evaluated at comoving distance $\chi_l$. 
+$H_0$ and $\Omega_M$ are the Hubble parameter and matter density parameter at redshift equals zero, respectively. 
+$\delta(\vec{r})=\rho(\vec{r})/\bar{\rho}-1$ is the matter fluctuation.
+
+The convergence field at redshift ($\kappa$) can be related to the shear field ($\gamma$) at the same redshift plane via a $2$D convolution
+\begin{equation}\label{lensing_2D_tv_continue}
+\gamma(\vec{\theta}, \chi_s)=\frac{1}{\pi} \int d^2 \theta' D(\vec{\theta}-\vec{\theta}') \kappa(\vec{\theta}',\chi_s),
+\end{equation} 
+where
+\begin{equation}
+D(\vec{\theta}) = \frac{1}{(\theta_1-i\theta_2)^2}.
+\end{equation}
+
+The shear field ($\gamma$) is pixelized into $N_{zs}$ tomographic bins $\gamma^{1}$,...,$\gamma^{N_{zs}}$ of size $N_{ys} \times N_{xs}$ where $N_{ys}$ and $N_{xs}$ are the number of pixels on the $2$D transverse Cartesian coordinates. Similarly, the density contrast field ($\delta$) to be reconstructed is also binned into $N_{zl}\times N_{yl} \times N_{xl}$ pixels. The discrete shear field and the discrete density contrast field can be viewed as finite size vectors $\gamma_\mu$ and $\delta_\alpha$. The measured shear is related to the matter density contrast by a $2$D transverse convolution (equation (\ref{lensing_2D_tv_continue})) and a $1$D line-of-sight convolution (equation (\ref{lensing_1D_los_continue})), which can be expressed in a matrix notation
+\begin{equation}
+\gamma_{\mu} = \textbf{P}_{\mu \nu} \textbf{Q}_{\nu \alpha} \delta_{\alpha} + \epsilon_{\mu},
+\end{equation}
+where $\textbf{P}_{\mu \nu}$ represents the transverse convolution and $\textbf{Q}_{\nu \alpha}$ represents the line-of-sight convolution and $\epsilon_{\mu}$ represents measurement noise including the contributions of shape noise and pixel noise.
+
+\subsection{Sparsity}
+
+
+
+\subsection{Wavelets}
+
+
+
+
+
+\section{Application}
+\subsection{Mock shape catalog}
+
+\subsection{HSC shape catalog}
+
+
+\section{Summary}
+
+\end{document}
