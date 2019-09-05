@@ -28,17 +28,9 @@ import astropy.io.fits as pyfits
 from configparser import ConfigParser
 from sparseBase import massmapSparsityTask
 
-# lsst pipe basic
+# lsst Tasks
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
-import lsst.afw.math as afwMath
-import lsst.afw.table as afwTable
-import lsst.afw.image as afwImg
-import lsst.afw.detection as afwDet
-import lsst.afw.geom as afwGeom
-import lsst.afw.coord as afwCoord
-
-# lsst Tasks
 from lsst.pipe.base import ArgumentParser, TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
@@ -98,7 +90,7 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         configName  =   'config_lbd%.1f_%s.ini' %(lbd,fieldName)
         configName  =   os.path.join(outDir,configName)
 
-        inFname     =   './s16aPre2D/%s_RG.fits' %fieldName  
+        inFname     =   './s16aPre/%s_RG.fits' %fieldName  
         sources     =   pyfits.getdata(inFname)
 
         parser      =   ConfigParser()

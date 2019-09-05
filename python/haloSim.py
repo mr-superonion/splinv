@@ -27,18 +27,10 @@ import galsim
 import numpy as np
 from astropy.table import Table
 from configparser import ConfigParser
+
 # lsst Tasks
-import lsst.daf.base as dafBase
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
-import lsst.afw.math as afwMath
-import lsst.afw.table as afwTable
-import lsst.afw.image as afwImg
-import lsst.afw.detection as afwDet
-import lsst.afw.geom as afwGeom
-import lsst.afw.coord as afwCoord
-import lsst.meas.algorithms as meaAlg
-
 from lsst.pipe.base import TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError

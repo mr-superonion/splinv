@@ -598,7 +598,7 @@ class massmapSparsityTask():
         #update deltaR
         for zl in range(self.nlp):
             alphaRZ         =   self.alphaR[zl].copy()
-            alphaRZ[0,:,:]  =   0.
+            #alphaRZ[0,:,:]  =   0.
             self.deltaR[zl] =   self.star2D.itransform(alphaRZ,inFou=False,outFou=False)*self.lpWeight[zl]
             self.deltaR     =   self.deltaR*self.maskF.astype(float)
         return

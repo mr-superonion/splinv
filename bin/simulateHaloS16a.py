@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 import os
-import hmf
-#import galsim
+#import hmf
+import galsim
 import numpy as np
 from configparser import ConfigParser
 import astropy.table as astTab
 
-fieldList   =  np.load('./fieldInfo.npy',allow_pickle=True).item().keys() 
-
-for fdName in fieldList:
-    parser =   ConfigParser()
-    configName='./s16a3D/3frames2Starlets/lambda2.5/config_lbd2.5_%s.ini' %fdName
-    parser.read(configName)
+def makehaloCat(fdName,parser):
+    outFname=   './s16aSim/haloCat_%s.csv' %fdName
+    if os.path.exists(outFname):
+        print('already have haloCat for %s' %fdName)
+        return astTab.Table.read(outFname)
     scale  =   parser.getfloat('transPlane','scale')
     ny     =   parser.getint('transPlane'  ,'ny')
     nx     =   parser.getint('transPlane'  ,'nx')
@@ -50,4 +49,64 @@ for fdName in fieldList:
     cols=(zAll,mAll,concAll,raAll,decAll)
     names=('z_cl','M_200','conc','ra','dec')
     haloTab=astTab.Table(cols,names=names)
-    haloTab.write('./s16aSim/haloCat_%s.csv' %fdName)
+    haloTab.write(outFname)
+    return haloTab
+
+
+def makeShapeCat(fdName,haloCat,parser):
+    simSrcName  =   './s16aPre/%s_RG_mock.fits' %(fdName)
+    if not os.path.exists(simSrcName):
+        print('do not have mock catalog for %s' %fdName)
+        return
+    if parser.has_option('sourceZ','zname'):
+        zname   =   parser.get('sourceZ','zname')
+    else:
+        zname   =   'z'
+    if parser.has_option('transPlane','raname'):
+        raname  =   parser.get('transPlane','raname')
+    else:
+        raname  =   'ra'
+    if parser.has_option('transPlane','decname'):
+        decname =   parser.get('transPlane','decname')
+    else:
+        decname=   'dec'
+    print('begin simulate catalog')
+    simSrc  =   astTab.Table.read(simSrcName)
+    ras     =   simSrc[raname]
+    decs    =   simSrc[decname]
+    zs      =   simSrc[zname]
+    for hh in haloCat:
+        #positionD should be in arcsec
+        pos_cl  =   galsim.PositionD(hh['ra']*3600,hh['dec']*3600.)
+        halo    =   galsim.nfw_halo.NFWHalo(mass= hh['M_200'],
+                conc=hh['conc'], redshift= hh['z_cl'],
+                halo_pos=pos_cl ,omega_m= 0.3,
+                omega_lam= 0.7)
+        #kappa   =   halo.getConvergence(pos=(ras,decs),z_s=zs,units = "degree") 
+        g1s,g2s=    halo.getShear(pos=(ras,decs),z_s=zs,units = "degree",reduced=False)
+    outSrc          =   astTab.Table()
+    outSrc['ra']    =   ras 
+    outSrc['dec']   =   decs
+    #outSrc['kappa']=   kappa
+    outSrc['gamma1']=   g1s
+    outSrc['gamma2']=   g2s
+    print('achieve shear and kappa field for each galaxies')
+    print('adding shape noise')
+
+    for isim in range(100):
+        znameU      =   zname+'_%d' %isim
+        outSrc['g1_%d' %isim]=  outSrc['gamma1']+simSrc['g1_%d' %isim]
+        outSrc['g2_%d' %isim]=  outSrc['gamma2']+simSrc['g2_%d' %isim]
+        outSrc['z_%d'  %isim]=  simSrc[znameU]
+    outSrc.write('./s16aSim/mockSrcHalo_%s.fits' %fdName)
+    return
+    
+
+if __name__=='__main__':
+    fieldList   =  np.load('./fieldInfo.npy',allow_pickle=True).item().keys() 
+    for fdName in fieldList:
+        parser =   ConfigParser()
+        configName='./s16a3D/3frames2Starlets/lambda2.5/config_lbd2.5_%s.ini' %fdName
+        parser.read(configName)
+        haloCat =   makehaloCat(fdName,parser)
+        makeShapeCat(fdName,haloCat,parser)

@@ -28,11 +28,9 @@ import astropy.io.fits as pyfits
 from configparser import ConfigParser
 from sparseBase import massmap_sparsity_3D_2
 
-# lsst pipe basic
+# lsst Tasks
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
-
-# lsst Tasks
 from lsst.pipe.base import ArgumentParser, TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
