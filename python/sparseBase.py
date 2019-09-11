@@ -463,10 +463,9 @@ class massmapSparsityTask():
         sigFname    =   os.path.join(self.root,'sigmaAlpha_%s.fits' %self.fieldN)
         if os.path.exists(sigFname):
             self.sigmaA =   pyfits.getdata(sigFname) 
-            assert self.sigmaA.shape  ==   self.shapeA, 'load wrong pixelized shear'
+            assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
         else:
-            self.prox_sigmaA(100)#np.zeros(self.shape)#
-            pyfits.writeto(sigFname,self.sigmaA)
+            self.log.info('Cannot find the noise sigma map, please run noiVarestimate first')
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
         return
@@ -518,35 +517,6 @@ class massmapSparsityTask():
         return
     
     
-    def prox_sigmaA(self,niter):
-        lsst.log.info('Estimating sigma map')
-        outData     =   np.zeros(self.shapeA)
-        if self.gsAprox:
-            lsst.log.info('using Gaussian approximation')
-            sigma   =   np.std(np.append(sources['g1'],sources['g2']))
-            sigMap  =   np.zeros(self.shapeS)
-            sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
-            for irun in range(niter):
-                np.random.seed(irun)
-                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-                shearSim=   g1Sim+np.complex128(1j)*g2Sim
-                alphaRSim=  self.main_transpose(shearSim)
-                outData +=  alphaRSim**2.
-            self.sigmaA =   np.sqrt(outData/niter)*self.mu
-        else:
-            lsst.log.info('using mock catalog')
-            simSrcName  =   os.path.join(self.root,'mock_%s.npy' %(self.fieldN))
-            simSrc      =   np.load(simSrcName)
-            for irun in range(niter):
-                shearSim    =   simSrc[irun] 
-                alphaRSim   =   self.main_transpose(shearSim)
-                outData     +=  alphaRSim**2.
-            self.sigmaA     =   np.sqrt(outData/niter)*self.mu
-            for izlp in range(self.nlp):
-                for iframe in range(self.nframe):
-                    self.sigmaA[izlp,iframe][~self.maskF]=np.max(self.sigmaA[izlp,iframe])
-        return
 
     def determine_thresholds(self,dalphaR):
         lbdArray=   np.ones(self.shapeA)*self.lbd

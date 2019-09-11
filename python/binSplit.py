@@ -35,12 +35,12 @@ from lsst.pipe.base import ArgumentParser, TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
-class sparseMockCatBatchConfig(pexConfig.Config):
+class binSplitBatchConfig(pexConfig.Config):
     nSim    =   pexConfig.Field(dtype=int, default=100, doc="number of realization")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
 
-class sparseMockCatRunner(TaskRunner):
+class binSplitRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         configDir    =  parsedCmd.configDir 
@@ -52,10 +52,10 @@ def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
 
-class sparseMockCatBatchTask(BatchPoolTask):
-    ConfigClass = sparseMockCatBatchConfig
-    RunnerClass = sparseMockCatRunner
-    _DefaultName = "sparseMockCatBatch"
+class binSplitBatchTask(BatchPoolTask):
+    ConfigClass = binSplitBatchConfig
+    RunnerClass = binSplitRunner
+    _DefaultName = "binSplitBatch"
 
     def __reduce__(self):
         """Pickler"""
@@ -72,14 +72,17 @@ class sparseMockCatBatchTask(BatchPoolTask):
         parser.read(configName)
         fieldName   =   parser.get('file','fieldN')
         pixDir      =   parser.get('file','pixDir')
-        ##!NOTE: the mock grid file is saved under root directroy 
-        ##!NOTE: since changing lbd does not require new mock 
-        ##!NOTE: changing pix_size change shearAll and sigmaA
-        ##!NOTE: changing nframe only change sigmaA 
+        ##!NOTE: the mock grid file is saved under pix directroy 
+        ##since changing lbd does not require new pixelation 
+        ##changing nframe only change sigmaA and 
+        ##also does not need new pixelation 
+        ##changing pix_size change shearAll and sigmaA
+        ##which need new pixelation
         self.log.info('processing field: %s' %fieldName)
+        # pixelize the mock catalogs
         outFname    =   'mock_RG_grid_%s.npy' %(fieldName)
         outFname    =   os.path.join(pixDir,outFname)
-        pool        =   Pool("sparseMockCatBatch")
+        pool        =   Pool("binSplitBatch")
         pool.cacheClear()
         pool.storeSet(parser=parser)
         # Run the code with Pool
@@ -88,63 +91,35 @@ class sparseMockCatBatchTask(BatchPoolTask):
         self.log.info('writing outcome for field: %s' %fieldName)
         shearAll    =   np.array(shearAll)
         np.save(outFname,shearAll)
-        return
-
-    def prox_sigmaA(self,niter):
-        lsst.log.info('Estimating sigma map')
-        outData     =   np.zeros(self.shapeA)
-        if gsAprox:
-            lsst.log.info('using Gaussian approximation')
-            sigma   =   np.std(np.append(sources['g1'],sources['g2']))
-            sigMap  =   np.zeros(self.shapeS)
-            sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
-            for irun in range(niter):
-                np.random.seed(irun)
-                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
-                shearSim=   g1Sim+np.complex128(1j)*g2Sim
-                alphaRSim=  self.main_transpose(shearSim)
-                outData +=  alphaRSim**2.
-            self.sigmaA =   np.sqrt(outData/niter)*self.mu
-        else:
-            lsst.log.info('using mock catalog')
-            simSrcName  =   os.path.join(self.root,'mock_%s.npy' %(self.fieldN))
-            simSrc      =   np.load(simSrcName)
-            for irun in range(niter):
-                shearSim    =   simSrc[irun] 
-                alphaRSim   =   self.main_transpose(shearSim)
-                outData     +=  alphaRSim**2.
-            self.sigmaA     =   np.sqrt(outData/niter)*self.mu
-            for izlp in range(self.nlp):
-                for iframe in range(self.nframe):
-                    self.sigmaA[izlp,iframe][~self.maskF]=np.max(self.sigmaA[izlp,iframe])
-        return
-    def process(self,cache,isim):
-        self.log.info('processing simulation: %d' %isim)
-        parser      =   cache.parser
-        fieldName   =   parser.get('file','fieldN')
-        simSrcName  =   './s16aPre/%s_RG_mock.fits' %(fieldName)
-        simSrc      =   pyfits.getdata(simSrcName)
-        #transverse plane
+        # pixelize the true catalog
+        g1Fname     =   os.path.join(pixDir,'g1Map_%s.fits' %fieldName)
+        g2Fname     =   os.path.join(pixDir,'g2Map_%s.fits' %fieldName)
+        nFname      =   os.path.join(pixDir,'nMap_%s.fits'  %fieldName)
         if parser.has_option('transPlane','raname'):
-            raname =   parser.get('transPlane','raname')
+            raname  =   parser.get('transPlane','raname')
         else:
-            raname =   'ra'
+            raname  =   'ra'
         if parser.has_option('transPlane','decname'):
             decname=   parser.get('transPlane','decname')
         else:
-            decname=   'dec'
+            decname =   'dec'
+        # Source z axis
+        if parser.has_option('sourceZ','zname'):
+            zname   =   parser.get('sourceZ','zname')
+        else:
+            zname   =   'z'
+        g1Map,g2Map,nMap=   self.pixelize(zname,g1name,g2name,parser)
+        pyfits.writeto(g1Fname,g1Map)
+        pyfits.writeto(g2Fname,g2Map)
+        pyfits.writeto(nFname,nMap)
+        return
+
+    def pixelize(self,zname,g1name,g2name,parser):
         xMin    =   parser.getfloat('transPlane','xMin')
         yMin    =   parser.getfloat('transPlane','yMin')
         scale   =   parser.getfloat('transPlane','scale')
         ny      =   parser.getint('transPlane'  ,'ny')
         nx      =   parser.getint('transPlane'  ,'nx')
-        #source z axis
-        if parser.has_option('sourceZ','zname'):
-            zname      =   parser.get('sourceZ','zname')
-        else:
-            zname      =   'z'
-        zname   =   zname+'_%d'  %isim
         zMin    =   parser.getfloat('sourceZ','zMin')
         zscale  =   parser.getfloat('sourceZ','zscale')
         nz      =   parser.getint('sourceZ','nz')
@@ -157,14 +132,41 @@ class sparseMockCatBatchTask(BatchPoolTask):
             iy  =   int((ss[decname]-yMin)//scale)
             iz  =   int((ss[zname]-zMin)//zscale)
             if iz>=0 and iz<nz:
-                g1Sim[iz,iy,ix]=   g1Sim[iz,iy,ix]+ss['g1_%d'%isim]
-                g2Sim[iz,iy,ix]=   g2Sim[iz,iy,ix]+ss['g2_%d'%isim]
-                nSim[iz,iy,ix] =   nSim[iz,iy,ix]+1.
-        mask        =   (nSim>=0.1)
+                g1Sim[iz,iy,ix]=   g1Sim[iz,iy,ix]  +   ss[g1name]
+                g2Sim[iz,iy,ix]=   g2Sim[iz,iy,ix]  +   ss[g2name]
+                nSim[iz,iy,ix] =   nSim[iz,iy,ix]   +   1.
+        mask    =   (nSim>=0.1)
         g1Sim[mask] =   g1Sim[mask]/nSim[mask]
         g2Sim[mask] =   g2Sim[mask]/nSim[mask]
-        shearSim    =   g1Sim+np.complex128(1j)*g2Sim
+        return g1Sim,g2Sim,nSim
+
+    def process(self,cache,isim):
+        self.log.info('processing simulation: %d' %isim)
+        parser      =   cache.parser
+        fieldName   =   parser.get('file','fieldN')
+        simSrcName  =   './s16aPre/%s_RG_mock.fits' %(fieldName)
+        simSrc      =   pyfits.getdata(simSrcName)
+        #transverse plane
+        if parser.has_option('transPlane','raname'):
+            raname  =   parser.get('transPlane','raname')
+        else:
+            raname  =   'ra'
+        if parser.has_option('transPlane','decname'):
+            decname=   parser.get('transPlane','decname')
+        else:
+            decname =   'dec'
+        #source z axis
+        if parser.has_option('sourceZ','zname'):
+            zname   =   parser.get('sourceZ','zname')
+        else:
+            zname   =   'z'
+        zname   =   zname+'_%d' %isim
+        g1name  =   'g1_%d'     %isim
+        g2name  =   'g2_%d'     %isim
+        g1Sim,g2Sim,nSim=   self.pixelize(zname,g1name,g2name,parser)
+        shearSim=   g1Sim+np.complex128(1j)*g2Sim
         return shearSim
+    
 
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):
