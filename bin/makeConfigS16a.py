@@ -4,7 +4,7 @@ import numpy as np
 from configparser import ConfigParser
 
 def getFieldInfo(fieldName,pix_scale):
-    fieldInfo=  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item()[fieldName]
+    fieldInfo=  np.load('./fieldInfo.npy',allow_pickle=True).item()[fieldName]
     raMin   =   fieldInfo['raMin']
     raMax   =   fieldInfo['raMax']
     decMin  =   fieldInfo['decMin']
@@ -86,21 +86,27 @@ def addInfoSparse(parser,lbd,fieldName):
 
 
 if __name__=='__main__':
-    lbd     =   3.
-    obsDir  =   's16a3D/3frames2Starlets/'
-    outDir  =   os.path.join(obsDir,'lambda%.1f'%lbd)
-    if not os.path.exists(obsDir):
-        os.mkdir(obsDir)
+    lbd     =   3.5
+    pixScale=   0.05   
+    nframe  =   3
+    pixDir  =   's16a3D/pix-%s/' %pixScale
+    frameDir=   os.path.join(pixDir,'nframe-%d' %nframe)
+    outDir  =   os.path.join(frameDir,'lambda-%.1f'%lbd)
+    if not os.path.exists(pixDir):
+        os.mkdir(pixDir)
+    if not os.path.exists(frameDir):
+        os.mkdir(frameDir)
     if not os.path.exists(outDir):
         os.mkdir(outDir)
-    fdNames =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys()
+    fdNames =  np.load('./fieldInfo.npy',allow_pickle=True).item().keys()
     for fieldName in fdNames:
         configName  =   os.path.join(outDir,'config_lbd%.1f_%s.ini' %(lbd,fieldName))
         parser  =   ConfigParser()
         parser  =   addInfoSparse(parser,lbd,fieldName)
         #file
-        parser['file']= { 'root'    :'%s'%obsDir,
-                          'outDir'  :'%s'%outDir,
+        parser['file']= { 'pixDir'  :'%s'%pixDir,
+                          'frameDir':'%s'%frameDir,
+                          'lbdDir'  :'%s'%outDir,
                           'fieldN'  :'%s'%fieldName
                           }
         with open(configName, 'w') as configfile:

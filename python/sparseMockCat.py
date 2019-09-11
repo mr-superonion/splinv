@@ -26,9 +26,9 @@ import time
 import numpy as np
 import astropy.io.fits as pyfits
 from configparser import ConfigParser
-from sparseBase import massmap_sparsity_3D_2
 
 # lsst Tasks
+import lsst.daf.base as dafBase
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import ArgumentParser, TaskRunner
@@ -36,7 +36,6 @@ from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
 class sparseMockCatBatchConfig(pexConfig.Config):
-    outDir  =   pexConfig.Field(dtype=str, default='./s16a3D2/', doc="The output directory")
     nSim    =   pexConfig.Field(dtype=int, default=100, doc="number of realization")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
@@ -44,7 +43,9 @@ class sparseMockCatBatchConfig(pexConfig.Config):
 class sparseMockCatRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        configList= os.popen('ls ./s16a3D2/ |grep ini |grep -v inverse').readlines()
+        configDir    =  parsedCmd.configDir 
+        ##!NOTE: only try on VVDS
+        configList= os.popen('ls %s* |grep VVDS.ini ' %configDir).readlines()
         return [(ref, kwargs) for ref in configList]
 
 def unpickle(factory, args, kwargs):
@@ -56,30 +57,31 @@ class sparseMockCatBatchTask(BatchPoolTask):
     RunnerClass = sparseMockCatRunner
     _DefaultName = "sparseMockCatBatch"
 
-    def __init__(self,**kwargs):
-        BatchPoolTask.__init__(self, **kwargs)
-    
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
-
     
+    def __init__(self,**kwargs):
+        BatchPoolTask.__init__(self, **kwargs)
+
     @abortOnError
-    def run(self,configName):
-        outDir      =   self.config.outDir
+    def runDataRef(self,configName):
         configName  =   configName[:-1]
-        configName2 =   configName.split('.')[0][7:] 
-        fieldName   =   configName2.split('_')[1]
+        parser      =   ConfigParser()
+        parser.read(configName)
+        fieldName   =   parser.get('file','fieldN')
+        rootDir     =   parser.get('file','root')
+        ##!NOTE: the mock grid file is saved under root directroy 
+        ##!NOTE: since changing lbd does not require new mock 
+        ##!NOTE: changing pix_size change shearAll and sigmaA
+        ##!NOTE: changing nframe only change sigmaA 
         self.log.info('processing field: %s' %fieldName)
-        outFname    =   'mock_%s.npy' %(configName2)
-        outFname    =   os.path.join(outDir,outFname)
+        outFname    =   'mock_RG_grid_%s.npy' %(fieldName)
+        outFname    =   os.path.join(rootDir,outFname)
         pool        =   Pool("sparseMockCatBatch")
         pool.cacheClear()
-        parser      =   ConfigParser()
-        parser.read(os.path.join(outDir,configName))
         pool.storeSet(parser=parser)
-        pool.storeSet(fieldName=fieldName)
         # Run the code with Pool
         nSim        =   self.config.nSim
         shearAll    =   pool.map(self.process,range(nSim))
@@ -91,8 +93,8 @@ class sparseMockCatBatchTask(BatchPoolTask):
     def process(self,cache,isim):
         self.log.info('processing simulation: %d' %isim)
         parser      =   cache.parser
-        fieldName   =   cache.fieldName
-        simSrcName  =   './s16aPre2D/%s_RG_mock.fits' %(fieldName)
+        fieldName   =   parser.get('file','fieldN')
+        simSrcName  =   './s16aPre/%s_RG_mock.fits' %(fieldName)
         simSrc      =   pyfits.getdata(simSrcName)
         #transverse plane
         if parser.has_option('transPlane','raname'):
@@ -139,6 +141,9 @@ class sparseMockCatBatchTask(BatchPoolTask):
     def _makeArgumentParser(cls, *args, **kwargs):
         kwargs.pop("doBatch", False)
         parser = ArgumentParser(name=cls._DefaultName)
+        parser.add_argument('--configDir', type= str, 
+                        default='./s16a3D/pix-0.05/nframe-3/lambda-3.5/',
+                        help='directory for configuration files')
         return parser
     
     @classmethod
