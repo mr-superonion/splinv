@@ -71,14 +71,14 @@ class sparseMockCatBatchTask(BatchPoolTask):
         parser      =   ConfigParser()
         parser.read(configName)
         fieldName   =   parser.get('file','fieldN')
-        rootDir     =   parser.get('file','root')
+        pixDir      =   parser.get('file','pixDir')
         ##!NOTE: the mock grid file is saved under root directroy 
         ##!NOTE: since changing lbd does not require new mock 
         ##!NOTE: changing pix_size change shearAll and sigmaA
         ##!NOTE: changing nframe only change sigmaA 
         self.log.info('processing field: %s' %fieldName)
         outFname    =   'mock_RG_grid_%s.npy' %(fieldName)
-        outFname    =   os.path.join(rootDir,outFname)
+        outFname    =   os.path.join(pixDir,outFname)
         pool        =   Pool("sparseMockCatBatch")
         pool.cacheClear()
         pool.storeSet(parser=parser)
@@ -90,6 +90,35 @@ class sparseMockCatBatchTask(BatchPoolTask):
         np.save(outFname,shearAll)
         return
 
+    def prox_sigmaA(self,niter):
+        lsst.log.info('Estimating sigma map')
+        outData     =   np.zeros(self.shapeA)
+        if gsAprox:
+            lsst.log.info('using Gaussian approximation')
+            sigma   =   np.std(np.append(sources['g1'],sources['g2']))
+            sigMap  =   np.zeros(self.shapeS)
+            sigMap[self.mask]  =   sigma/np.sqrt(self.nMap[self.mask])
+            for irun in range(niter):
+                np.random.seed(irun)
+                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*sigMap
+                shearSim=   g1Sim+np.complex128(1j)*g2Sim
+                alphaRSim=  self.main_transpose(shearSim)
+                outData +=  alphaRSim**2.
+            self.sigmaA =   np.sqrt(outData/niter)*self.mu
+        else:
+            lsst.log.info('using mock catalog')
+            simSrcName  =   os.path.join(self.root,'mock_%s.npy' %(self.fieldN))
+            simSrc      =   np.load(simSrcName)
+            for irun in range(niter):
+                shearSim    =   simSrc[irun] 
+                alphaRSim   =   self.main_transpose(shearSim)
+                outData     +=  alphaRSim**2.
+            self.sigmaA     =   np.sqrt(outData/niter)*self.mu
+            for izlp in range(self.nlp):
+                for iframe in range(self.nframe):
+                    self.sigmaA[izlp,iframe][~self.maskF]=np.max(self.sigmaA[izlp,iframe])
+        return
     def process(self,cache,isim):
         self.log.info('processing simulation: %d' %isim)
         parser      =   cache.parser
