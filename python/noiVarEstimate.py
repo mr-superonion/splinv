@@ -90,7 +90,7 @@ class noiVarEstimateBatchTask(BatchPoolTask):
         np.save(outFname,shearAll)
         return
 
-    def prox_sigmaA(self,niter):
+    def prox_sigmaA(self,niter,gsAprox):
         lsst.log.info('Estimating sigma map')
         outData     =   np.zeros(self.shapeA)
         if gsAprox:

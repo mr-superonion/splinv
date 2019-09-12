@@ -347,18 +347,16 @@ class massmap_sparsity_3D():
 class massmapSparsityTask():
     def __init__(self,sources,parser):
         #file
-        if parser.has_option('file','root'):
-            self.root   =   parser.get('file','root')
-        else:
-            self.root   =   './'
+        assert parser.has_option('file','pixDir'), 'Do not have pixDir'
+        pixDir   =   parser.get('file','pixDir')
+        assert parser.has_option('file','frameDir'), 'Do not have frameDir'
+        frameDir =   parser.get('file','frameDir')
+        assert parser.has_option('file','lbdDir'), 'Do not have lbdDir'
+        lbdDir   =   parser.get('file','lbdDir')
         if parser.has_option('file','fieldN'):
             self.fieldN =   parser.get('file','fieldN')
         else:
             self.fieldN  =   ''
-        if parser.has_option('file','outDir'):
-            self.outDir =   parser.get('file','outDir')
-        else:
-            self.outDir =   self.root
         #sparse
         self.doDebug=   parser.getboolean('sparse','doDebug')
         self.lbd    =   parser.getfloat('sparse','lbd')
@@ -366,8 +364,8 @@ class massmapSparsityTask():
         self.nMax   =   parser.getint('sparse','nMax')
         self.maxR   =   parser.getint('sparse','maxR')
         self.gsAprox=   parser.getboolean('sparse','gsAprox')
-        outFname   =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
-        self.outFname   =   os.path.join(self.outDir,outFname)
+        outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
+        self.outFname   =   os.path.join(lbdDir,outFname)
 
         #transverse plane
         if parser.has_option('transPlane','raname'):
@@ -407,8 +405,8 @@ class massmapSparsityTask():
         self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
         
         self.cosmo  =   cosmology.Cosmo(H0=70) 
-        lensKName   =   os.path.join(self.root,'lensKernel.fits')
-        lensWName   =   os.path.join(self.root,'lpWeight.fits')
+        lensKName   =   os.path.join(pixDir,'lensKernel.fits')
+        lensWName   =   os.path.join(pixDir,'lpWeight.fits')
         if os.path.exists(lensKName):
             self.lensKernel =   pyfits.getdata(lensKName)
             self.lpWeight   =   pyfits.getdata(lensWName)
@@ -420,35 +418,16 @@ class massmapSparsityTask():
             pyfits.writeto(lensWName,self.lpWeight)
         
         #pixelize shear and mask
-        g1Fname     =   os.path.join(self.root,'g1Map_%s.fits'%self.fieldN)
-        g2Fname     =   os.path.join(self.root,'g2Map_%s.fits'%self.fieldN)
-        nFname      =   os.path.join(self.root,'nMap_%s.fits'%self.fieldN)
-        if os.path.exists(nFname):
-            self.nMap   =   pyfits.getdata(nFname)
-            g1Map       =   pyfits.getdata(g1Fname)
-            g2Map       =   pyfits.getdata(g2Fname)
-            assert self.nMap.shape  ==   self.shapeS, 'load wrong pixelized shear'
-            self.mask   =   (self.nMap>=0.1)
-            self.maskF  =   (np.sum(self.nMap,axis=0)>1.)
-        else:
-            self.nMap   =   np.zeros(self.shapeS,dtype=np.int)  
-            g1Map       =   np.zeros(self.shapeS)
-            g2Map       =   np.zeros(self.shapeS)
-            for ss in sources:
-                ix  =   int((ss[self.raname]-self.xMin)//self.scale)
-                iy  =   int((ss[self.decname]-self.yMin)//self.scale)
-                iz  =   int((ss[self.zname]-self.zMin)//self.zscale)
-                if iz>=0 and iz<self.nz:
-                    g1Map[iz,iy,ix]    =   g1Map[iz,iy,ix]+ss['g1']
-                    g2Map[iz,iy,ix]    =   g2Map[iz,iy,ix]+ss['g2']
-                    self.nMap[iz,iy,ix]=   self.nMap[iz,iy,ix]+1.
-            self.mask       =   (self.nMap>=0.1)
-            self.maskF      =   (np.sum(self.nMap,axis=0)>1.)
-            g1Map[self.mask]=   g1Map[self.mask]/self.nMap[self.mask]
-            g2Map[self.mask]=   g2Map[self.mask]/self.nMap[self.mask]
-            pyfits.writeto(g1Fname,g1Map)
-            pyfits.writeto(g2Fname,g2Map)
-            pyfits.writeto(nFname,self.nMap)
+        g1Fname     =   os.path.join(pixDir,'g1Map_%s.fits'%self.fieldN)
+        g2Fname     =   os.path.join(pixDir,'g2Map_%s.fits'%self.fieldN)
+        nFname      =   os.path.join(pixDir,'nMap_%s.fits'%self.fieldN)
+        assert os.path.exists(nFname),'cannot find pixelized shear, run binSplit first'
+        self.nMap   =   pyfits.getdata(nFname)
+        g1Map       =   pyfits.getdata(g1Fname)
+        g2Map       =   pyfits.getdata(g2Fname)
+        assert self.nMap.shape  ==   self.shapeS, 'load wrong pixelized shear'
+        self.mask   =   (self.nMap>=0.1)
+        self.maskF  =   (np.sum(self.nMap,axis=0)>1.)
         self.shearR     =   g1Map+np.complex128(1j)*g2Map
 
         #make subtasks
@@ -460,12 +439,10 @@ class massmapSparsityTask():
             self.spectrum_norm(100)
             parser.set('sparse','mu','%s' %self.mu)
         lsst.log.info('mu = %s' %self.mu)
-        sigFname    =   os.path.join(self.root,'sigmaAlpha_%s.fits' %self.fieldN)
-        if os.path.exists(sigFname):
-            self.sigmaA =   pyfits.getdata(sigFname) 
-            assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
-        else:
-            self.log.info('Cannot find the noise sigma map, please run noiVarestimate first')
+        sigFname    =   os.path.join(frameDir,'sigmaAlpha_%s.fits' %self.fieldN)
+        assert os.path.exists(sigFname),'Cannot find the noise sigma map, please run noiVarestimate first'
+        self.sigmaA =   pyfits.getdata(sigFname) 
+        assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
         return
