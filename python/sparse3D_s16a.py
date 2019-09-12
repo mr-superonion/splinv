@@ -37,7 +37,7 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 
 
 class sparse3D_s16aBatchConfig(pexConfig.Config):
-    obsDir  =   pexConfig.Field(dtype=str, default='./s16a3D/3frames2Starlets/', doc="The output directory")
+    obsDir  =   pexConfig.Field(dtype=str, default='s16a3D/pix-0.05/nframe-3/lambda-3.5/', doc="The output directory")
     lbd  =   pexConfig.Field(dtype=float, default=3.5, doc="The lambda of the sparsity algorithm")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)

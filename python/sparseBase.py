@@ -348,11 +348,11 @@ class massmapSparsityTask():
     def __init__(self,sources,parser):
         #file
         assert parser.has_option('file','pixDir'), 'Do not have pixDir'
-        pixDir   =   parser.get('file','pixDir')
+        self.pixDir   =   parser.get('file','pixDir')
         assert parser.has_option('file','frameDir'), 'Do not have frameDir'
-        frameDir =   parser.get('file','frameDir')
+        self.frameDir =   parser.get('file','frameDir')
         assert parser.has_option('file','lbdDir'), 'Do not have lbdDir'
-        lbdDir   =   parser.get('file','lbdDir')
+        self.lbdDir   =   parser.get('file','lbdDir')
         if parser.has_option('file','fieldN'):
             self.fieldN =   parser.get('file','fieldN')
         else:
@@ -365,7 +365,7 @@ class massmapSparsityTask():
         self.maxR   =   parser.getint('sparse','maxR')
         self.gsAprox=   parser.getboolean('sparse','gsAprox')
         outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
-        self.outFname   =   os.path.join(lbdDir,outFname)
+        self.outFname   =   os.path.join(self.lbdDir,outFname)
 
         #transverse plane
         if parser.has_option('transPlane','raname'):
@@ -405,8 +405,8 @@ class massmapSparsityTask():
         self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
         
         self.cosmo  =   cosmology.Cosmo(H0=70) 
-        lensKName   =   os.path.join(pixDir,'lensKernel.fits')
-        lensWName   =   os.path.join(pixDir,'lpWeight.fits')
+        lensKName   =   os.path.join(self.pixDir,'lensKernel.fits')
+        lensWName   =   os.path.join(self.pixDir,'lpWeight.fits')
         if os.path.exists(lensKName):
             self.lensKernel =   pyfits.getdata(lensKName)
             self.lpWeight   =   pyfits.getdata(lensWName)
@@ -418,9 +418,9 @@ class massmapSparsityTask():
             pyfits.writeto(lensWName,self.lpWeight)
         
         #pixelize shear and mask
-        g1Fname     =   os.path.join(pixDir,'g1Map_%s.fits'%self.fieldN)
-        g2Fname     =   os.path.join(pixDir,'g2Map_%s.fits'%self.fieldN)
-        nFname      =   os.path.join(pixDir,'nMap_%s.fits'%self.fieldN)
+        g1Fname     =   os.path.join(self.pixDir,'g1Map_%s.fits'%self.fieldN)
+        g2Fname     =   os.path.join(self.pixDir,'g2Map_%s.fits'%self.fieldN)
+        nFname      =   os.path.join(self.pixDir,'nMap_%s.fits'%self.fieldN)
         assert os.path.exists(nFname),'cannot find pixelized shear, run binSplit first'
         self.nMap   =   pyfits.getdata(nFname)
         g1Map       =   pyfits.getdata(g1Fname)
@@ -439,10 +439,13 @@ class massmapSparsityTask():
             self.spectrum_norm(100)
             parser.set('sparse','mu','%s' %self.mu)
         lsst.log.info('mu = %s' %self.mu)
-        sigFname    =   os.path.join(frameDir,'sigmaAlpha_%s.fits' %self.fieldN)
-        assert os.path.exists(sigFname),'Cannot find the noise sigma map, please run noiVarestimate first'
-        self.sigmaA =   pyfits.getdata(sigFname) 
-        assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
+        sigFname    =   os.path.join(self.frameDir,'sigmaAlpha_%s.fits' %self.fieldN)
+        if os.path.exists(sigFname)
+            self.sigmaA =   pyfits.getdata(sigFname) 
+            assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
+        else:
+            self.prox_sigmaA(100):
+
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
         return
@@ -494,6 +497,21 @@ class massmapSparsityTask():
         return
     
     
+    def prox_sigmaA(self,niter):
+        lsst.log.info('Estimating sigma map')
+        outData     =   np.zeros(self.shapeA)
+        lsst.log.info('using mock catalog to calculate alpha sigma')
+        simSrcName  =   os.path.join(self.pixDir,'mock_RG_grid_%s.npy' %(self.fieldN))
+        simSrc      =   np.load(simSrcName)
+        for irun in range(niter):
+            shearSim    =   simSrc[irun] 
+            alphaRSim   =   self.main_transpose(shearSim)
+            outData     +=  alphaRSim**2.
+        self.sigmaA     =   np.sqrt(outData/niter)*self.mu
+        for izlp in range(self.nlp):
+            for iframe in range(self.nframe):
+                self.sigmaA[izlp,iframe][~self.maskF]=np.max(self.sigmaA[izlp,iframe])
+        return
 
     def determine_thresholds(self,dalphaR):
         lbdArray=   np.ones(self.shapeA)*self.lbd
