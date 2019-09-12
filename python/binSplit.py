@@ -82,19 +82,37 @@ class binSplitBatchTask(BatchPoolTask):
         # pixelize the mock catalogs
         outFname    =   'mock_RG_grid_%s.npy' %(fieldName)
         outFname    =   os.path.join(pixDir,outFname)
-        pool        =   Pool("binSplitBatch")
-        pool.cacheClear()
-        pool.storeSet(parser=parser)
-        # Run the code with Pool
-        nSim        =   self.config.nSim
-        shearAll    =   pool.map(self.process,range(nSim))
-        self.log.info('writing outcome for field: %s' %fieldName)
-        shearAll    =   np.array(shearAll)
-        np.save(outFname,shearAll)
+        if not os.path.exists(outFname):
+            pool    =   Pool("binSplitBatch")
+            pool.cacheClear()
+            pool.storeSet(parser=parser)
+            # Run the code with Pool
+            nSim    =   self.config.nSim
+            shearAll=   pool.map(self.process,range(nSim))
+            self.log.info('writing outcome for field: %s' %fieldName)
+            shearAll=   np.array(shearAll)
+            np.save(outFname,shearAll)
         # pixelize the true catalog
         g1Fname     =   os.path.join(pixDir,'g1Map_%s.fits' %fieldName)
         g2Fname     =   os.path.join(pixDir,'g2Map_%s.fits' %fieldName)
         nFname      =   os.path.join(pixDir,'nMap_%s.fits'  %fieldName)
+        if parser.has_option('sourceZ','zname'):
+            zname   =   parser.get('sourceZ','zname')
+        else:
+            zname   =   'z'
+        g1name  =   'g1'
+        g2name  =   'g2'
+
+        catSrcName  =   './s16aPre/%s_RG.fits' %(fieldName)
+        catSrc      =   pyfits.getdata(catSrcName)
+        g1Map,g2Map,nMap=   self.pixelize(catSrc,zname,g1name,g2name,parser)
+        pyfits.writeto(g1Fname,g1Map)
+        pyfits.writeto(g2Fname,g2Map)
+        pyfits.writeto(nFname,nMap)
+        return
+
+    def pixelize(self,simSrc,zname,g1name,g2name,parser):
+        #transverse plane
         if parser.has_option('transPlane','raname'):
             raname  =   parser.get('transPlane','raname')
         else:
@@ -103,18 +121,6 @@ class binSplitBatchTask(BatchPoolTask):
             decname=   parser.get('transPlane','decname')
         else:
             decname =   'dec'
-        # Source z axis
-        if parser.has_option('sourceZ','zname'):
-            zname   =   parser.get('sourceZ','zname')
-        else:
-            zname   =   'z'
-        g1Map,g2Map,nMap=   self.pixelize(zname,g1name,g2name,parser)
-        pyfits.writeto(g1Fname,g1Map)
-        pyfits.writeto(g2Fname,g2Map)
-        pyfits.writeto(nFname,nMap)
-        return
-
-    def pixelize(self,zname,g1name,g2name,parser):
         xMin    =   parser.getfloat('transPlane','xMin')
         yMin    =   parser.getfloat('transPlane','yMin')
         scale   =   parser.getfloat('transPlane','scale')
@@ -146,15 +152,6 @@ class binSplitBatchTask(BatchPoolTask):
         fieldName   =   parser.get('file','fieldN')
         simSrcName  =   './s16aPre/%s_RG_mock.fits' %(fieldName)
         simSrc      =   pyfits.getdata(simSrcName)
-        #transverse plane
-        if parser.has_option('transPlane','raname'):
-            raname  =   parser.get('transPlane','raname')
-        else:
-            raname  =   'ra'
-        if parser.has_option('transPlane','decname'):
-            decname=   parser.get('transPlane','decname')
-        else:
-            decname =   'dec'
         #source z axis
         if parser.has_option('sourceZ','zname'):
             zname   =   parser.get('sourceZ','zname')
@@ -163,7 +160,7 @@ class binSplitBatchTask(BatchPoolTask):
         zname   =   zname+'_%d' %isim
         g1name  =   'g1_%d'     %isim
         g2name  =   'g2_%d'     %isim
-        g1Sim,g2Sim,nSim=   self.pixelize(zname,g1name,g2name,parser)
+        g1Sim,g2Sim,nSim=   self.pixelize(simSrc,zname,g1name,g2name,parser)
         shearSim=   g1Sim+np.complex128(1j)*g2Sim
         return shearSim
     
