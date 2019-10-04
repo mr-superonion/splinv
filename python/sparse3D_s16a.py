@@ -66,8 +66,8 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
 
     
     @abortOnError
-    def run(self,Id):
-        fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
+    def runDataRef(self,Id):
+        fieldList   =  np.load('fieldInfo.npy',allow_pickle=True).item().keys() 
         pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
         obsDir  =   self.config.obsDir
@@ -86,9 +86,9 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
             self.log.info('stop processing field: %s' %fieldName)
             return
 
-        outDir      =   os.path.join(obsDir,'lambda%.1f'%lbd)
         configName  =   'config_lbd%.1f_%s.ini' %(lbd,fieldName)
-        configName  =   os.path.join(outDir,configName)
+        configName  =   os.path.join(obsDir,configName)
+        
 
         inFname     =   './s16aPre/%s_RG.fits' %fieldName  
         sources     =   pyfits.getdata(inFname)

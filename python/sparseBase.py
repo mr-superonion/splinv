@@ -440,11 +440,11 @@ class massmapSparsityTask():
             parser.set('sparse','mu','%s' %self.mu)
         lsst.log.info('mu = %s' %self.mu)
         sigFname    =   os.path.join(self.frameDir,'sigmaAlpha_%s.fits' %self.fieldN)
-        if os.path.exists(sigFname)
+        if os.path.exists(sigFname):
             self.sigmaA =   pyfits.getdata(sigFname) 
             assert self.sigmaA.shape  ==   self.shapeA, 'load wrong noise sigma map'
         else:
-            self.prox_sigmaA(100):
+            self.prox_sigmaA(100)
 
         self.alphaR =   np.zeros(self.shapeA)
         self.deltaR =   np.zeros(self.shapeL)
