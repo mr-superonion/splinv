@@ -1,3 +1,11 @@
 *.pyc
 *.swp
 __*
+*.bbl
+*.blg
+*.pdf
+*.log
+*.dvi
+*.aux
+*.synctex.gz
+*.tex.bak
