@@ -35,16 +35,16 @@ from lsst.pipe.base import TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
-class haloSimConfig(pexConfig.Config):
+class haloSimStampConfig(pexConfig.Config):
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
     
     def validate(self):
         pexConfig.Config.validate(self)
 
-class haloSimTask(pipeBase.CmdLineTask):
-    _DefaultName = "haloSim"
-    ConfigClass = haloSimConfig
+class haloSimStampTask(pipeBase.CmdLineTask):
+    _DefaultName = "haloSimStamp"
+    ConfigClass = haloSimStampConfig
     def __init__(self,**kwargs):
         pipeBase.CmdLineTask.__init__(self, **kwargs)
 
@@ -132,10 +132,10 @@ class haloSimTask(pipeBase.CmdLineTask):
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
 
-class haloSimBatchConfig(pexConfig.Config):
-    haloSim = pexConfig.ConfigurableField(
-        target = haloSimTask,
-        doc = "haloSim task to run on multiple cores"
+class haloSimStampBatchConfig(pexConfig.Config):
+    haloSimStamp = pexConfig.ConfigurableField(
+        target = haloSimStampTask,
+        doc = "haloSimStamp task to run on multiple cores"
     )
     simDir  =   pexConfig.Field(dtype=str, default='simulation9',
                 doc = 'directory to store exposures')
@@ -147,7 +147,7 @@ class haloSimBatchConfig(pexConfig.Config):
         if not os.path.exists(self.simDir):
             self.log.info('Do not have %s' %self.simDir)
     
-class haloSimRunner(TaskRunner):
+class haloSimStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         return [(ref, kwargs) for ref in range(1)] 
@@ -156,10 +156,10 @@ def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
 
-class haloSimBatchTask(BatchPoolTask):
-    ConfigClass = haloSimBatchConfig
-    RunnerClass = haloSimRunner
-    _DefaultName = "haloSimBatch"
+class haloSimStampBatchTask(BatchPoolTask):
+    ConfigClass = haloSimStampBatchConfig
+    RunnerClass = haloSimStampRunner
+    _DefaultName = "haloSimStampBatch"
 
     def __reduce__(self):
         """Pickler"""
@@ -168,13 +168,13 @@ class haloSimBatchTask(BatchPoolTask):
 
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
-        self.makeSubtask("haloSim")
+        self.makeSubtask("haloSimStamp")
     
     @abortOnError
     def run(self,Id):
         #Prepare the pool
         simDir  =   self.config.simDir
-        pool    =   Pool("haloSim")
+        pool    =   Pool("haloSimStamp")
         pool.cacheClear()
         pool.storeSet(simDir=self.config.simDir)
         configList= os.popen('ls %s/ |grep ini' %simDir).readlines()
@@ -183,7 +183,7 @@ class haloSimBatchTask(BatchPoolTask):
         return
         
     def process(self,cache,ifield):
-        self.haloSim.run(ifield,cache.simDir)
+        self.haloSimStamp.run(ifield,cache.simDir)
         return 
 
     @classmethod
