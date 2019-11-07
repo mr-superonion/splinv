@@ -1,3 +1,4 @@
+import numpy as np
 import cosmology
 import scipy.special as spfun
 import astropy.io.fits as pyfits
@@ -76,7 +77,6 @@ class nfw_lensWB00():
         arcsec2rad = np.pi/180./3600
         self.rs_arcsec = scale/arcsec2rad
         return
-    
     
     
     def __DdRs(self,ra_s,dec_s):
@@ -223,7 +223,6 @@ class nfw_lensWB00():
         DeltaSigma1 = -DeltaSigma*self.__cos2phi(ra_s,dec_s)
         DeltaSigma2 = -DeltaSigma*self.__sin2phi(ra_s,dec_s)
         return DeltaSigma1+1j*DeltaSigma2
-        
         
         
     def lensKernel(self,z_s):
@@ -515,7 +514,94 @@ class nfw_lensTJ03():
         rhoM_ave=self.cosmo.rho_m((z_bin_min+z_bin_max)/2.)
         DaBin=self.cosmo.Da(z_bin_min,z_bin_max)
         return rhoM_ave*DaBin
+    
+
+    def SigmaAtom(self,pix_scale,ngrid):
+        """NFW Atom
+        @param pix_scale    pixel sacle [arcsec]
+        @param ngrid        number of pixels on x and y axis
+        """
+        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+self.ra
+        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+self.dec
+        x,y =   np.meshgrid(X,Y)
+        atomReal=self.Sigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        return atomReal
+
+    def DeltaSigmaAtom(self,pix_scale,ngrid):
+        """NFW Atom
+        @param pix_scale    pixel sacle [arcsec]
+        @param ngrid        number of pixels on x and y axis
+        """
+        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+self.ra
+        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+self.dec
+        x,y =   np.meshgrid(X,Y)
+        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        return atomReal
+
+def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=0,fou=True):
+    """Make haloTJ03 atom from Fourier space as CS02.
+    @param r_s        scale radius [unit of pixel].
+    @param ngrid      number of pixel in x and y directions.
+    @param c          truncation ratio (concentration)
+    @param fou        in Fourier space
+    """
+    A= 1./(np.log(1+c)-c/(1.+c))
+    x,y=np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
+    x*=(2*np.pi);y*=(2*np.pi)
+    rT=np.sqrt(x**2+y**2)
+    r=rT*r_s
+    mask=r>0.001
+    atomFou=np.zeros_like(r, dtype=float)
+    r1=r[mask]
+    si1,ci1=spfun.sici((1+c)*r1)
+    si2,ci2=spfun.sici(r1)
+    atomFou[mask]=A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
+    r0=r[~mask]
+    atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
+    if smooth_scale>1.:
+        atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
+    if fou:
+        return atomFou
+    else:
+        return np.real(np.fft.ifft2(atomFou))
+
+def GausAtom(sigma,ngrid,fou=True):
+    x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
+    if fou:
+        x  *=   (2*np.pi);y*=(2*np.pi)
+        rT  =   np.sqrt(x**2+y**2)
+        return  np.exp(-(rT*sigma)**2./2.)
+    else:
+        x  *=   (ngrid);y*=(ngrid)
+        rT  =   np.sqrt(x**2+y**2)
+        return  1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
 
 
+def ksInverse(gMap):
+    gFouMap =   np.fft.fft2(gMap)
+    e2phiF  =   e2phiFou(gFouMap.shape)
+    kFouMap =   gFouMap/e2phiF*np.pi
+    kMap    =   np.fft.ifft2(kFouMap)
+    return kMap
 
+def ksForward(kMap):
+    kFouMap =   np.fft.fft2(kMap)
+    e2phiF  =   e2phiFou(gFouMap.shape)
+    gFouMap =   kFouMap*e2phiF/np.pi
+    gMap    =   np.fft.ifft2(gFouMap)
+    return gMap
 
+def e2phiFou(shape):
+    ny1,nx1 =   shape
+    e2phiF  =   np.zeros(shape,dtype=complex)
+    for j in range(ny1):
+        jy  =   (j+ny1//2)%ny1-ny1//2
+        jy  =   jy/ny1
+        for i in range(nx1):
+            ix  =   (i+nx1//2)%nx1-nx1//2
+            ix  =   ix/nx1
+            if (i**2+j**2)>0:
+                e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)/(ix**2.+jy**2.)
+            else:
+                e2phiF[j,i]    =   1.
+    return e2phiF*np.pi
