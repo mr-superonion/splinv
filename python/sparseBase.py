@@ -430,7 +430,8 @@ class massmapSparsityTask():
         self.shearR     =   g1Map+np.complex128(1j)*g2Map
 
         #make subtasks
-        self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
+        #self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
+        self.star2D =   nfwlet2D(nframe=self.nframe,ngrid=self.nx,smooth_scale=-1)
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
         if parser.has_option('sparse','mu'):
             self.mu =   parser.getfloat('sparse','mu')

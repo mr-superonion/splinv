@@ -39,10 +39,7 @@ class nfwlet2D():
         # shape of output shapelets
         self.shape2=(ngrid,ngrid)
         self.shape3=(nframe,ngrid,ngrid)
-        if os.path.exists(pltDir):
-            self.pltDir=pltDir
-        else:
-            self.pltDir=None
+        self.pltDir=pltDir
         self.prepareFrames()
 
     def prepareFrames(self):
@@ -87,7 +84,7 @@ class nfwlet2D():
         """
         assert dataIn.shape==(self.ny,self.nx),\
                 'input should have shape2 (ny,nx)'
-        dataOut=np.empty(self.shape)
+        dataOut=np.empty(self.shape3)
         if not inFou:
             dataTmp=np.fft.fft2(dataIn)
         else:

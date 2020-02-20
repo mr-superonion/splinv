@@ -40,10 +40,7 @@ class starlet2D():
         self.nx=nx
         self.gen=gen
         self.shape=(nframe,ny,nx)
-        if os.path.exists(pltDir):
-            self.pltDir=pltDir
-        else:
-            self.pltDir=None
+        self.pltDir=pltDir
         self.prepareFrames()
 
     def prepareFrames(self):
