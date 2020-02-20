@@ -39,15 +39,13 @@ class binSplitBatchConfig(pexConfig.Config):
     nSim    =   pexConfig.Field(dtype=int, default=100, doc="number of realization")
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-
 class binSplitRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        configDir    =  parsedCmd.configDir 
+        configDir    =  parsedCmd.configDir
         ##!NOTE: only try on VVDS
         configList= os.popen('ls %s* |grep VVDS.ini ' %configDir).readlines()
         return [(ref, kwargs) for ref in configList]
-
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
@@ -61,7 +59,7 @@ class binSplitBatchTask(BatchPoolTask):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
-    
+
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
 
@@ -72,10 +70,10 @@ class binSplitBatchTask(BatchPoolTask):
         parser.read(configName)
         fieldName   =   parser.get('file','fieldN')
         pixDir      =   parser.get('file','pixDir')
-        ##!NOTE: the mock grid file is saved under pix directroy 
-        ##since changing lbd does not require new pixelation 
-        ##changing nframe only change sigmaA and 
-        ##also does not need new pixelation 
+        ##!NOTE: the mock grid file is saved under pix directroy
+        ##since changing lbd does not require new pixelation
+        ##changing nframe only change sigmaA and
+        ##also does not need new pixelation
         ##changing pix_size change shearAll and sigmaA
         ##which need new pixelation
         self.log.info('processing field: %s' %fieldName)
@@ -129,8 +127,8 @@ class binSplitBatchTask(BatchPoolTask):
         zMin    =   parser.getfloat('sourceZ','zMin')
         zscale  =   parser.getfloat('sourceZ','zscale')
         nz      =   parser.getint('sourceZ','nz')
-        shapeS  =   (nz,ny,nx)   
-        nSim    =   np.zeros(shapeS)  
+        shapeS  =   (nz,ny,nx)
+        nSim    =   np.zeros(shapeS)
         g1Sim   =   np.zeros(shapeS)
         g2Sim   =   np.zeros(shapeS)
         for ss in simSrc:
@@ -163,35 +161,28 @@ class binSplitBatchTask(BatchPoolTask):
         g1Sim,g2Sim,nSim=   self.pixelize(simSrc,zname,g1name,g2name,parser)
         shearSim=   g1Sim+np.complex128(1j)*g2Sim
         return shearSim
-    
 
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):
         kwargs.pop("doBatch", False)
         parser = ArgumentParser(name=cls._DefaultName)
-        parser.add_argument('--configDir', type= str, 
+        parser.add_argument('--configDir', type= str,
                         default='./s16a3D/pix-0.05/nframe-3/lambda-3.5/',
                         help='directory for configuration files')
         return parser
-    
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-    
+
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeMetadata(self, dataRef):
         pass
-
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
-    
     def _getConfigName(self):
         return None
-
     def _getEupsVersionsName(self):
         return None
-
     def _getMetadataName(self):
         return None

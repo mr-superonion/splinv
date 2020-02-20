@@ -1,8 +1,34 @@
+import os
 import numpy as np
 import astropy.io.fits as pyfits
 
 class starlet2D():
-    def __init__(self,gen=2,nframe=4,ny=64,nx=64):
+    """
+    A Class for 2D nfwlet transform
+    --------
+
+    Construction Keywords
+    -------
+    nframe  :   number of frames
+    ngrid   :   size of the field (pixel)
+    smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
+    pltDir  :   whether plot the atoms for demonstration
+
+    Methods
+    --------
+    itransform:
+
+    itranspose:
+
+    transform:
+
+    transpose:
+
+    Examples
+    --------
+    halolet.nfwlet2D(pltDir='plot')
+    """
+    def __init__(self,gen=2,nframe=4,ny=64,nx=64,pltDir=None):
         Coeff_h0 = 3. / 8.;
         Coeff_h1 = 1. / 4.;
         Coeff_h2 = 1. / 16.;
@@ -14,9 +40,13 @@ class starlet2D():
         self.nx=nx
         self.gen=gen
         self.shape=(nframe,ny,nx)
+        if os.path.exists(pltDir):
+            self.pltDir=pltDir
+        else:
+            self.pltDir=None
         self.prepareFrames()
-        
-    def prepareFrames(self,doPlot=False):
+
+    def prepareFrames(self):
         self.frames=np.zeros(self.shape)
         self.aframes=np.zeros(self.shape)
         self.frames[0,0,0]=1
@@ -56,15 +86,14 @@ class starlet2D():
         for iframe in range(self.nframe):
             self.fouframes[iframe,:,:]=np.fft.fft2(self.frames[iframe,:,:]).real
             self.fouaframes[iframe,:,:]=np.fft.fft2(self.aframes[iframe,:,:]).real
-            
-        if doPlot:
-            self.framesShow=np.zeros(self.shape)
-            for iframe in range(self.nframe):
-                self.framesShow[iframe,:,:]=np.fft.fftshift(np.fft.ifft2(self.fouframes[iframe]).real )
-            pyfits.writeto('starlet2-gen%d-nframe%d.fits' %(self.gen,self.nframe), self.frames )
-            pyfits.writeto('starlet2-Fou-gen%d-nframe%d.fits' %(self.gen,self.nframe), self.framesShow)
+
+        if self.pltDir:
+            afname  =   os.path.join(self.pltDir,'starlet2-gen%d-nframe%d.fits' %(self.gen,self.nframe))
+            pyfits.writeto(afname,self.aframes)
+            fafname  =   os.path.join(self.pltDir,'starlet2-Fou-gen%d-nframe%d.fits' %(self.gen,self.nframe))
+            pyfits.writeto(fafname,self.fouaframes)
         return
-    
+
     def transform(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==(self.ny,self.nx)
         if not inFou:
@@ -78,7 +107,7 @@ class starlet2D():
                 dataTmp=np.fft.ifft2(dataTmp).real
             dataOut[iframe,:,:]=dataTmp
         return dataOut
-    
+
     def transpose(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==self.shape
         dataOut=np.zeros((self.ny,self.nx)).astype(np.complex)
@@ -90,7 +119,7 @@ class starlet2D():
         if not outFou:
             dataOut=np.fft.ifft2(dataOut)
         return dataOut.real
-    
+
     def itransform(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==self.shape
         dataOut=np.zeros((self.ny,self.nx)).astype(np.complex)
@@ -102,7 +131,7 @@ class starlet2D():
         if not outFou:
             dataOut=np.fft.ifft2(dataOut).real
         return dataOut
-    
+
     def itranspose(self,dataIn,inFou=True,outFou=True):
         assert dataIn.shape==(self.ny,self.nx)
         dataOut=np.empty(self.shape)

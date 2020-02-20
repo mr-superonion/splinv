@@ -45,29 +45,24 @@ class sparse3D_s16aBatchConfig(pexConfig.Config):
 class sparse3D_s16aRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        return [(ref, kwargs) for ref in range(1)] 
-
+        return [(ref, kwargs) for ref in range(1)]
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
-
 class sparse3D_s16aBatchTask(BatchPoolTask):
     ConfigClass = sparse3D_s16aBatchConfig
     RunnerClass = sparse3D_s16aRunner
     _DefaultName = "sparse3D_s16aBatch"
-
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
-    
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
 
-    
     @abortOnError
     def runDataRef(self,Id):
-        fieldList   =  np.load('fieldInfo.npy',allow_pickle=True).item().keys() 
+        fieldList   =  np.load('fieldInfo.npy',allow_pickle=True).item().keys()
         pool    =   Pool("sparse3D_s16aBatch")
         pool.cacheClear()
         obsDir  =   self.config.obsDir
@@ -88,9 +83,8 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
 
         configName  =   'config_lbd%.1f_%s.ini' %(lbd,fieldName)
         configName  =   os.path.join(obsDir,configName)
-        
 
-        inFname     =   './s16aPre/%s_RG.fits' %fieldName  
+        inFname     =   './s16aPre/%s_RG.fits' %fieldName
         sources     =   pyfits.getdata(inFname)
 
         parser      =   ConfigParser()
@@ -98,31 +92,25 @@ class sparse3D_s16aBatchTask(BatchPoolTask):
         sparse3D    =   massmapSparsityTask(sources,parser)
         sparse3D.process()
         sparse3D.write()
-        
+        return
+
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):
         kwargs.pop("doBatch", False)
         parser = ArgumentParser(name=cls._DefaultName)
         return parser
-    
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-    
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeMetadata(self, dataRef):
         pass
-
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
-    
     def _getConfigName(self):
         return None
-
     def _getEupsVersionsName(self):
         return None
-
     def _getMetadataName(self):
         return None

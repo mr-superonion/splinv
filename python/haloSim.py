@@ -11,20 +11,20 @@ M_PER_PARSEC=3.08568025e16  # m/pc
 
 def four_pi_G_over_c_squared():
     # = 1.5*H0^2/roh_0/c^2
-    # We want it return 4piG/c^2 in unit of Mpc/M_solar 
+    # We want it return 4piG/c^2 in unit of Mpc/M_solar
     # in unit of m/kg
     fourpiGoverc2 = 4.0*np.pi*GNEWTON/(C_LIGHT**2)
-    # in unit of pc/M_solar 
+    # in unit of pc/M_solar
     fourpiGoverc2 *= KG_PER_SUN/M_PER_PARSEC
     # in unit of Mpc/M_solar
     fourpiGoverc2 /= 1.e6
-    return fourpiGoverc2   
+    return fourpiGoverc2
 
 class nfw_lensWB00():
     """
-    Based on the integral functions of a spherical NFW profile: 
+    Based on the integral functions of a spherical NFW profile:
     Wright & Brainerd(2000, ApJ, 534, 34)
-    
+
     @param mass         Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
     @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
@@ -43,7 +43,7 @@ class nfw_lensWB00():
         self.z = float(redshift)
         # E(z)^{-1}
         self.ezInv=self.cosmo.Ez_inverse(self.z)
-        # critical density 
+        # critical density
         # in unit of M_solar / Mpc^3
         rho_cZ   = self.cosmo.rho0()/self.ezInv**2
         # charateristic matter density within R200 at redshift z
@@ -58,13 +58,13 @@ class nfw_lensWB00():
 
         # First we get the virial radius, which is defined for some spherical overdensity as
         # 3 M / [4 pi (r_vir)^3] = overdensity
-        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance). 
-        # The factor of 1.63e-5 comes from the following set of prefactors: 
-        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3. 
+        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance).
+        # The factor of 1.63e-5 comes from the following set of prefactors:
+        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3.
         #(H0=100.
         #DH=C_LIGHT/1e3/H0
         #rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
-        # The mass in the equation below is in M_solar/h, 
+        # The mass in the equation below is in M_solar/h,
         # which is how the final units are Mpc/h.
         R200 = 1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
         self.rs = R200/self.c
@@ -105,7 +105,7 @@ class nfw_lensWB00():
         dx = ra_s - self.ra
         dy = dec_s - self.dec
         drsq = dx*dx+dy*dy
-        
+
         return np.divide(dx*dx-dy*dy, drsq, where=(drsq != 0.))
 
     def __Sigma(self,x):
@@ -123,7 +123,7 @@ class nfw_lensWB00():
         # the approximation below has a maximum fractional error of 7.4e-7
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
         out[mask] = (22./15. - 0.8*x[mask])
-        
+
         return out* self.rs * self.rho_s
 
     def Sigma(self,ra_s,dec_s):
@@ -155,7 +155,7 @@ class nfw_lensWB00():
         a = ((x[mask]-1.)/(x[mask]+1.))**0.5
         out[mask] = x[mask]**(-2)*(4.*np.log(x[mask]/2)+8.*np.arctan(a)/(x[mask]**2 - 1)**0.5)*self.rs * self.rho_s\
                     -self.__Sigma(x[mask])
-        
+
         mask = np.where((x < 0.999) & (x> 0.01))[0]  # Equivalent but usually faster than `mask = (x < 0.999)`
         a = ((1.-x[mask])/(x[mask]+1.))**0.5
         out[mask] = x[mask]**(-2)*(4.*np.log(x[mask]/2)+8.*np.arctanh(a)/(1-x[mask]**2)**0.5)*self.rs * self.rho_s\
@@ -234,7 +234,7 @@ class nfw_lensWB00():
         # convenience: call with single number
         assert isinstance(z_bin_min,np.ndarray)==isinstance(z_bin_max,np.ndarray),\
             'z_bin_min and z_bin_max do not have same type'
-        
+
         if not isinstance(z_bin_min,np.ndarray):
             z_bin_minA=np.array([z_bin_min], dtype='float')
             z_bin_maxA=np.array([z_bin_max], dtype='float')
@@ -281,9 +281,9 @@ class nfw_lensWB00():
 
 class nfw_lensTJ03():
     """
-    Based on the integral functions of a spherical NFW profile: 
+    Based on the integral functions of a spherical NFW profile:
     Wright & Brainerd(2000, ApJ, 534, 34)
-    
+
     @param mass         Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
     @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
@@ -303,7 +303,7 @@ class nfw_lensTJ03():
         self.z = float(redshift)
         # E(z)^{-1}
         self.ezInv=self.cosmo.Ez_inverse(self.z)
-        # critical density 
+        # critical density
         # in unit of M_solar / Mpc^3
         rho_cZ   = self.cosmo.rho0()/self.ezInv**2
         # charateristic matter density within R200 at redshift z
@@ -315,14 +315,14 @@ class nfw_lensTJ03():
         # ra_l,dec_l
         self.ra=ra
         self.dec=dec
-        
+
         # First we get the virial radius, which is defined for some spherical overdensity as
         # 3 M / [4 pi (r_vir)^3] = overdensity
-        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance). 
-        # The factor of 1.63e-5 comes from the following set of prefactors: 
-        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3. 
+        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance).
+        # The factor of 1.63e-5 comes from the following set of prefactors:
+        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3.
         # (H0=100,DH=C_LIGHT/1e3/H0,rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
-        # The mass in the equation below is in M_solar/h, 
+        # The mass in the equation below is in M_solar/h,
         # which is how the final units are Mpc/h.
         R200 = 1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
         self.rs = R200/self.c
@@ -373,7 +373,7 @@ class nfw_lensTJ03():
         mask = np.where(x0 < 0.999)[0]
         x=x0[mask]
         out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
- 
+
         mask = np.where((x0 > 1.001) & (x0<c))[0]
         x=x0[mask]
         out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
@@ -381,7 +381,7 @@ class nfw_lensTJ03():
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
         x=x0[mask]
         out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))+((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
- 
+
         mask = np.where(x0 >= c)[0]
         out[mask]=0.
         return out* self.rs * self.rho_s*2.
@@ -392,7 +392,7 @@ class nfw_lensTJ03():
         @param ra_s       ra of sources [arcsec].
         @param dec_s      dec of sources [arcsec].
         """
-        
+
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
             'ra_s and dec_s do not have same type'
@@ -404,7 +404,7 @@ class nfw_lensTJ03():
             'input ra and dec have different length '
         x=self.__DdRs(ra_s,dec_s)
         return self.__Sigma(x)
-        
+
     def __DeltaSigma(self,x0):
         c   = np.float(self.c)
         out = np.zeros_like(x0, dtype=float)
@@ -415,13 +415,13 @@ class nfw_lensTJ03():
 
         mask = np.where(x0 < 0.0001)[0]
         out[mask]=1./2.
-        
+
         mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
         x=x0[mask]
         out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)+((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
-        
-        mask = np.where((x0 > 1.001) & (x0< c))[0]  
+
+        mask = np.where((x0 > 1.001) & (x0< c))[0]
         x=x0[mask]
         out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)-((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
@@ -431,12 +431,12 @@ class nfw_lensTJ03():
         out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))+6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
             (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
             4*np.log(c +np.sqrt(-1.+c**2)))
-        
+
         mask = np.where(x0 >= c)[0]
         x=x0[mask]
         out[mask] = 2./self.A/x**2.
         return out*self.rs * self.rho_s*2.
-    
+
     def DeltaSigma(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
         @param ra_s       ra of sources [arcsec].
@@ -546,7 +546,7 @@ class nfw_lensTJ03():
 """
 # The following functions are mainly used for halolet construction
 """
-def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=0,fou=True):
+def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     """Make haloTJ03 atom from Fourier space as CS02.
     @param r_s        scale radius [unit of pixel].
     @param ngrid      number of pixel in x and y directions.
@@ -574,15 +574,23 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=0,fou=True):
         return np.real(np.fft.ifft2(atomFou))
 
 def GausAtom(sigma,ngrid,fou=True):
-    x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
-    if fou:
-        x  *=   (2*np.pi);y*=(2*np.pi)
-        rT  =   np.sqrt(x**2+y**2)
-        return  np.exp(-(rT*sigma)**2./2.)
+    if sigma>0:
+        x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
+        if fou:
+            x  *=   (2*np.pi);y*=(2*np.pi)
+            rT  =   np.sqrt(x**2+y**2)
+            return  np.exp(-(rT*sigma)**2./2.)
+        else:
+            x  *=   (ngrid);y*=(ngrid)
+            rT  =   np.sqrt(x**2+y**2)
+            return  1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
     else:
-        x  *=   (ngrid);y*=(ngrid)
-        rT  =   np.sqrt(x**2+y**2)
-        return  1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
+        if fou:
+            return np.ones((ngrid,ngrid))
+        else:
+            out =   np.zeros((ngrid,ngrid))
+            out[0,0]=1
+            return out
 
 def ksInverse(gMap):
     gFouMap =   np.fft.fft2(gMap)

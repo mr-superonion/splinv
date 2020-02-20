@@ -49,7 +49,6 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 class sparse3DConfig(pexConfig.Config):
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-    
     def validate(self):
         pexConfig.Config.validate(self)
 
@@ -74,7 +73,7 @@ class sparse3DTask(pipeBase.CmdLineTask):
         lbd         =   parser.getfloat('sparse','lbd')
         outFname    =   os.path.join(simDir,'kappaMap_3D_lbd%s_m%d_z%d.fits'%(lbd,m_id,z_id))
         if os.path.exists(outFname):
-           massMap  =   pyfits.getdata(outFname) 
+           massMap  =   pyfits.getdata(outFname)
         else:
             sources     =   pyfits.getdata(srcFname)
             sparse3D    =   massmapSparsityTask(sources,parser)
@@ -83,7 +82,7 @@ class sparse3DTask(pipeBase.CmdLineTask):
             pyfits.writeto(outFname,massMap,overwrite=True)
         zyx         =   np.argmax(massMap)
         iz,iy,ix    =   np.unravel_index(zyx,massMap.shape)
-        return (M200,z_cl,ix,iy,iz) 
+        return (M200,z_cl,ix,iy,iz)
 
     @classmethod
     def _makeArgumentParser(cls):
@@ -92,16 +91,12 @@ class sparse3DTask(pipeBase.CmdLineTask):
         doBatch = kwargs.pop("doBatch", False)
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         return parser
-
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeMetadata(self, dataRef):
         pass
-
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
 
@@ -114,35 +109,30 @@ class sparse3DBatchConfig(pexConfig.Config):
                 doc = 'directory to store exposures')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-    
     def validate(self):
         pexConfig.Config.validate(self)
         if not os.path.exists(self.simDir):
             self.log.info('Do not have %s' %self.simDir)
-    
+
 class sparse3DRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        return [(ref, kwargs) for ref in range(1)] 
-
+        return [(ref, kwargs) for ref in range(1)]
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
-
 class sparse3DBatchTask(BatchPoolTask):
     ConfigClass = sparse3DBatchConfig
     RunnerClass = sparse3DRunner
     _DefaultName = "sparse3DBatch"
-
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
-
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
         self.makeSubtask("sparse3D")
-    
+
     @abortOnError
     def run(self,Id):
         #Prepare the pool
@@ -156,7 +146,6 @@ class sparse3DBatchTask(BatchPoolTask):
         tabOut.write('detection_lbd8.csv',overwrite=True)
         self.log.info('finish group %d'%(Id))
         return
-        
     def process(self,cache,ifield):
         return self.sparse3D.run(ifield,cache.simDir)
 
@@ -165,25 +154,18 @@ class sparse3DBatchTask(BatchPoolTask):
         kwargs.pop("doBatch", False)
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         return parser
-    
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-    
     def writeMetadata(self, dataRef):
         pass
-    
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
-    
     def _getConfigName(self):
         return None
-   
     def _getEupsVersionsName(self):
         return None
-    
     def _getMetadataName(self):
         return None

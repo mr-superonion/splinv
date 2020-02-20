@@ -1,5 +1,5 @@
 \documentclass[twocolumn]{aastex62}
-\emergencystretch=1.em 
+\emergencystretch=1.em
 \newcommand \figPath{./}
 \newcommand \redColor{\color{red}}
 \newcommand{\vecb}[1]{{#1}}
@@ -61,7 +61,7 @@
 \section{The Problem}
 
 \subsection{Density Contrast to Shear}
-The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground inhomogeneous density distribution is 
+The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground inhomogeneous density distribution is
 \begin{equation}
 \kappa(\vec{\theta},\chi_s)=\frac{3H_0^2\Omega_M}{2 c^2} \int_0^{\chi_s} d\chi_l \frac{\chi_l \chi_{sl}}{\chi_s} \frac{\delta(\chi_l \vec{\theta},\chi_l)}{a(\chi_l)}
 \end{equation}
@@ -83,7 +83,7 @@ As reported in \citet{massMap-KS1993}, the shear distortion is
 \begin{equation}\label{eq-kappa2gamma}
 \vecb{\gamma}(\vec{\theta},z_s) = \int \vecb{D}(\vec{\theta}-\vec{\theta'}) \kappa(\vec{\theta'},z_s) d^2 \theta,
 \end{equation}
-where 
+where
 \begin{equation}
 \begin{split}
 \vecb{D}(\vec{\theta})&=-\frac{1}{\pi}(\theta_1-i\theta_2)^{-2},\\
@@ -129,7 +129,7 @@ In this paper, we set
 \begin{equation}
 \begin{split}
 W_T(\vec{\theta}) &=\frac{1}{2\pi\beta^2}\exp(-\frac{|\vec{\theta}|}{2\beta^2}),\\
-W_\times (z) &= 
+W_\times (z) &=
 \begin{cases}
 1/\Delta z& (|z|<\Delta z/2),\\
 0& else.
@@ -137,7 +137,7 @@ W_\times (z) &=
 \end{split}
 \end{equation}
 
-With the assumption that the density of response $R$ and the density of galaxy number vary slowly on the smoothing scale, the smoothed shear is 
+With the assumption that the density of response $R$ and the density of galaxy number vary slowly on the smoothing scale, the smoothed shear is
 \begin{equation}\label{eq-smooth-gamma}
 \gamma_S(\vec{\theta}_j,z_j)= \int d^2 \theta_s d z_sW(\vec{\theta}_j-\vec{{\theta}}_s,z_j-z_s) \gamma(\vec{\theta}_s,z_s)
 \end{equation}
@@ -159,17 +159,17 @@ Q_S(\vec{\theta},\vec{\theta'},z_l)&=\int d^2\theta'' W_T( \vec{\theta} -\vec{\t
 
 
 \subsection{Mask and Noise}
-In real observations, the influence of mask and noise should also be taken into account. The final observed shear is 
+In real observations, the influence of mask and noise should also be taken into account. The final observed shear is
 \begin{equation}\label{eq-delta2gamma-final}
 \gamma_o(\vec{\theta},z)=M(\vec{\theta},z) \gamma(\vec{\theta},z) + \epsilon(\vec{\theta},z),
 \end{equation}
 where $\epsilon$ represents noise typically caused by random shape of intrinsic galaxies and such noise is modeled as white Gaussian noise. $M(\vec{\theta},z_s)$ is the mask function.
 
-We can write equation (\ref{eq-delta2gamma-final}) into 
+We can write equation (\ref{eq-delta2gamma-final}) into
 \begin{equation}\label{eq-delta2gamma-operator-final}
 \gamma_o =\mathbf{M}  \mathbf{P} \mathbf{Q} \delta + \epsilon,
 \end{equation}
-where $\mathbf{M}$,  $\mathbf{P}$ and $\mathbf{Q}$ represent the functional operators $M$, $P$ and $Q$, respectively.  
+where $\mathbf{M}$,  $\mathbf{P}$ and $\mathbf{Q}$ represent the functional operators $M$, $P$ and $Q$, respectively.
 
 \section{The Method}
 \label{sec:kappaMap}
@@ -213,9 +213,9 @@ $\alpha_s$ is the corresponding decomposition coefficient of the density contras
 \phi_0, \phi_1, ..., \phi_{N_s}
 \end{pmatrix}$.
 
-We pixelize the parameter space into a $N_\theta \times N_\theta \times N_l$ grid. $N_\theta$ is the number of pixels on the two dimensions of the transverse plane and $N_l$ is the number of pixels on the line-of-sight direction for the lenses. Similarly, $\gamma_o$ is pixelized onto a $N_\theta \times N_\theta \times N_s$ grid, where $N_s$ is the number of pixel on the line-of-sight direction for the sources. 
+We pixelize the parameter space into a $N_\theta \times N_\theta \times N_l$ grid. $N_\theta$ is the number of pixels on the two dimensions of the transverse plane and $N_l$ is the number of pixels on the line-of-sight direction for the lenses. Similarly, $\gamma_o$ is pixelized onto a $N_\theta \times N_\theta \times N_s$ grid, where $N_s$ is the number of pixel on the line-of-sight direction for the sources.
 The pixel size for the two dimensions on the transverse plane is denoted as $\Delta \theta$ and the pixel size for the line-of-sight direction is denoted as $\Delta z$.
-Equation (\ref{eq-delta2gamma-operator-final}) changes to 
+Equation (\ref{eq-delta2gamma-operator-final}) changes to
 \begin{equation}\label{eq-alpha2gamma-operator}
 \gamma=\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha +\epsilon.
 \end{equation}
@@ -226,7 +226,7 @@ The loss function is defined as
 L = \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_2+\lambda \norm{\alpha}^1_1 + \tau\mathrm{TSV}(\alpha_0),
 \end{equation}
 where $\norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_2$ is the normal chi-square, $\norm{\alpha^{N,P}}^1_1$ is the sparsity constrain, and $\mathrm{TSV}(\alpha^P)$ is the Total Squared Variation (TSV) constrain. $\norm{\bullet}_1$ and $\norm{\bullet}_2$ represent $l_1$ norm and $l_2$ norm, respectively.
-The $\mathrm{TSV}$ operator is defined as 
+The $\mathrm{TSV}$ operator is defined as
 \begin{equation}
 \begin{split}
 \mathrm{TSV}(\alpha_0) =&  \sum_{ijk} \{ (\alpha_0[i,j,k]-\alpha_0[i+1,j,k])^2\\
@@ -236,21 +236,21 @@ The $\mathrm{TSV}$ operator is defined as
 \end{equation}
 where $i=1..N_\theta$, $j=1..N_\theta$, are the pixel indexes for the two dimensions on the transverse plane, $k=1..N_l$ is the pixel index on the line-of-sight direction.
 
-We define 
+We define
 \begin{equation}
 \begin{split}
 f(\alpha) &= \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_2+ \tau\mathrm{TSV}(\alpha^P)\\
 &= \sum_{lm} A_{lm} \alpha_l \alpha_m + \sum_{l}B_{l} \alpha_l +C,
 \end{split}
 \end{equation}
-where $l,m$ go over the indexes of $(i,j,k,s)$. 
+where $l,m$ go over the indexes of $(i,j,k,s)$.
 
 \subsection{FISTA}
 The basic FISTA algorithms is
 \begin{equation}
 X^{(n+1)}_m=\mathrm{ST}_{\lambda} (\alpha_m -\frac{\mu}{2A_{mm}} \frac{\partial f}{\partial \alpha_m})|_{\alpha^{(n)}_m} ,
 \end{equation}
-where 
+where
 \begin{equation}
 \mathrm{ST}_{\lambda} (x) = \mathrm{sign} (x) \max (\abs{x}-\lambda,0)
 \end{equation}
@@ -262,13 +262,20 @@ t^{(n+1)} &= \frac{1+\sqrt{1+4(t^{(n)})^2}}{2},\\
 \end{split}
 \end{equation}
 with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
+
 \section{Simulation}
 
-\subsection{One Halo}
-\label{subsec:oneHalo}
 
-\subsection{Multiple Halo}
-\label{subsec:multiHalo}
+\subsection{Postage Stamp}
+
+
+\subsubsection{One Halo}
+\label{subsubsec:oneHalo}
+
+
+\subsubsection{Multiple Halo}
+\label{subsubsec:multiHalo}
+
 
 \subsection{Mock catalog}
 \label{subsec:mockCat}
@@ -276,19 +283,20 @@ with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
 
 
 \section{Results}
-...
+
+
 \section{Summary}
-...
+
 \bibliographystyle{aasjournal}
 \bibliography{weak_lensing,lensCat,cosmoSim,cmbObs,gglens,shearCor,massMap,other}
 
 \appendix
 \section{General linear LASSO}
-Note that the loss function defined in equation (\ref{eq-lossFun}) into 
+Note that the loss function defined in equation (\ref{eq-lossFun}) into
 \begin{equation}
 L(\alpha)=f(\alpha) +\lambda \norm{\alpha}^1_1,
 \end{equation}
-where 
+where
 \begin{equation}
 f(\vec{\alpha}) = \vec{\alpha}^T \mathbf{A} \vec{\alpha} + \vec{B} \cdot \vec{\alpha} +C.
 \end{equation}
@@ -298,7 +306,7 @@ L(\alpha_i) = A_{ij} \alpha_i \alpha_j + B_{i} \alpha_i + C +\lambda_i \abs{\alp
 \end{equation}
 Set the initial parameter vector is $\vec{\alpha}^{(0)}$. We focus on one specific parameter with index $\mu$ and fix other parameters with indexes $i \neq \mu$
 \begin{equation}
-L(\alpha_\mu| \alpha^{(0)}_{i\neq\mu})=A_{\mu\mu} \alpha_\mu^2 + (A_{i\mu}\alpha^{(0)}_i+A_{\mu i}\alpha^{(0)}_i +B_\mu) \alpha_\mu +\lambda_\mu \abs{\alpha_\mu} +B_i \alpha^{(0)}_i + \lambda_i \abs{\alpha^{(0)}_i} +C 
+L(\alpha_\mu| \alpha^{(0)}_{i\neq\mu})=A_{\mu\mu} \alpha_\mu^2 + (A_{i\mu}\alpha^{(0)}_i+A_{\mu i}\alpha^{(0)}_i +B_\mu) \alpha_\mu +\lambda_\mu \abs{\alpha_\mu} +B_i \alpha^{(0)}_i + \lambda_i \abs{\alpha^{(0)}_i} +C
 \end{equation}
 reach its minimum at $\mathrm{ST}_{\lambda} (\alpha_\mu -\frac{\partial_\mu f(\alpha_\mu| \alpha^{(0)}_{i\neq\mu})}{2A_{\mu\mu}}) |_{\alpha_\mu^{(0)}}$,
 where $\mathrm{ST}_{\lambda} (x) = \mathrm{sign} (x) \max (\abs{x}-\lambda,0)$ is the soft thresholding function. Then the parameter can be updated

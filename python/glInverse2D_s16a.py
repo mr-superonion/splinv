@@ -41,37 +41,31 @@ class glInverse2D_s16aBatchConfig(pexConfig.Config):
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
 
-
 class glInverse2D_s16aRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        return [(ref, kwargs) for ref in range(1)] 
-
+        return [(ref, kwargs) for ref in range(1)]
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
-
 class glInverse2D_s16aBatchTask(BatchPoolTask):
     ConfigClass = glInverse2D_s16aBatchConfig
     RunnerClass = glInverse2D_s16aRunner
     _DefaultName = "glInverse2D_s16aBatch"
-
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
-    
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
 
-    
     @abortOnError
     def run(self,Id):
         lbd     =   self.config.lambdaR
         glDir   =   './s16a2D/lambda_%s/' % lbd
         if not os.path.exists(glDir):
             os.mkdir(glDir)
-        fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys() 
+        fieldList   =  np.load('/work/xiangchong.li/work/S16AFPFS/fieldInfo.npy').item().keys()
         pool    =   Pool("glInverse2D_s16aBatch")
         pool.cacheClear()
         pool.storeSet(lbd=lbd)
@@ -99,8 +93,7 @@ class glInverse2D_s16aBatchTask(BatchPoolTask):
         ngrid   =   max(ngridX,ngridY)
         size    =   pix_scale*ngrid
         outDict =   {'raCent':raCen,'decCent':decCen,'size':size,'ngridX':ngridX,'ngridY':ngridY,'ngrid':ngrid}
-        return outDict 
-
+        return outDict
 
     def makeMaskMap(self,raCen,decCen,pix_scale,ngrid,catRG):
         xMin    =   raCen   -   pix_scale*ngrid/2
@@ -115,7 +108,6 @@ class glInverse2D_s16aBatchTask(BatchPoolTask):
         maskMap =   (maskMap>=2).astype(int)
         return maskMap
 
-
     def process(self,cache,fieldName):
         if fieldName=='AEGIS':
             return
@@ -125,7 +117,7 @@ class glInverse2D_s16aBatchTask(BatchPoolTask):
         glDir   =   './s16a/lambda_%s/' % lbd
         if not os.path.exists(glDir):
             os.mkdir(glDir)
-        inFname     =   './s16aPre/%s_RG.fits' %fieldName  
+        inFname     =   './s16aPre/%s_RG.fits' %fieldName
         fieldOut    =   self.getFieldInfo(fieldName,pix_scale)
         raCen,decCen,size,ngridX,ngridY,ngrid   =   fieldOut.values()
         mskFname    =   os.path.join(glDir,'msk_%s.fits'  %(fieldName))
@@ -161,31 +153,24 @@ class glInverse2D_s16aBatchTask(BatchPoolTask):
             fieldOut.update({'pix_scale':pix_scale})
             fitsio.write(outFname+'2',data=outMap[shiftY:shiftY+ngridY,shiftX:shiftX+ngridX],header=fieldOut,clobber=True)
         return
-        
+
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):
         kwargs.pop("doBatch", False)
         parser = ArgumentParser(name=cls._DefaultName)
         return parser
-    
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-    
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeMetadata(self, dataRef):
         pass
-
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
-    
     def _getConfigName(self):
         return None
-
     def _getEupsVersionsName(self):
         return None
-
     def _getMetadataName(self):
         return None

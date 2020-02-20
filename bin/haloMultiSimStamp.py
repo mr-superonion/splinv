@@ -13,13 +13,12 @@ def getS16aZ(nobj):
     pdf     /=  np.sum(pdf)
     cdf     =   np.empty(nbin,dtype=float)
     np.cumsum(pdf,out=cdf)
-              
+
     # Monte Carlo z
     r       =   np.random.random(size=nobj)
     tzmc    =   np.empty(nobj, dtype=float)
     tzmc    =   np.interp(r, cdf, z_bins)
     return tzmc
-
 
 rangHalo=   range(2,3)
 isim    =   5
@@ -34,7 +33,7 @@ ns          =   int(size**2.*ns_per_arcmin+1)
 var_gErr    =   0.25
 x_s         =   np.random.random(ns)*size-size/2.
 y_s         =   np.random.random(ns)*size-size/2.
-z_s         =   getS16aZ(ns)#0.8 
+z_s         =   getS16aZ(ns)#0.8
 kappa_s     =   np.zeros(ns)
 g1_s        =   np.zeros(ns)
 g2_s        =   np.zeros(ns)
@@ -91,8 +90,8 @@ for ngrid in ngList: #(pix)
     g2Map_true  =   np.zeros((ngrid2,ngrid2))
     kMap_true   =   np.zeros((ngrid2,ngrid2))
     kMap_true2  =   np.zeros((ngrid2,ngrid2))# this is the true kMap
-    numMap      =   np.zeros((ngrid2,ngrid2),dtype=np.int)  
-    numMap2     =   np.zeros((ngrid2,ngrid2),dtype=np.int)  
+    numMap      =   np.zeros((ngrid2,ngrid2),dtype=np.int)
+    numMap2     =   np.zeros((ngrid2,ngrid2),dtype=np.int)
     xMin        =   -size
     yMin        =   -size
 
@@ -118,7 +117,6 @@ for ngrid in ngList: #(pix)
                 kMap_true[j,i]  =   kMap_true[j,i]/numMap[j,i]
             if numMap2[j,i]!=0:
                 kMap_true2[j,i]  =   kMap_true2[j,i]/numMap2[j,i]
-
 
     fitsio.write(os.path.join(simDir,'g1Map_grid%s.fits' %(ngrid)),g1Map_true)
     fitsio.write(os.path.join(simDir,'g2Map_grid%s.fits' %(ngrid)),g2Map_true)
