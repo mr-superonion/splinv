@@ -28,6 +28,7 @@ def pixelize(simSrc,parser):
         zname   =   parser.get('sourceZ','zname')
     else:
         zname   =   'z'
+
     g1name  =   'g1'
     g2name  =   'g2'
 
@@ -40,20 +41,21 @@ def pixelize(simSrc,parser):
     zscale  =   parser.getfloat('sourceZ','zscale')
     nz      =   parser.getint('sourceZ','nz')
     shapeS  =   (nz,ny,nx)
-    nSim    =   np.zeros(shapeS)
-    g1Sim   =   np.zeros(shapeS)
-    g2Sim   =   np.zeros(shapeS)
+    nMap    =   np.zeros(shapeS)
+    g1Map   =   np.zeros(shapeS)
+    g2Map   =   np.zeros(shapeS)
     for ss in simSrc:
         ix  =   int((ss[raname]-xMin)//scale)
         iy  =   int((ss[decname]-yMin)//scale)
         iz  =   int((ss[zname]-zMin)//zscale)
         if iz>=0 and iz<nz:
-            g1Sim[iz,iy,ix]=   g1Sim[iz,iy,ix]  +   ss[g1name]
-            g2Sim[iz,iy,ix]=   g2Sim[iz,iy,ix]  +   ss[g2name]
-            nSim[iz,iy,ix] =   nSim[iz,iy,ix]   +   1.
-    mask    =   (nSim>=0.1)
-    g1Sim[mask] =   g1Sim[mask]/nSim[mask]
-    g2Sim[mask] =   g2Sim[mask]/nSim[mask]
+            g1Map[iz,iy,ix]=   g1Map[iz,iy,ix]  +   ss[g1name]
+            g2Map[iz,iy,ix]=   g2Map[iz,iy,ix]  +   ss[g2name]
+            nMap[iz,iy,ix] =   nMap[iz,iy,ix]   +   1.
+
+    mask        =   (nMap>=0.1)
+    g1Map[mask] =   g1Map[mask]/nMap[mask]
+    g2Map[mask] =   g2Map[mask]/nMap[mask]
     pyfits.writeto(g1Fname,g1Map)
     pyfits.writeto(g2Fname,g2Map)
     pyfits.writeto(nFname,nMap)
