@@ -568,13 +568,15 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
     if smooth_scale>1.:
         atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
+    norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)))/ngrid
+    atomFou=atomFou/norm
     if fou:
         return atomFou
     else:
         return np.real(np.fft.ifft2(atomFou))
 
 def GausAtom(sigma,ngrid,fou=True):
-    if sigma>0:
+    if sigma>0.1:
         x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
         if fou:
             x  *=   (2*np.pi);y*=(2*np.pi)

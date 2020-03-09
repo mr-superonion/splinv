@@ -1,0 +1,535 @@
+
+    
+
+
+
+
+    
+\documentclass[11pt]{article}
+
+    
+    \usepackage[breakable]{tcolorbox}
+    \tcbset{nobeforeafter} % prevents tcolorboxes being placing in paragraphs
+    \usepackage{float}
+    \floatplacement{figure}{H} % forces figures to be placed at the correct location
+    
+    \usepackage[T1]{fontenc}
+    % Nicer default font (+ math font) than Computer Modern for most use cases
+    \usepackage{mathpazo}
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % We will generate all images so they have a width \maxwidth. This means
+    % that they will get their normal width if they fit onto the page, but
+    % are scaled down if they would overflow the margins.
+    \makeatletter
+    \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+    \else\Gin@nat@width\fi}
+    \makeatother
+    \let\Oldincludegraphics\includegraphics
+    % Set max figure width to be 80% of text width, for now hardcoded.
+    \renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=.8\maxwidth]{#1}}
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionLabelFormat{nolabel}{}
+    \captionsetup{labelformat=nolabel}
+
+    \usepackage{adjustbox} % Used to constrain images to a maximum size 
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+    \usepackage[mathletters]{ucs} % Extended unicode (utf-8) support
+    \usepackage[utf8x]{inputenc} % Allow utf-8 characters in the tex document
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics 
+                         % to support a larger range 
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    \usepackage{mathrsfs}
+    
+
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+    \definecolor{ansi-default-inverse-fg}{HTML}{FFFFFF}
+    \definecolor{ansi-default-inverse-bg}{HTML}{000000}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+    
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    
+    
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatibility definitions
+    \def\gt{>}
+    \def\lt{<}
+    \let\Oldtex\TeX
+    \let\Oldlatex\LaTeX
+    \renewcommand{\TeX}{\textrm{\Oldtex}}
+    \renewcommand{\LaTeX}{\textrm{\Oldlatex}}
+    % Document parameters
+    % Document title
+    \title{sparseBase}
+    
+    
+    
+    
+    
+% Pygments definitions
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\expandafter\def\csname PY@tok@w\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\expandafter\def\csname PY@tok@c\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.74,0.48,0.00}{##1}}}
+\expandafter\def\csname PY@tok@k\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\expandafter\def\csname PY@tok@o\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ow\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@ne\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.82,0.25,0.23}{##1}}}
+\expandafter\def\csname PY@tok@nv\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@no\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ni\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.60,0.60,0.60}{##1}}}
+\expandafter\def\csname PY@tok@na\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.49,0.56,0.16}{##1}}}
+\expandafter\def\csname PY@tok@nt\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@s\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sd\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@si\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@se\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sr\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@ss\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sx\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@m\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@gh\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gu\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gr\endcsname{\def\PY@tc##1{\textcolor[rgb]{1.00,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ge\endcsname{\let\PY@it=\textit}
+\expandafter\def\csname PY@tok@gs\endcsname{\let\PY@bf=\textbf}
+\expandafter\def\csname PY@tok@gp\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@go\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.53,0.53}{##1}}}
+\expandafter\def\csname PY@tok@gt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\expandafter\def\csname PY@tok@err\endcsname{\def\PY@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
+\expandafter\def\csname PY@tok@kc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kd\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kr\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@bp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@fm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@vc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vg\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sa\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@dl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s2\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s1\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@mb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@il\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mo\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ch\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cm\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cpf\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@c1\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cs\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % For linebreaks inside Verbatim environment from package fancyvrb. 
+    \makeatletter
+        \newbox\Wrappedcontinuationbox 
+        \newbox\Wrappedvisiblespacebox 
+        \newcommand*\Wrappedvisiblespace {\textcolor{red}{\textvisiblespace}} 
+        \newcommand*\Wrappedcontinuationsymbol {\textcolor{red}{\llap{\tiny$\m@th\hookrightarrow$}}} 
+        \newcommand*\Wrappedcontinuationindent {3ex } 
+        \newcommand*\Wrappedafterbreak {\kern\Wrappedcontinuationindent\copy\Wrappedcontinuationbox} 
+        % Take advantage of the already applied Pygments mark-up to insert 
+        % potential linebreaks for TeX processing. 
+        %        {, <, #, %, $, ' and ": go to next line. 
+        %        _, }, ^, &, >, - and ~: stay at end of broken line. 
+        % Use of \textquotesingle for straight quote. 
+        \newcommand*\Wrappedbreaksatspecials {% 
+            \def\PYGZus{\discretionary{\char`\_}{\Wrappedafterbreak}{\char`\_}}% 
+            \def\PYGZob{\discretionary{}{\Wrappedafterbreak\char`\{}{\char`\{}}% 
+            \def\PYGZcb{\discretionary{\char`\}}{\Wrappedafterbreak}{\char`\}}}% 
+            \def\PYGZca{\discretionary{\char`\^}{\Wrappedafterbreak}{\char`\^}}% 
+            \def\PYGZam{\discretionary{\char`\&}{\Wrappedafterbreak}{\char`\&}}% 
+            \def\PYGZlt{\discretionary{}{\Wrappedafterbreak\char`\<}{\char`\<}}% 
+            \def\PYGZgt{\discretionary{\char`\>}{\Wrappedafterbreak}{\char`\>}}% 
+            \def\PYGZsh{\discretionary{}{\Wrappedafterbreak\char`\#}{\char`\#}}% 
+            \def\PYGZpc{\discretionary{}{\Wrappedafterbreak\char`\%}{\char`\%}}% 
+            \def\PYGZdl{\discretionary{}{\Wrappedafterbreak\char`\$}{\char`\$}}% 
+            \def\PYGZhy{\discretionary{\char`\-}{\Wrappedafterbreak}{\char`\-}}% 
+            \def\PYGZsq{\discretionary{}{\Wrappedafterbreak\textquotesingle}{\textquotesingle}}% 
+            \def\PYGZdq{\discretionary{}{\Wrappedafterbreak\char`\"}{\char`\"}}% 
+            \def\PYGZti{\discretionary{\char`\~}{\Wrappedafterbreak}{\char`\~}}% 
+        } 
+        % Some characters . , ; ? ! / are not pygmentized. 
+        % This macro makes them "active" and they will insert potential linebreaks 
+        \newcommand*\Wrappedbreaksatpunct {% 
+            \lccode`\~`\.\lowercase{\def~}{\discretionary{\hbox{\char`\.}}{\Wrappedafterbreak}{\hbox{\char`\.}}}% 
+            \lccode`\~`\,\lowercase{\def~}{\discretionary{\hbox{\char`\,}}{\Wrappedafterbreak}{\hbox{\char`\,}}}% 
+            \lccode`\~`\;\lowercase{\def~}{\discretionary{\hbox{\char`\;}}{\Wrappedafterbreak}{\hbox{\char`\;}}}% 
+            \lccode`\~`\:\lowercase{\def~}{\discretionary{\hbox{\char`\:}}{\Wrappedafterbreak}{\hbox{\char`\:}}}% 
+            \lccode`\~`\?\lowercase{\def~}{\discretionary{\hbox{\char`\?}}{\Wrappedafterbreak}{\hbox{\char`\?}}}% 
+            \lccode`\~`\!\lowercase{\def~}{\discretionary{\hbox{\char`\!}}{\Wrappedafterbreak}{\hbox{\char`\!}}}% 
+            \lccode`\~`\/\lowercase{\def~}{\discretionary{\hbox{\char`\/}}{\Wrappedafterbreak}{\hbox{\char`\/}}}% 
+            \catcode`\.\active
+            \catcode`\,\active 
+            \catcode`\;\active
+            \catcode`\:\active
+            \catcode`\?\active
+            \catcode`\!\active
+            \catcode`\/\active 
+            \lccode`\~`\~ 	
+        }
+    \makeatother
+
+    \let\OriginalVerbatim=\Verbatim
+    \makeatletter
+    \renewcommand{\Verbatim}[1][1]{%
+        %\parskip\z@skip
+        \sbox\Wrappedcontinuationbox {\Wrappedcontinuationsymbol}%
+        \sbox\Wrappedvisiblespacebox {\FV@SetupFont\Wrappedvisiblespace}%
+        \def\FancyVerbFormatLine ##1{\hsize\linewidth
+            \vtop{\raggedright\hyphenpenalty\z@\exhyphenpenalty\z@
+                \doublehyphendemerits\z@\finalhyphendemerits\z@
+                \strut ##1\strut}%
+        }%
+        % If the linebreak is at a space, the latter will be displayed as visible
+        % space at end of first line, and a continuation symbol starts next line.
+        % Stretch/shrink are however usually zero for typewriter font.
+        \def\FV@Space {%
+            \nobreak\hskip\z@ plus\fontdimen3\font minus\fontdimen4\font
+            \discretionary{\copy\Wrappedvisiblespacebox}{\Wrappedafterbreak}
+            {\kern\fontdimen2\font}%
+        }%
+        
+        % Allow breaks at special characters using \PYG... macros.
+        \Wrappedbreaksatspecials
+        % Breaks at punctuation characters . , ; ? ! and / need catcode=\active 	
+        \OriginalVerbatim[#1,codes*=\Wrappedbreaksatpunct]%
+    }
+    \makeatother
+
+    % Exact colors from NB
+    \definecolor{incolor}{HTML}{303F9F}
+    \definecolor{outcolor}{HTML}{D84315}
+    \definecolor{cellborder}{HTML}{CFCFCF}
+    \definecolor{cellbackground}{HTML}{F7F7F7}
+    
+    % prompt
+    \newcommand{\prompt}[4]{
+        \llap{{\color{#2}[#3]: #4}}\vspace{-1.25em}
+    }
+    
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy 
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+    \begin{document}
+    
+    
+    \maketitle
+    
+    
+
+    
+    \hypertarget{general-lasso}{%
+\section{General LASSO}\label{general-lasso}}
+
+\[L(\vec{x})=\frac{1}{2}(y_{i}-A^{*}_{ij}x_{j})(y_{i}-A_{ik}x_{k})+\frac{\lambda_2}{2}[(D^{1}_{ij} x_{j})(D^{1}_{ik}x_{k})+ (D^{2}_{ij} x_{j})(D^{2}_{ik}x_{k})]+ \lambda_1 \sigma_i |x_i|,\]
+
+where \(x_i\) is the i-th component of real vector \(\vec{x}\),
+\(A_{ij}\) and \(D^{1,2}_{ij}\) are the \((i,j)\) component of matrix
+\(\mathbf{A}\) and \(\mathbf{D^{1,2}}\). \(A_{ij}\) is complex number
+whereas \(D^{1,2}_{ij}\) are real number. \(A^{*}_{ij}\) is used to
+denote the conjugate of \(A_{ij}\).
+
+\(\mathbf{A}\) refers to the transformation operator from the real
+dictionary field to the observed complex shear field. Note that we do
+not consider \(B\) mode so \(x\) is a real vector.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# sparseBase.massmapSparsityTask.__init__}
+\CommentTok{## Initialization of the Dictionary Space (A)}
+\CommentTok{# 1) Basis vector used to model the Surface Density of halo  }
+\ControlFlowTok{if}\NormalTok{ dicname}\OperatorTok{==}\StringTok{'starlet'}\NormalTok{:}
+    \ImportTok{from}\NormalTok{ halolet }\ImportTok{import}\NormalTok{ starlet2D}
+    \VariableTok{self}\NormalTok{.dict2D }\OperatorTok{=}\NormalTok{   starlet2D(gen}\OperatorTok{=}\DecValTok{2}\NormalTok{,nframe}\OperatorTok{=}\VariableTok{self}\NormalTok{.nframe,ny}\OperatorTok{=}\VariableTok{self}\NormalTok{.ny,nx}\OperatorTok{=}\VariableTok{self}\NormalTok{.nx)}
+\ControlFlowTok{elif}\NormalTok{ dicname}\OperatorTok{==}\StringTok{'nfwlet'}\NormalTok{:}
+    \ImportTok{from}\NormalTok{ halolet }\ImportTok{import}\NormalTok{ nfwlet2D}
+    \VariableTok{self}\NormalTok{.dict2D }\OperatorTok{=}\NormalTok{   nfwlet2D(nframe}\OperatorTok{=}\VariableTok{self}\NormalTok{.nframe,ngrid}\OperatorTok{=}\VariableTok{self}\NormalTok{.nx,smooth_scale}\OperatorTok{=-}\DecValTok{1}\NormalTok{)}
+\CommentTok{# 2) From Surface Density of Excess Surface Density}
+\VariableTok{self}\NormalTok{.ks2D   }\OperatorTok{=}\NormalTok{   massmap_ks2D(}\VariableTok{self}\NormalTok{.ny,}\VariableTok{self}\NormalTok{.nx)}
+
+\CommentTok{# 3) Lening Kernel: from Excess Surface Density to Shear}
+
+\ControlFlowTok{if} \VariableTok{self}\NormalTok{.nlp}\OperatorTok{<=}\DecValTok{1}\NormalTok{:}
+    \VariableTok{self}\NormalTok{.lensKernel }\OperatorTok{=}\NormalTok{   np.ones((}\VariableTok{self}\NormalTok{.nz,}\VariableTok{self}\NormalTok{.nlp))}
+\ControlFlowTok{else}\NormalTok{:}
+    \VariableTok{self}\NormalTok{.lensKernel }\OperatorTok{=}\NormalTok{   np.zeros((}\VariableTok{self}\NormalTok{.nz,}\VariableTok{self}\NormalTok{.nlp))}
+    \ControlFlowTok{for}\NormalTok{ i,zs }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(zsbin):}
+        \VariableTok{self}\NormalTok{.lensKernel[i,:]    }\OperatorTok{=}   \VariableTok{self}\NormalTok{.cosmo.deltacritinv(zlbin,zs)}
+\end{Highlighting}
+\end{Shaded}
+
+    \(\mathbf{D^{1,2}}\) refer to difference operators in two transverse
+(ra, dec) directions. \(\lambda_2\) control the amplitude of the Total
+Square Variance (TSV) term.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# sparseBase.massmapSparsityTask.gradient_TSV}
+\CommentTok{# Definition of D1 and D2}
+\NormalTok{difx    }\OperatorTok{=}\NormalTok{   np.roll(}\VariableTok{self}\NormalTok{.alphaR[:,}\DecValTok{0}\NormalTok{,:,:],}\DecValTok{1}\NormalTok{,axis}\OperatorTok{=-}\DecValTok{1}\NormalTok{)}
+\NormalTok{difx    }\OperatorTok{=}\NormalTok{   difx}\OperatorTok{-}\VariableTok{self}\NormalTok{.alphaR[:,}\DecValTok{0}\NormalTok{,:,:] }\CommentTok{# D1}
+\NormalTok{dify    }\OperatorTok{=}\NormalTok{   np.roll(}\VariableTok{self}\NormalTok{.alphaR[:,}\DecValTok{0}\NormalTok{,:,:],}\DecValTok{1}\NormalTok{,axis}\OperatorTok{=-}\DecValTok{2}\NormalTok{)}
+\NormalTok{dify    }\OperatorTok{=}\NormalTok{   dify}\OperatorTok{-}\VariableTok{self}\NormalTok{.alphaR[:,}\DecValTok{0}\NormalTok{,:,:] }\CommentTok{# D2}
+\end{Highlighting}
+\end{Shaded}
+
+    We separate out the second order terms in the loss function.
+\[F(\vec{x})=\frac{1}{2}(y_{i}-A^{*}_{ij}x_{j})(y_{i}-A_{ik}x_{k})+\frac{\lambda_2}{2}[(D^{1}_{ij} x_{j})(D^{1}_{ik}x_{k})+ (D^{2}_{ij} x_{j})(D^{2}_{ik}x_{k})],\]
+
+Then we approach to the minimum of the loss function (\(L(\vec{x})\)) by
+iteratively updates each component of \(\vec{x}\)
+\[x_{\alpha}^{(n+1)}=x_{\alpha}^{(n)}-S_{\lambda_1 \sigma_{\alpha}}(\frac{\mu\partial_{\alpha}F(\vec{x})}{A_{i\alpha}A_{i\alpha}+4\lambda_2}),\]
+
+where
+
+\[\partial_\alpha F(\vec{x})=-A_{i\alpha}^{*} (y_{i}-A_{ij}x_{j}) + \lambda_2(D^1_{i\alpha}D^1_{ij} x_{j}+ D^2_{i\alpha} D^2_{ij} x_j).\]
+
+\(\mu\) is the step size of the iteration. S\_\{\lambda\} is the soft
+thresholding function defined as:
+
+\[S_{\lambda} (x_{\alpha})=\rm{sign}(x_{\alpha}) \rm{max}(|x_{\alpha}| - \lambda,0)\]
+
+    \begin{Shaded}
+\begin{Highlighting}[]
+
+\CommentTok{# sparseBase.massmapSparsityTask.gradient}
+\CommentTok{# calculate the gradient of the Second order component in loss function }
+\CommentTok{# wihch includes Total Square Variance(TSV) and chi2 components}
+\NormalTok{gCh2}\OperatorTok{=}\VariableTok{self}\NormalTok{.gradient_chi2()}
+\NormalTok{gTSV}\OperatorTok{=}\VariableTok{self}\NormalTok{.gradient_TSV()}
+
+\CommentTok{# sparseBase.massmapSparsityTask.gradient_chi2}
+\CommentTok{# calculate the gradient of the chi2 component}
+\NormalTok{shearRTmp   }\OperatorTok{=}   \VariableTok{self}\NormalTok{.main_forward(}\VariableTok{self}\NormalTok{.alphaR) }\CommentTok{#A_\{ij\} x_j}
+\VariableTok{self}\NormalTok{.shearRRes   }\OperatorTok{=}   \VariableTok{self}\NormalTok{.shearR}\OperatorTok{-}\NormalTok{shearRTmp     }\CommentTok{#y_i-A_\{ij\} x_j}
+\NormalTok{dalphaR     }\OperatorTok{=}   \OperatorTok{-}\VariableTok{self}\NormalTok{.main_transpose(}\VariableTok{self}\NormalTok{.shearRRes)}\OperatorTok{/}\FloatTok{2.} \CommentTok{#-A_\{i\textbackslash{}alpha\}(y_i-A_\{ij\} x_j)/2}
+
+\CommentTok{# sparseBase.massmapSparsityTask.gradient_TSV}
+\NormalTok{gradx   }\OperatorTok{=}\NormalTok{   np.roll(difx,}\OperatorTok{-}\DecValTok{1}\NormalTok{,axis}\OperatorTok{=-}\DecValTok{1}\NormalTok{)}
+\NormalTok{gradx   }\OperatorTok{=}\NormalTok{   gradx}\OperatorTok{-}\NormalTok{difx    }\CommentTok{# (D1)_\{i\textbackslash{}alpha\} (D1)_\{ij\} x_j}
+\NormalTok{grady   }\OperatorTok{=}\NormalTok{   np.roll(dify,}\OperatorTok{-}\DecValTok{1}\NormalTok{,axis}\OperatorTok{=-}\DecValTok{2}\NormalTok{)  }
+\NormalTok{grady   }\OperatorTok{=}\NormalTok{   grady}\OperatorTok{-}\NormalTok{dify    }\CommentTok{# (D2)_\{i\textbackslash{}alpha\} (D2)_\{ij\} x_j}
+\NormalTok{dalphaR[:,}\DecValTok{0}\NormalTok{,:,:]}\OperatorTok{=}\NormalTok{(gradx}\OperatorTok{+}\NormalTok{grady)}\OperatorTok{*}\VariableTok{self}\NormalTok{.lbd2}\OperatorTok{/}\FloatTok{2.}
+\end{Highlighting}
+\end{Shaded}
+
+    Note that here \(A_{i\alpha} A_{i\alpha}\) should be estimated taking
+into account the mask of observed shear field.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# sparseBase.massmapSparsityTask.spectrum_norm}
+\CommentTok{# Estimate A_\{i\textbackslash{}alpha\} A_\{i\textbackslash{}alpha\}}
+\NormalTok{asquareframe}\OperatorTok{=}\NormalTok{np.zeros((}\VariableTok{self}\NormalTok{.nz,}\VariableTok{self}\NormalTok{.nframe,}\VariableTok{self}\NormalTok{.ny,}\VariableTok{self}\NormalTok{.nx))}
+\ControlFlowTok{for}\NormalTok{ iz }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(}\VariableTok{self}\NormalTok{.nz):}
+\NormalTok{    maskF}\OperatorTok{=}\NormalTok{np.fft.fft2(}\VariableTok{self}\NormalTok{.mask[iz,:,:])}
+    \ControlFlowTok{for}\NormalTok{ iframe }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(}\VariableTok{self}\NormalTok{.nframe):}
+\NormalTok{        fun}\OperatorTok{=}\NormalTok{np.}\BuiltInTok{abs}\NormalTok{(}\VariableTok{self}\NormalTok{.ks2D.transform(}\VariableTok{self}\NormalTok{.dict2D.fouaframes[iframe,:,:],outFou}\OperatorTok{=}\VariableTok{False}\NormalTok{))}\OperatorTok{**}\FloatTok{2.}
+\NormalTok{        asquareframe[iz,iframe,:,:]}\OperatorTok{=}\NormalTok{np.fft.ifft2(np.fft.fft2(fun).real}\OperatorTok{*}\NormalTok{maskF).real}
+
+\NormalTok{spectrum}\OperatorTok{=}\NormalTok{np.}\BuiltInTok{sum}\NormalTok{(}\VariableTok{self}\NormalTok{.lensKernel[:,:,}\VariableTok{None}\NormalTok{,}\VariableTok{None}\NormalTok{,}\VariableTok{None}\NormalTok{]}\OperatorTok{*}\NormalTok{asquareframe[:,}\VariableTok{None}\NormalTok{,:,:,:],axis}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+\VariableTok{self}\NormalTok{.mu}\OperatorTok{=}\FloatTok{0.1}\OperatorTok{/}\NormalTok{(spectrum}\FloatTok{+4.}\OperatorTok{*}\VariableTok{self}\NormalTok{.lbd2) }\CommentTok{#we chose mu=0.1}
+\end{Highlighting}
+\end{Shaded}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Populating the interactive namespace from numpy and matplotlib
+\end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+/data1b/work/xiangchong.li/superonionMaster/miniconda3/lib/python3.7/site-
+packages/IPython/core/magics/pylab.py:160: UserWarning: pylab import has
+clobbered these variables: ['figure', 'logging']
+`\%matplotlib` prevents importing * from pylab and numpy
+  "\textbackslash{}n`\%matplotlib` prevents importing * from pylab and numpy"
+\end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+/lustre2/work/xiangchong.li/massMapSim/stampSim/oneHalo-2D/TSV-lbd1.5
+\end{Verbatim}
+
+    \hypertarget{a-simple-simulation}{%
+\section{A simple Simulation}\label{a-simple-simulation}}
+
+\(M_{200}=4.41 \times 10^{14} M_{\odot}\)
+
+\(z=0.38\)
+
+\(\sigma_\gamma=0.25\)
+
+\(40\) galaxies per arcmin
+
+    \hypertarget{pixel-frame-only}{%
+\section{Pixel frame only}\label{pixel-frame-only}}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{sparseBase_files/sparseBase_10_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{pixel-frame-one-halo-frame}{%
+\section{Pixel frame + one halo
+frame}\label{pixel-frame-one-halo-frame}}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{sparseBase_files/sparseBase_12_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
+    \end{document}

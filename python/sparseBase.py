@@ -17,10 +17,10 @@ def soft_thresholding(dum,thresholds):
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
 
 def firm_thresholding(dum,thresholds):
-    mask    =   (abs(dum)<= thresholds)
+    mask    =   (np.abs(dum)<= thresholds)
     dum[mask]=  0.
-    mask    =   (abs(dum)>thresholds)
-    mask    =   mask&(abs(dum)<= 2*thresholds)
+    mask    =   (np.abs(dum)>thresholds)
+    mask    =   mask&(np.abs(dum)<= 2*thresholds)
     dum[mask]=  np.sign(dum[mask])*(2*np.abs(dum[mask])-thresholds[mask])
     return dum
 
@@ -30,6 +30,44 @@ def my_thresholding(dum,thresholds):
     mask    =   (abs(dum)>thresholds)
     dum[mask]=  np.sign(dum[mask])*(abs(dum[mask])-thresholds[mask]**2./abs(dum[mask]))
     return dum
+
+class massmap_ks2D():
+    def __init__(self,ny,nx):
+        self.shape   =   (ny,nx)
+        self.e2phiF  =   self.e2phiFou(self.shape)
+
+    def e2phiFou(self,shape):
+        ny1,nx1 =   shape
+        e2phiF  =   np.zeros(shape,dtype=complex)
+        for j in range(ny1):
+            jy  =   (j+ny1//2)%ny1-ny1//2
+            jy  =   jy/ny1
+            for i in range(nx1):
+                ix  =   (i+nx1//2)%nx1-nx1//2
+                ix  =   ix/nx1
+                if (i**2+j**2)>0:
+                    e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)/(ix**2.+jy**2.)
+                else:
+                    e2phiF[j,i]    =   1.
+        return e2phiF*np.pi
+
+    def itransform(self,gMap,inFou=True,outFou=True):
+        assert gMap.shape==self.shape
+        if not inFou:
+            gMap =   np.fft.fft2(gMap)
+        kOMap    =   gMap/self.e2phiF*np.pi
+        if not outFou:
+            kOMap    =   np.fft.ifft2(kOMap)
+        return kOMap
+
+    def transform(self,kMap,inFou=True,outFou=True):
+        assert kMap.shape==self.shape
+        if not inFou:
+            kMap =   np.fft.fft2(kMap)
+        gOMap    =   kMap*self.e2phiF/np.pi
+        if not outFou:
+            gOMap    =   np.fft.ifft2(gOMap)
+        return gOMap
 
 class massmapSparsityTask():
     def __init__(self,sources,parser):
@@ -48,6 +86,10 @@ class massmapSparsityTask():
         #sparse
         self.doDebug=   parser.getboolean('sparse','doDebug')
         self.lbd    =   parser.getfloat('sparse','lbd')
+        if parser.has_option('file','lbd2'):
+            self.lbd2   =   parser.getfloat('sparse','lbd2')
+        else:
+            self.lbd2   =   0.
         self.nframe =   parser.getint('sparse','nframe')
         self.nMax   =   parser.getint('sparse','nMax')
         self.maxR   =   parser.getint('sparse','maxR')
@@ -72,8 +114,8 @@ class massmapSparsityTask():
         #lens z axis
         self.nlp    =   parser.getint('lensZ','nlp')
         if self.nlp<=1:
-            self.zlMin=0.
-            self.zlscale=2.
+            self.zlMin  =   0.
+            self.zlscale=   1.
         else:
             self.zlMin       =   parser.getfloat('lensZ','zlMin')
             self.zlscale     =   parser.getfloat('lensZ','zlscale')
@@ -87,8 +129,8 @@ class massmapSparsityTask():
 
         self.nz     =   parser.getint('sourceZ','nz')
         if self.nz<=1:
-            self.zMin=  0.01
-            self.zscale=4.
+            self.zMin   =   0.01
+            self.zscale =   2.5
         else:
             self.zMin   =   parser.getfloat('sourceZ','zMin')
             self.zscale =   parser.getfloat('sourceZ','zscale')
@@ -111,7 +153,14 @@ class massmapSparsityTask():
             pyfits.writeto(lensKName,self.lensKernel)
             pyfits.writeto(lensWName,self.lpWeight)
 
-        #pixelize shear and mask
+        dicname =   parser.get('sparse','dicname')
+        if dicname=='starlet':
+            self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
+        elif dicname=='nfwlet':
+            self.star2D =   nfwlet2D(nframe=self.nframe,ngrid=self.nx,smooth_scale=-1)
+        self.ks2D   =   massmap_ks2D(self.ny,self.nx)
+
+        # Read pixelized shear and mask
         g1Fname     =   os.path.join(self.pixDir,'g1Map_%s.fits'%self.fieldN)
         g2Fname     =   os.path.join(self.pixDir,'g2Map_%s.fits'%self.fieldN)
         nFname      =   os.path.join(self.pixDir,'nMap_%s.fits'%self.fieldN)
@@ -122,20 +171,15 @@ class massmapSparsityTask():
         assert self.nMap.shape  ==   self.shapeS, 'load wrong pixelized shear'
         self.mask   =   (self.nMap>=0.1)
         self.maskF  =   (np.sum(self.nMap,axis=0)>1.)
-        self.shearR =   g1Map+np.complex128(1j)*g2Map
 
-        dicname =   parser.get('sparse','dicname')
-        if dicname=='starlet':
-            self.star2D =   starlet2D(gen=2,nframe=self.nframe,ny=self.ny,nx=self.nx)
-        elif dicname=='nfwlet':
-            self.star2D =   nfwlet2D(nframe=self.nframe,ngrid=self.nx,smooth_scale=-1)
-        self.ks2D   =   massmap_ks2D(self.ny,self.nx)
+        # Estimate mu
         if parser.has_option('sparse','mu'):
             self.mu =   parser.getfloat('sparse','mu')
         else:
             self.spectrum_norm(100)
-
         lsst.log.info('mu = %s' %self.mu)
+
+        # Estimate variance plane for alpha
         sigFname    =   os.path.join(self.frameDir,'sigmaAlpha_%s.fits' %self.fieldN)
         sigma_noise =   parser.getfloat('sparse','sigma_noise')
         if os.path.exists(sigFname):
@@ -145,20 +189,27 @@ class massmapSparsityTask():
             self.prox_sigmaA(100,sigma_noise)
             pyfits.writeto(sigFname,self.sigmaA)
 
-        self.alphaR =   np.zeros(self.shapeA)
-        self.deltaR =   np.zeros(self.shapeL)
+        # Initialization
+        self.alphaR =   np.zeros(self.shapeA)   # alpha
+        self.deltaR =   np.zeros(self.shapeL)   # delta
+        self.shearRRes   = np.zeros(self.shapeS)# shear residuals
+        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
         return
 
     def lensing_kernel(self,zlbin,zsbin):
         lsst.log.info('Calculating lensing kernel')
-        self.lensKernel =   np.zeros((self.nz,self.nlp))
-        self.lpWeight   =   np.zeros(self.nlp)
-        for i,zs in enumerate(zsbin):
-            self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)
-            self.lpWeight=  self.lpWeight+(self.lensKernel[i,:])**2.
-        self.lpWeight   =   np.sqrt(self.lpWeight)
-        self.lensKernel =   self.lensKernel/self.lpWeight
-        self.lpWeight   =   self.lpWeight/self.zlscale
+        if self.nlp<=1:
+            self.lensKernel =   np.ones((self.nz,self.nlp))
+            self.lpWeight   =   np.ones(self.nlp)
+
+        else:
+            self.lensKernel =   np.zeros((self.nz,self.nlp))
+            self.lpWeight   =   np.zeros(self.nlp)
+            for i,zs in enumerate(zsbin):
+                self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)
+                self.lpWeight=  self.lpWeight+(self.lensKernel[i,:])**2.
+            self.lpWeight   =   np.sqrt(self.lpWeight)
+            self.lensKernel =   self.lensKernel/self.lpWeight
         return
 
     def main_forward(self,alphaRIn):
@@ -180,19 +231,49 @@ class massmapSparsityTask():
             alphaRO[zl,:,:,:]=self.star2D.itranspose(deltaFTmp[zl],outFou=False).real
         return alphaRO
 
+    def gradient_chi2(self):
+        shearRTmp   =   self.main_forward(self.alphaR)
+        self.shearRRes   =   self.shearR-shearRTmp
+        dalphaR     =   -self.main_transpose(self.shearRRes)
+        return dalphaR
+
+    def gradient_TSV(self):
+        dalphaR =   np.zeros(self.shapeA)
+        difx    =   np.roll(self.alphaR[:,0,:,:],1,axis=-1)
+        difx    =   difx-self.alphaR[:,0,:,:]
+        gradx   =   np.roll(difx,-1,axis=-1)
+        gradx   =   gradx-difx
+
+        dify    =   np.roll(self.alphaR[:,0,:,:],1,axis=-2)
+        dify    =   dify-self.alphaR[:,0,:,:]
+        grady   =   np.roll(dify,-1,axis=-2)
+        grady   =   grady-dify
+        dalphaR[:,0,:,:]=(gradx+grady)/np.sqrt(20.)
+        return dalphaR
+
+    def gradient(self):
+        gCh2=self.gradient_chi2()
+        gTSV=self.gradient_TSV()
+        return gCh2+self.lbd2*gTSV
+
     def spectrum_norm(self,niter):
+        self.shearR=np.zeros(self.shapeS)
         norm    =   0.
         for irun in range(niter):
+            # Generate a random alphaR
             np.random.seed(irun)
-            alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)+np.random.random()*100
-            normTmp =   np.sqrt(np.sum(alphaTmp**2.))
-            alphaTmp=   alphaTmp/normTmp
-            shearTmp=   self.main_forward(alphaTmp)
-            alphaTmp2=  self.main_transpose(shearTmp)
-            normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
+            self.alphaR=   np.random.randn(*self.shapeA)+np.random.random()
+            """
+            self.alphaR=   np.zeros(self.shapeA)
+            self.alphaR[0,0,self.ny//2,self.nx//2]=1
+            """
+            normTmp =   np.sqrt(np.sum(self.alphaR**2.))
+            self.alphaR=self.alphaR/normTmp
+            dalphaT =   self.gradient()
+            normTmp2=   np.sqrt(np.sum(dalphaT**2.))
             if normTmp2>norm:
                 norm=normTmp2
-        self.mu    = 1./norm/1.2
+        self.mu    = 1./(norm+1.)/1.3/(self.lbd2+1.)
         return
 
     def prox_sigmaA(self,niter,sigma):
@@ -267,32 +348,12 @@ class massmapSparsityTask():
         self.thresholds =   lbdArray*self.sigmaA
         return
 
-    def gradient_chi2(self):
-        shearRTmp   =   self.main_forward(self.alphaR)
-        self.shearRRes   =   self.shearR-shearRTmp
-        dalphaR     =   -self.main_transpose(self.shearRRes)
-        return dalphaR
-
-    def gradient_TSV(self):
-        difx    =   np.roll(self.alphaR[:,0,:,:],1,axis=-1)
-        difx    =   difx-self.alphaR[:,0,:,:]
-        gradx   =   np.roll(difx,-1,axis=-1)/np.sqrt(2.)
-        gradx   =   gradx-difx
-        dify    =   np.roll(self.alphaR[:,0,:,:],1,axis=-2)
-        dify    =   dify-self.alphaR[:,0,:,:]
-        grady   =   np.roll(dify,-1,axis=-2)/np.sqrt(2.)
-        grady   =   gradx-dify
-        return gradx+grady
-
-    def gradient(self):
-        return self.gradient_chi2()#+0.8*self.gradient_TSV()
-
     def reconstruct(self):
         #update deltaR
         for zl in range(self.nlp):
             alphaRZ         =   self.alphaR[zl].copy()
             #alphaRZ[0,:,:]  =   0.
-            self.deltaR[zl] =   self.star2D.itransform(alphaRZ,inFou=False,outFou=False)*self.lpWeight[zl]
+            self.deltaR[zl] =   self.star2D.itransform(alphaRZ,inFou=False,outFou=False)/self.zlscale/self.lpWeight[zl]
             #self.deltaR     =   self.deltaR*self.maskF.astype(float)
         return
 
@@ -317,7 +378,7 @@ class massmapSparsityTask():
             tn   = tnTmp
             self.alphaR=dum+(ratio*(dum-self.alphaR))
             #self.alphaR[:,0,:,:]=0.
-            if (irun+1)%50==0:
+            if (irun+1)%100==0:
                 lsst.log.info('iteration: %d' %(irun))
                 lsst.log.info('chi2: %.2f' %(np.sum(abs(self.shearRRes)**2.)))
                 if self.doDebug:
@@ -327,9 +388,9 @@ class massmapSparsityTask():
                     pyfits.writeto('lbdR_%d_%d.fits' %(iup,irun),self.lbdArray.real,overwrite=True)
         return
 
-    def process(self,niter=500):
+    def process(self,niter=1000):
         self.thresholdsMin  =   self.lbd*self.sigmaA
-        threM   =   'FT'
+        threM   =   'ST'
         self.run_main_iteration(0,niter,threM)
         self.reconstruct()
         return
