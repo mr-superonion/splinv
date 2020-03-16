@@ -389,7 +389,6 @@ class massmapSparsityTask():
         return
 
     def process(self,niter=1000):
-        self.thresholdsMin  =   self.lbd*self.sigmaA
         threM   =   'ST'
         self.run_main_iteration(0,niter,threM)
         self.reconstruct()
