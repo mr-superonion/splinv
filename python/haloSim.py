@@ -105,7 +105,6 @@ class nfw_lensWB00():
         dx = ra_s - self.ra
         dy = dec_s - self.dec
         drsq = dx*dx+dy*dy
-
         return np.divide(dx*dx-dy*dy, drsq, where=(drsq != 0.))
 
     def __Sigma(self,x):
@@ -123,7 +122,6 @@ class nfw_lensWB00():
         # the approximation below has a maximum fractional error of 7.4e-7
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
         out[mask] = (22./15. - 0.8*x[mask])
-
         return out* self.rs * self.rho_s
 
     def Sigma(self,ra_s,dec_s):
@@ -226,7 +224,7 @@ class nfw_lensWB00():
         return k_s
 
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
-        """Zero-order Surface mass density
+        """Zero-order Surface mass density **background**
         within redshift bin [z_bin_min,z_bin_max].
         @param z_bin_min   minimum of redshift bin.
         @param z_bin_max   maximum of redshift bin.
@@ -548,6 +546,8 @@ class nfw_lensTJ03():
 """
 def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     """Make haloTJ03 atom from Fourier space as CS02.
+        https://arxiv.org/pdf/astro-ph/0206508.pdf
+        Eq.(81) Eq.(82)
     @param r_s        scale radius [unit of pixel].
     @param ngrid      number of pixel in x and y directions.
     @param c          truncation ratio (concentration)
@@ -566,7 +566,7 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     atomFou[mask]=A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
     r0=r[~mask]
     atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
-    if smooth_scale>1.:
+    if smooth_scale>.1:
         atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
     norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)))/ngrid
     atomFou=atomFou/norm

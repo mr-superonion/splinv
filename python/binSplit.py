@@ -173,7 +173,6 @@ class binSplitBatchTask(BatchPoolTask):
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
     def writeMetadata(self, dataRef):

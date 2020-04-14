@@ -11,8 +11,8 @@ def rotCatalog(e1, e2, phi=None):
         phi = 2.0 * np.pi * np.random.rand(len(e1))
     cs = np.cos(phi)
     ss = np.sin(phi)
-    e1_rot = e1 * cs + e2 * ss
-    e2_rot = (-1.0) * e1 * ss + e2 * cs
+    e1_rot  = e1 * cs + e2 * ss
+    e2_rot  = (-1.0) * e1 * ss + e2 * cs
     return e1_rot, e2_rot
 
 def prepareHSCField16(fTone):
@@ -50,7 +50,7 @@ def prepareHSCField16(fTone):
         tableNew.write(onameRG)
     else:
         tableNew=   astTab.Table.read(onameRG)
-    pzBinFname   =   '/work/xiangchong.li/work/S16AStandard/S16A_pz_pdf/mlz/target_wide_s16a_xmmlss_9493.0.P.fits'
+    pzBinFname  =   '/work/xiangchong.li/work/S16AStandard/S16A_pz_pdf/mlz/target_wide_s16a_xmmlss_9493.0.P.fits'
     cdf_z   =   fitsio.read(pzBinFname,ext=2)['BINS']
     fnamePZ =   '/work/xiangchong.li/work/S16AStandard/S16AStandardCalibrated/tract/%s_pofz.fits' %(tract)
     dataPZ  =   astTab.Table.read(fnamePZ)
@@ -58,15 +58,15 @@ def prepareHSCField16(fTone):
     tableMock   =   astTab.Table()
     tableMock['ra']  =   tableNew['ra']
     tableMock['dec'] =   tableNew['dec']
-    tableMock['best_z']  =   tableNew['best_z']
-    tableMock['best_conf'] =   tableNew['best_conf']
-    tableMock['best_std'] =   tableNew['best_std']
+    tableMock['best_z']     =   tableNew['best_z']
+    tableMock['best_conf']  =   tableNew['best_conf']
+    tableMock['best_std']   =   tableNew['best_std']
     pdf         =   dataPZ['PDF']
-    
+
     nobj, nbin = pdf.shape
     pdf = pdf.astype(float)
     pdf /= np.sum(pdf,axis=1).reshape(nobj, 1)
-    
+
     cdf = np.empty(shape=(nobj, nbin), dtype=float)
     np.cumsum(pdf, axis=1, out=cdf)
     for imock in range(100):
@@ -76,7 +76,7 @@ def prepareHSCField16(fTone):
         r     =   np.random.random(size=nobj)
         for i in range(nobj):
             tzmc[i] = np.interp(r[i], cdf[i], cdf_z)
-        tableMock['z_%d' %imock]    =   tzmc  
+        tableMock['z_%d' %imock]    =   tzmc
         g1Sim,g2Sim =   rotCatalog(tableNew['g1'],tableNew['g2'])
         tableMock['g1_%d' %imock]   =   g1Sim
         tableMock['g2_%d' %imock]   =   g2Sim
@@ -85,7 +85,7 @@ def prepareHSCField16(fTone):
 
 def main():
     fTinfo  =   np.load('/work/xiangchong.li/work/S16AFPFS/dr1FieldTract.npy').item()
-    fields  =   fTinfo.keys() 
+    fields  =   fTinfo.keys()
     fTlist  =   []
     for fd in fields:
         for tt in fTinfo[fd]:
