@@ -553,22 +553,26 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     @param c          truncation ratio (concentration)
     @param fou        in Fourier space
     """
-    A= 1./(np.log(1+c)-c/(1.+c))
     x,y=np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
     x*=(2*np.pi);y*=(2*np.pi)
     rT=np.sqrt(x**2+y**2)
-    r=rT*r_s
-    mask=r>0.001
-    atomFou=np.zeros_like(r, dtype=float)
-    r1=r[mask]
-    si1,ci1=spfun.sici((1+c)*r1)
-    si2,ci2=spfun.sici(r1)
-    atomFou[mask]=A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
-    r0=r[~mask]
-    atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
+    if r_s<=0.1:
+        atomFou=np.ones((ngrid,ngrid))
+    else:
+        A= 1./(np.log(1+c)-c/(1.+c))
+        r=rT*r_s
+        mask=r>0.001
+        atomFou=np.zeros_like(r, dtype=float)
+        r1=r[mask]
+        si1,ci1=spfun.sici((1+c)*r1)
+        si2,ci2=spfun.sici(r1)
+        atomFou[mask]=A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
+        r0=r[~mask]
+        atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
     if smooth_scale>.1:
         atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
     norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)))/ngrid
+    # Normalize
     atomFou=atomFou/norm
     if fou:
         return atomFou
