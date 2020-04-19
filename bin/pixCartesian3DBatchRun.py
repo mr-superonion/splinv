@@ -10,8 +10,8 @@ from pixel3D import cartesianGrid3D
 raname='raR'
 decname='decR'
 zname='zbest'
-g1name='g1n'
-g2name='g2n'
+g1name='g1R'
+g2name='g2R'
 ngroup=100 # groups in the input fits file
 
 configName  =   'stampSim/HSC-like/process/config.ini'
@@ -23,19 +23,25 @@ def process(isim):
     im = isim//9
     iz = isim%9
     infname='stampSim/HSC-like/stampSim-HSC_like-TJ03-%d,%d-202004021856.fits' %(iz,im)
-    outfname='stampSim/HSC-like/process/pixShear-%d-%d.fits' %(iz,im)
 
     noiTab=pyfits.getdata(infname)
     ng=len(noiTab)//ngroup
 
     pixDatAll=np.zeros((ngroup,)+gridInfo.shape,dtype=np.complex128)
-
     for ig in range(ngroup):
         noiU=noiTab[ig*ng:(ig+1)*ng]
-        val=noiU[g1name]+noiU[g2name]*1j
-        pixDatAll[ig]=gridInfo.pixelize_data(noiU[raname],noiU[decname],noiU[zname],val)
+        val=(noiU[g1name]+noiU['g1n'])+(noiU[g2name]+noiU['g2n'])*1j
+        outcome=gridInfo.pixelize_data(noiU[raname],noiU[decname],noiU[zname],val)
+        pixDatAll[ig]=outcome[0]
 
-    pyfits.writeto(outfname,pixDatAll)
+    outfname1='stampSim/HSC-like/process-equalNum/pixShearR-g1-%d-%d.fits' %(iz,im)
+    outfname2='stampSim/HSC-like/process-equalNum/pixShearR-g2-%d-%d.fits' %(iz,im)
+    pyfits.writeto(outfname1,pixDatAll.real)
+    pyfits.writeto(outfname2,pixDatAll.imag)
+
+    pixNumAll=outcome[1]
+    outfname3='stampSim/HSC-like/process-equalNum/pixNumR-%d-%d.fits' %(iz,im)
+    pyfits.writeto(outfname3,pixNumAll)
     return
 
 if __name__=="__main__":
