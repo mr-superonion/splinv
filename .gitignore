@@ -3,8 +3,8 @@
 __*
 *.bbl
 *.blg
-*.pdf
 *.log
+*.html
 *.dvi
 *.aux
 *.synctex.gz
