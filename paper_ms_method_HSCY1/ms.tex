@@ -62,6 +62,13 @@
 
 \subsection{Density Contrast to Shear}
 The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground inhomogeneous density distribution is
+
+\begin{figure*}
+ \includegraphics[width=0.95\textwidth]{nfwlet-atom-2D.pdf}
+ \caption{The NFW atom with different scale radius ($r_s$). The first row shows the NFW atoms in Fourier space and the second row shows the NFW atom in Real space.}
+\end{figure*}
+
+
 \begin{equation}
 \kappa(\vec{\theta},\chi_s)=\frac{3H_0^2\Omega_M}{2 c^2} \int_0^{\chi_s} d\chi_l \frac{\chi_l \chi_{sl}}{\chi_s} \frac{\delta(\chi_l \vec{\theta},\chi_l)}{a(\chi_l)}
 \end{equation}
@@ -74,7 +81,7 @@ we term $\delta_{c}(z_l,z_s)$ as lensing critical density contrast and define it
 \begin{equation}
 \delta_{c}^{-1}(z_l,z_s) =
 \begin{cases}
-\frac{3H_0\Omega_M}{2 c} \frac{\chi_l \chi_{sl} (1+z_l)}{ \chi_s E(z_l)} & (z_s>z_l),\\
+\frac{3H_0\Omega_M}{2 c} \frac{\chi_l \chi_{sl} (1+z_l)}{\chi_{s} E\left(z_l\right)} & (z_s>z_l),\\
 0&(z_s \leq z_l).
 \end{cases}
 \end{equation}
@@ -92,12 +99,15 @@ where
 \end{equation}
 
 
-
 Combine equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}) and we have
 \begin{equation}\label{eq-delta2gamma-z}
 \vecb{\gamma}(\vec{\theta},z_s) = \int_0^{z_s} dz_l \frac{\delta_c(z_l,+\infty)}{\delta_{c}(z_l,z_s)} \int d^2 \theta'  \vecb{D}(\vec{\theta}-\vec{\theta'}) \frac{\delta(\vec{\theta'},z_l)}{\delta_c(z_l,+\infty)}.
 \end{equation}
 
+\begin{figure}
+ \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
+ \caption{The $1$-D slices of NFW atoms with different scale radius ($r_s=0,1,2,4,8$).}
+\end{figure}
 \subsection{Photo-$z$ Uncertainty}
 Since the redshifts of source galaxies are estimated with a limited number of photometric bands, the estimated redshift of a galaxy suffer from large uncertainty. The probability distribution function (PDF) of a galaxies at position $(\vec{\theta},z_s)$ is denoted as $\mathcal{P}(z|z_s)$.  Note that, in order to simplify the future calculation, we assume the variation of the PDF across the transverse plane is small and neglect the dependency on the transverse position.
 
@@ -186,6 +196,8 @@ where $\phi_0$ is $3$-D Dirac delta function representing point mass
 \end{equation}
 Since the scale of halo is much less than the reachable redshift resolution, we neglect the depth of halo on the line-of-sight direction as suggested by \citep{massMap-Glimpse3D2014}.
 On the transverse plane, the NFW atom is modeled with the surface density profile of NFW halo with scale $\theta_s$ and truncation radius $c \theta_s$ \citep{haloModel-TJ2003-3pt}, where $c$ is generally known as concentration of NFW halo.  Whereas, the NFW atom is modeled with Dirac delta function on the line-of-sight direction
+
+
 \begin{equation}
 \begin{split}
 \phi_s(\vec{x}) =&\frac{f }{2 \pi \theta_s^2 } F(|\vec{\theta}|/\theta_s) \delta_D(z),\\
@@ -221,6 +233,11 @@ Equation (\ref{eq-delta2gamma-operator-final}) changes to
 \end{equation}
 
 \subsection{Loss Function with Constrains}
+\begin{figure}
+ \centering
+ \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
+ \caption{The source galaxies are binned into $10$ redshift bins according to their mlz best photo-$z$ estimation. The blue histogram is the number distribution of the best photo-$z$ estimation. The vertical dashed lines are the bounds of bins. The galaxies are evenly distributed in each bins.}
+\end{figure}
 The loss function is defined as
 \begin{equation}\label{eq-lossFun}
 L = \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_2+\lambda \norm{\alpha}^1_1 + \tau\mathrm{TSV}(\alpha_0),
@@ -245,6 +262,17 @@ f(\alpha) &= \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_
 \end{equation}
 where $l,m$ go over the indexes of $(i,j,k,s)$.
 
+\begin{figure}
+ \centering
+ \includegraphics[width=0.5\textwidth]{mlz-poz.pdf}
+ \caption{The PDF of photo-$z$ error for $10$ source redshift bins.}
+\end{figure}
+
+\begin{figure}
+ \centering
+ \includegraphics[width=0.5\textwidth]{lensing_efficiency.pdf}
+ \caption{The blue line shows the normalized lensing efficiency for lens bin at $z_{l}=0.51$. The orange line is the normalized lensing efficiency while taking into account the photo-$z$ uncertainty.}
+\end{figure}
 \subsection{FISTA}
 The basic FISTA algorithms is
 \begin{equation}
@@ -263,22 +291,13 @@ t^{(n+1)} &= \frac{1+\sqrt{1+4(t^{(n)})^2}}{2},\\
 \end{equation}
 with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
 
-\section{Simulation}
+\section{HSC-like Simulation}
 
 
-\subsection{Postage Stamp}
+\subsection{Shear Measurement Error}
+\subsection{Photo-$z$ Error}
 
 
-\subsubsection{One Halo}
-\label{subsubsec:oneHalo}
-
-
-\subsubsection{Multiple Halo}
-\label{subsubsec:multiHalo}
-
-
-\subsection{Mock catalog}
-\label{subsec:mockCat}
 
 
 \section{Results}
