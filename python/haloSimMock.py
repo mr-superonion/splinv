@@ -38,7 +38,6 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 class haloSimStampConfig(pexConfig.Config):
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-    
     def validate(self):
         pexConfig.Config.validate(self)
 
@@ -105,7 +104,7 @@ class haloSimStampTask(pipeBase.CmdLineTask):
         pdf         /=  np.sum(pdf)
         cdf         =   np.empty(nbin,dtype=float)
         np.cumsum(pdf,out=cdf)
-                  
+
         # Monte Carlo z
         r       =   np.random.random(size=nobj)
         tzmc    =   np.empty(nobj, dtype=float)
@@ -119,16 +118,12 @@ class haloSimStampTask(pipeBase.CmdLineTask):
         doBatch = kwargs.pop("doBatch", False)
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         return parser
-
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeMetadata(self, dataRef):
         pass
-
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
 
@@ -141,17 +136,15 @@ class haloSimStampBatchConfig(pexConfig.Config):
                 doc = 'directory to store exposures')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-    
     def validate(self):
         pexConfig.Config.validate(self)
         if not os.path.exists(self.simDir):
             self.log.info('Do not have %s' %self.simDir)
-    
+
 class haloSimStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        return [(ref, kwargs) for ref in range(1)] 
-
+        return [(ref, kwargs) for ref in range(1)]
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
@@ -169,7 +162,7 @@ class haloSimStampBatchTask(BatchPoolTask):
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
         self.makeSubtask("haloSimStamp")
-    
+
     @abortOnError
     def run(self,Id):
         #Prepare the pool
@@ -181,35 +174,29 @@ class haloSimStampBatchTask(BatchPoolTask):
         pool.map(self.process,configList)
         self.log.info('finish group %d'%(Id))
         return
-        
+
     def process(self,cache,ifield):
         self.haloSimStamp.run(ifield,cache.simDir)
-        return 
+        return
 
     @classmethod
     def _makeArgumentParser(cls, *args, **kwargs):
         kwargs.pop("doBatch", False)
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         return parser
-    
+
     @classmethod
     def writeConfig(self, butler, clobber=False, doBackup=False):
         pass
-
     def writeSchemas(self, butler, clobber=False, doBackup=False):
         pass
-    
     def writeMetadata(self, dataRef):
         pass
-    
     def writeEupsVersions(self, butler, clobber=False, doBackup=False):
         pass
-    
     def _getConfigName(self):
         return None
-   
     def _getEupsVersionsName(self):
         return None
-    
     def _getMetadataName(self):
         return None
