@@ -80,6 +80,8 @@ class cartesianGrid3D():
         self.pozPdfAve=None
 
     def pixelize_data(self,x,y,z,v,ws=None):
+        if ws is None:
+            ws=np.ones(len(x))/0.25**2.
         xbin=np.int_((x-self.xbound[0])/self.delta)
         ybin=np.int_((y-self.ybound[0])/self.delta)
         if z is None:
@@ -104,13 +106,11 @@ class cartesianGrid3D():
                     rl2=(x[mskx]-xc)**2.+(y[mskx]-yc)**2.
                     wg=1./np.sqrt(2.*np.pi)/self.sigma*np.exp(-rl2/self.sigma**2./2.)
                     wgsum=np.sum(wg)
-                    if ws is not None:
-                        wl=wg*ws[mskx]
-                    else:
-                        wl=wg/(0.25**2.)
+                    wl=wg*ws[mskx]
                     if wgsum>0.1:
                         dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
-                        varOut[iz,iy,ix]=2.*np.sum(wg**2.)/(np.sum(wl))**2.
+                        varOut[iz,iy,ix]=2.*np.sum(wg**2.*ws[mskx])/(np.sum(wl))**2.
+                        # 2 is to account for 2 components of shear (g1 and g2)
         return dataOut,varOut
 
     def lensing_kernel(self,poz_bins=None,poz_data=None,poz_best=None):
