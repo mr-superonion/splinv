@@ -36,12 +36,12 @@ def process(isim):
 
     outfname1='stampSim/HSC-like/process-equalNum/pixShearR-g1-%d-%d.fits' %(iz,im)
     outfname2='stampSim/HSC-like/process-equalNum/pixShearR-g2-%d-%d.fits' %(iz,im)
-    pyfits.writeto(outfname1,pixDatAll.real)
-    pyfits.writeto(outfname2,pixDatAll.imag)
+    pyfits.writeto(outfname1,pixDatAll.real,overwrite=True)
+    pyfits.writeto(outfname2,pixDatAll.imag,overwrite=True)
 
     pixNumAll=outcome[1]
     outfname3='stampSim/HSC-like/process-equalNum/pixVarR-%d-%d.fits' %(iz,im)
-    pyfits.writeto(outfname3,pixNumAll)
+    pyfits.writeto(outfname3,pixNumAll,overwrite=True)
     return
 
 if __name__=="__main__":
