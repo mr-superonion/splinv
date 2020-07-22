@@ -7,7 +7,6 @@
 \renewcommand\theenumi\labelenumi
 %\newcommand{\jcap}{JCAP}
 
-
 \usepackage{amsmath,amsthm,amsfonts,amssymb,bm}
 \usepackage{listings}
 \usepackage{multirow}
@@ -19,7 +18,7 @@
 \usepackage{natbib}
 \usepackage{commath}
 \hypersetup{breaklinks}
-
+\DeclareMathOperator{\arccosh}{arccosh}
 
 \begin{document}
 \title{Sparsity Weak Lensing Mass Reconstruction}
@@ -57,11 +56,25 @@
 \end{abstract}
 
 \section{Introduction}
-...
-\section{The Problem}
+Light from distant galaxies is lensed by the foreground inhomogeneous density distribution along the line-of-sight 
+due to the influence of gravity and the shapes of the foreground galaxies are distorted due to the lensing effect. 
+Such effect, which is known as weak lensing, imprints the information of foreground density distribution to the 
+background galaxies and offers a direct probe into the mass density distribution in the universe. 
 
-\subsection{Density Contrast to Shear}
-The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground inhomogeneous density distribution is
+This paper is organized as follows. 
+Section \ref{sec:MethodAll} proposes the new method for $3$-D mass map reconstruction. 
+Section \ref{sec:Sim} introduces the realistic simulations we use to test the new method.
+Section \ref{sec:Res} presents the results of our method on the simulations.
+Section \ref{sec:Sum} summarizes and discusses the future development of the method.
+
+\section{Methodology}
+\label{sec:MethodAll}
+
+\subsection{The Problem}
+\subsubsection{Density Contrast to Shear}
+We first review how the foreground density contrast induces the shear distortion on background galaxies.
+The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground 
+inhomogeneous density distribution is
 
 \begin{figure*}
  \includegraphics[width=0.95\textwidth]{nfwlet-atom-2D.pdf}
@@ -98,17 +111,16 @@ where
 \end{split}
 \end{equation}
 
-
 Combine equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}) and we have
 \begin{equation}\label{eq-delta2gamma-z}
 \vecb{\gamma}(\vec{\theta},z_s) = \int_0^{z_s} dz_l \frac{\delta_c(z_l,+\infty)}{\delta_{c}(z_l,z_s)} \int d^2 \theta'  \vecb{D}(\vec{\theta}-\vec{\theta'}) \frac{\delta(\vec{\theta'},z_l)}{\delta_c(z_l,+\infty)}.
 \end{equation}
 
+\subsubsection{Photo-$z$ Uncertainty}
 \begin{figure}
  \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
  \caption{The $1$-D slices of NFW atoms with different scale radius ($r_s=0,1,2,4,8$).}
 \end{figure}
-\subsection{Photo-$z$ Uncertainty}
 Since the redshifts of source galaxies are estimated with a limited number of photometric bands, the estimated redshift of a galaxy suffer from large uncertainty. The probability distribution function (PDF) of a galaxies at position $(\vec{\theta},z_s)$ is denoted as $\mathcal{P}(z|z_s)$.  Note that, in order to simplify the future calculation, we assume the variation of the PDF across the transverse plane is small and neglect the dependency on the transverse position.
 
 Taking the uncertainty of redshift into account, equation (\ref{eq-delta2gamma-z}) changes to
@@ -125,7 +137,8 @@ P(z_l,z_s)&=\int \frac{\delta_c(z_l,+\infty)}{\delta_{c}(z_l,z)} \mathcal{P}(z|z
 Q(\vec{\theta},\vec{\theta'},z_l)&=\frac{\vecb{D}(\vec{\theta}-\vec{\theta'})}{\delta_c(z_l,+\infty)}.
 \end{split}
 \end{equation}
-\subsection{Smoothing}
+
+\subsubsection{Smoothing}
 Since the observed galaxies have random irregular (unequally-spaced) distribution, it is necessary to smooth the shear signal in the observation. The smoothing is expressed as follows
 \begin{equation}
 \gamma_S  (\vec{\theta},z)  = \frac{\sum_i  W(\vec{\theta}-\vec{{\theta}}_i,z-z_i) e_i}{\sum_i W(\vec{\theta}-\vec{{\theta}}_i,z-z_i) R_i},
@@ -168,7 +181,7 @@ Q_S(\vec{\theta},\vec{\theta'},z_l)&=\int d^2\theta'' W_T( \vec{\theta} -\vec{\t
 \end{equation}
 
 
-\subsection{Mask and Noise}
+\subsubsection{Mask and Noise}
 In real observations, the influence of mask and noise should also be taken into account. The final observed shear is
 \begin{equation}\label{eq-delta2gamma-final}
 \gamma_o(\vec{\theta},z)=M(\vec{\theta},z) \gamma(\vec{\theta},z) + \epsilon(\vec{\theta},z),
@@ -181,10 +194,10 @@ We can write equation (\ref{eq-delta2gamma-final}) into
 \end{equation}
 where $\mathbf{M}$,  $\mathbf{P}$ and $\mathbf{Q}$ represent the functional operators $M$, $P$ and $Q$, respectively.
 
-\section{The Method}
+\subsection{The Method}
 \label{sec:kappaMap}
 
-\subsection{Dictionary}
+\subsubsection{Dictionary}
 Since many $N$-body simulations have shown the dark matter to be largely distributed in halos connected by filaments,
 we assume that the density contrast field can be decomposed into multi-scaled NFW halo \citep{halo-NFW1997ApJ} and point mass at different positions
 \begin{equation}
@@ -208,9 +221,9 @@ where
 \begin{equation}
 F(x)=
 \begin{cases}
--\frac{\sqrt{c^2-x^2}}{(1-x^2)(1+c)} + \frac{1}{(1-x^2)^{3/2}} \mathrm{arccosh} (\frac{x^2+c}{x(1+c)}) & (x<1),\\
+-\frac{\sqrt{c^2-x^2}}{(1-x^2)(1+c)} + \frac{\arccosh \left(\frac{x^2+c}{x(1+c)}\right)}{(1-x^2)^{3/2}}  & (x<1),\\
 \frac{\sqrt{c^2-1}}{3(1+c)} (1+\frac{1}{c+1}) & (x=1),\\
--\frac{\sqrt{c^2-x^2}}{(1-x^2)(1+c)} + \frac{1}{(x^2-1)^{3/2}} \mathrm{arccos} (\frac{x^2+c}{x(1+c)}) & (1<x\leq c),\\
+-\frac{\sqrt{c^2-x^2}}{(1-x^2)(1+c)} + \frac{\arccos\left(\frac{x^2+c}{x(1+c)}\right)}{(x^2-1)^{3/2}} & (1<x\leq c),\\
 0& (x>c).
 \end{cases}
 \end{equation}
@@ -232,12 +245,13 @@ Equation (\ref{eq-delta2gamma-operator-final}) changes to
 \gamma=\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha +\epsilon.
 \end{equation}
 
-\subsection{Loss Function with Constrains}
+\subsubsection{Loss Function with Constrains}
 \begin{figure}
  \centering
  \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
  \caption{The source galaxies are binned into $10$ redshift bins according to their mlz best photo-$z$ estimation. The blue histogram is the number distribution of the best photo-$z$ estimation. The vertical dashed lines are the bounds of bins. The galaxies are evenly distributed in each bins.}
 \end{figure}
+
 The loss function is defined as
 \begin{equation}\label{eq-lossFun}
 L = \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_2+\lambda \norm{\alpha}^1_1 + \tau\mathrm{TSV}(\alpha_0),
@@ -253,6 +267,12 @@ The $\mathrm{TSV}$ operator is defined as
 \end{equation}
 where $i=1..N_\theta$, $j=1..N_\theta$, are the pixel indexes for the two dimensions on the transverse plane, $k=1..N_l$ is the pixel index on the line-of-sight direction.
 
+\begin{figure}
+ \centering
+ \includegraphics[width=0.5\textwidth]{mlz-poz.pdf}
+ \caption{The PDF of photo-$z$ error for $10$ source redshift bins.}
+\end{figure}
+
 We define
 \begin{equation}
 \begin{split}
@@ -262,26 +282,17 @@ f(\alpha) &= \norm{\gamma-\mathbf{M}\mathbf{P}\mathbf{Q}\mathbf{\Phi} \alpha}^2_
 \end{equation}
 where $l,m$ go over the indexes of $(i,j,k,s)$.
 
-\begin{figure}
- \centering
- \includegraphics[width=0.5\textwidth]{mlz-poz.pdf}
- \caption{The PDF of photo-$z$ error for $10$ source redshift bins.}
-\end{figure}
 
 \begin{figure}
  \centering
  \includegraphics[width=0.5\textwidth]{lensing_efficiency.pdf}
- \caption{The blue line shows the normalized lensing efficiency for lens bin at $z_{l}=0.51$. The orange line is the normalized lensing efficiency while taking into account the photo-$z$ uncertainty.}
+ \caption{The blue line shows the normalized lensing efficiency for lens bin at $z_{l}=0.51$. 
+ The orange line is the normalized lensing efficiency while taking into account the photo-$z$ uncertainty. 
+ The green data points show the averaged $\kappa$ field for different redshift bins in the simulation.}
 \end{figure}
 
 
-\begin{figure}
- \centering
- \includegraphics[width=0.5\textwidth]{noise_std_map_pix.pdf}
- \caption{The standard deviation map of shear measreuemnt error for the fifth source bin ($0.69 \leq z < 0.80 $).}
-\end{figure}
-
-\subsection{FISTA}
+\subsubsection{FISTA}
 The basic FISTA algorithms is
 \begin{equation}
 X^{(n+1)}_m=\mathrm{ST}_{\lambda} (\alpha_m -\frac{\mu}{2A_{mm}} \frac{\partial f}{\partial \alpha_m})|_{\alpha^{(n)}_m} ,
@@ -291,27 +302,65 @@ where
 \mathrm{ST}_{\lambda} (x) = \mathrm{sign} (x) \max (\abs{x}-\lambda,0)
 \end{equation}
 is the soft thresholding function.
+
 \begin{equation}
 \begin{split}
 t^{(n+1)} &= \frac{1+\sqrt{1+4(t^{(n)})^2}}{2},\\
-\alpha^{(n+1)}_m&=X^{(n+1)}_m+[\frac{t^{(n)}-1}{t^{(n+1)}}(X^{(n+1)}_m-X^{(n)}_m)],
+\alpha^{(n+1)}_m& = X^{(n+1)}_m+[\frac{t^{(n)}-1}{t^{(n+1)}}(X^{(n+1)}_m-X^{(n)}_m)].
 \end{split}
 \end{equation}
-with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
+The iteration is initialized with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
 
-\section{HSC-like Simulation}
-
-
-\subsection{Shear Measurement Error}
-\subsection{Photo-$z$ Error}
-
+\section{Simulation}
+\label{sec:Sim}
+This section simulates lensing shear fields induced by a group of dark matter halos with various halo mass and redshifts.
+HSC-like shape measurement error and photo-$z$ error are added to the shear field.
 
 
+\subsection{Weak Lensing Fields}
+
+We simulate weak lensing shear fields of NFW halos according to \citet{haloModel-TJ2003-3pt} 
+and sample halos in the mass-redshift plane as shown in Figure \ref{fig:mass-redshift}.
+We assume a dependency of the concentration on the mass and the redshift of a halo 
+\begin{equation}
+c_{h}=6.02\times(\frac{M_{200}}{10^{13} M_{\odot}})^{-0.12}(\frac{1.47}{1.+z_h})^{0.16}.
+\end{equation}
+
+
+\begin{figure}[!ht]
+ \centering
+ \includegraphics[width=0.45\textwidth]{mass-redshift-sampling.pdf}
+ \caption{The sampling points of halos in the mass-redshift plane.}
+ \label{fig:mass-redshift}
+\end{figure}
+
+\subsection{HSC-like Errors}
+\subsubsection{Shear Measurement Error}
+\begin{figure}[!ht]
+ \centering
+ \includegraphics[width=0.45\textwidth]{shapeMeasurementError-HSCY1.pdf}
+ \caption{HSC-like measurement error on the first component of shear ($g_1$).}
+ \label{fig:mass-redshift}
+\end{figure}
+
+\subsubsection{Photo-$z$ Error} 
 
 \section{Results}
+\label{sec:Res}
+
+\subsection{Detection Rate}
+
+\subsection{Mass and Redshift Estimation}
 
 
 \section{Summary}
+\label{sec:Sum}
+
+\begin{figure}[!ht]
+ \centering
+ \includegraphics[width=0.45\textwidth]{noise_std_map_pix.pdf}
+ \caption{The standard deviation map of shear measurement error for the fifth source bin ($0.69 \leq z < 0.80 $).}
+\end{figure}
 
 \bibliographystyle{aasjournal}
 \bibliography{weak_lensing,lensCat,cosmoSim,cmbObs,gglens,shearCor,massMap,other}
