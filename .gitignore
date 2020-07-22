@@ -8,6 +8,7 @@ __*
 *.dvi
 *.aux
 *.synctex.gz
+*.ipynb_checkpoints*
 *.tex.bak
 work*
 wrkDir*
