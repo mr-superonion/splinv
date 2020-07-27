@@ -73,24 +73,31 @@ Section \ref{sec:Sum} summarizes and discusses the future development of the met
 \subsection{The Problem}
 \subsubsection{Density Contrast to Shear}
 We first review how the foreground density contrast induces the shear distortion on background galaxies.
-The lensing distortion $\kappa$ at a position $\vec{x}=(\vec{\theta}$, $\chi_s$) caused by the foreground 
-inhomogeneous density distribution is
+The lensing distortion $\kappa$ at a comoving distance $\chi_s$ caused by the foreground inhomogeneous 
+density distribution at a comoving distance $\chi_l$ ($\chi_l< \chi_s$) is
 
 \begin{figure*}
- \includegraphics[width=0.95\textwidth]{nfwlet-atom-2D.pdf}
- \caption{The NFW atom with different scale radius ($r_s$). The first row shows the NFW atoms in Fourier space and the second row shows the NFW atom in Real space.}
+    \includegraphics[width=0.95\textwidth]{nfwlet-atom-2D.pdf}
+    \caption{The NFW atom with different scale radius ($r_s$). The first row shows the NFW atoms in Fourier 
+            space and the second row shows the NFW atom in Real space.}
 \end{figure*}
 
 
 \begin{equation}
-\kappa(\vec{\theta},\chi_s)=\frac{3H_0^2\Omega_M}{2 c^2} \int_0^{\chi_s} d\chi_l \frac{\chi_l \chi_{sl}}{\chi_s} \frac{\delta(\chi_l \vec{\theta},\chi_l)}{a(\chi_l)}
+\kappa(\vec{\theta},\chi_s)=\frac{3H_0^2\Omega_M}{2 c^2} \int_0^{\chi_s} d\chi_l \frac{\chi_l \chi_{sl}}{\chi_s}
+\frac{\delta(\vec{\theta},\chi_l)}{a(\chi_l)},
 \end{equation}
 \citep{massMap-Glimpse3D2014}.
-Substitute angular distance $D$ with redshift $z$ and we have
+where $\chi$ refers to the comoving distance, $\delta=\rho(\vec{\theta},\chi_l)/\bar{\rho}-1$ is the density contrast
+at the position of lens, $H_0$ is the Hubble parameter, $\Omega_M$ is the matter density parameter, $c$ is the speed 
+of light, and $a(\chi_l)$ is the scale parameter at the lens position. 
+
+Substitute comoving distance ($\chi$) with redshift ($z$)
+$z$ and we have
 \begin{equation}\label{eq-delta2kappa}
 \kappa(\vec{\theta},z_s)=\int_0^{z_s} dz_l \delta_{c}^{-1}(z_l,z_s)\delta(\vec{\theta},z_l).
 \end{equation}
-we term $\delta_{c}(z_l,z_s)$ as lensing critical density contrast and define it as
+We term $\delta_{c}(z_l,z_s)$ as lensing critical density contrast and define it as
 \begin{equation}
 \delta_{c}^{-1}(z_l,z_s) =
 \begin{cases}
@@ -99,7 +106,7 @@ we term $\delta_{c}(z_l,z_s)$ as lensing critical density contrast and define it
 \end{cases}
 \end{equation}
 
-As reported in \citet{massMap-KS1993}, the shear distortion is
+As shown in \citet{massMap-KS1993}, the shear distortion is related to the kappa field at the redshift plane as
 \begin{equation}\label{eq-kappa2gamma}
 \vecb{\gamma}(\vec{\theta},z_s) = \int \vecb{D}(\vec{\theta}-\vec{\theta'}) \kappa(\vec{\theta'},z_s) d^2 \theta,
 \end{equation}
@@ -121,7 +128,11 @@ Combine equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}) and
  \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
  \caption{The $1$-D slices of NFW atoms with different scale radius ($r_s=0,1,2,4,8$).}
 \end{figure}
-Since the redshifts of source galaxies are estimated with a limited number of photometric bands, the estimated redshift of a galaxy suffer from large uncertainty. The probability distribution function (PDF) of a galaxies at position $(\vec{\theta},z_s)$ is denoted as $\mathcal{P}(z|z_s)$.  Note that, in order to simplify the future calculation, we assume the variation of the PDF across the transverse plane is small and neglect the dependency on the transverse position.
+Since the redshifts of source galaxies in the current large scale survey are estimated with a limited 
+number of photometric bands, the estimated redshift of a single galaxy suffers from large uncertainty. 
+We denote the probability of a galaxies, with photo-$z$ estimated as $z_s$, being  located at redshift 
+$z$ as $\mathcal{P}(z|z_s)$.  Note that, in order to simplify the future calculation, we assume the 
+variation of the PDF across the transverse plane is small and neglect such variation.
 
 Taking the uncertainty of redshift into account, equation (\ref{eq-delta2gamma-z}) changes to
 \begin{equation}\label{eq-delta2gamma-poz}
@@ -315,7 +326,6 @@ The iteration is initialized with $t^{(0)}=1$ and $X^{(0)}=\alpha^{(0)}$.
 \label{sec:Sim}
 This section simulates lensing shear fields induced by a group of dark matter halos with various halo mass and redshifts.
 HSC-like shape measurement error and photo-$z$ error are added to the shear field.
-
 
 \subsection{Weak Lensing Fields}
 
