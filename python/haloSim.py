@@ -474,7 +474,10 @@ class nfw_lensTJ03():
         return DeltaSigma1+1j*DeltaSigma2
 
     def lensKernel(self,z_s):
-        """Lensing kernel of halo as function of source redshift.
+        """
+        # Note that this lensing kernel is from surface density at lens redshfit
+        # to kappa at source redshift
+        Lensing kernel of halo as function of source redshift.
         @param z_s        redshift of sources.
         """
         # convenience: call with single number

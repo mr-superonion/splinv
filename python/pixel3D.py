@@ -4,6 +4,23 @@ import cosmology
 import numpy as np
 from configparser import ConfigParser
 
+C_LIGHT=2.99792458e8        # m/s
+GNEWTON=6.67428e-11         # m^3/kg/s^2
+KG_PER_SUN=1.98892e30       # kg/M_solar
+M_PER_PARSEC=3.08568025e16  # m/pc
+
+
+def four_pi_G_over_c_squared():
+    # = 1.5*H0^2/roh_0/c^2
+    # We want it return 4piG/c^2 in unit of Mpc/M_solar
+    # in unit of m/kg
+    fourpiGoverc2 = 4.0*np.pi*GNEWTON/(C_LIGHT**2)
+    # in unit of pc/M_solar
+    fourpiGoverc2 *= KG_PER_SUN/M_PER_PARSEC
+    # in unit of Mpc/M_solar
+    fourpiGoverc2 /= 1.e6
+    return fourpiGoverc2
+
 class cartesianGrid3D():
     # pixel3D.cartesianGrid3D
     def __init__(self,parser):
@@ -53,6 +70,7 @@ class cartesianGrid3D():
             assert nz>=1
             zmax=zmin+deltaz*(nz+0.1)
             zbound=np.arange(zmin,zmax,deltaz)
+
         zcgrid=(zbound[:-1]+zbound[1:])/2.
         self.zbound=zbound
         self.zcgrid=zcgrid
@@ -89,7 +107,11 @@ class cartesianGrid3D():
             assert self.shape[0]==1
         dataOut=np.zeros(self.shape,v.dtype)
         varOut=np.zeros(self.shape,dtype=float)
-        rsig=int(self.sigma/self.delta*3+1)
+        # sample to 3 times of sigma
+        if self.sigma>0:
+            rsig=int(self.sigma/self.delta*3+1)
+        else:
+            rsig=0.5
         for iz in range(self.shape[0]):
             if z is not None:
                 mskz=(z>=self.zbound[iz])&(z<self.zbound[iz+1])
@@ -104,44 +126,50 @@ class cartesianGrid3D():
                     if not np.sum(mskx)>=1:
                         continue
                     rl2=(x[mskx]-xc)**2.+(y[mskx]-yc)**2.
+                    # convolve with Gaussian kernel
                     wg=1./np.sqrt(2.*np.pi)/self.sigma*np.exp(-rl2/self.sigma**2./2.)
                     wgsum=np.sum(wg)
                     wl=wg*ws[mskx]
                     if wgsum>0.1:
                         dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
-                        varOut[iz,iy,ix]=2.*np.sum(wg**2.*ws[mskx])/(np.sum(wl))**2.
+                        #varOut[iz,iy,ix]=2.*np.sum(wg**2.*ws[mskx])/(np.sum(wl))**2.
                         # 2 is to account for 2 components of shear (g1 and g2)
-        return dataOut,varOut
+        return dataOut
 
-    def lensing_kernel(self,poz_bins=None,poz_data=None,poz_best=None):
-        assert (poz_bins is None)==(poz_data is None)==(poz_best is None), \
+    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None):
+        # Note that this lensing kernel is from an average delta in
+        # a lens redshfit bin to an average kappa in a source redshift
+        assert (poz_grids is None)==(poz_data is None)==(poz_best is None), \
             'Please provide both photo-z bins and photo-z data'
         assert (self.nzl==1)==(self.nz==1), \
             'number of lens plane and source plane'
         if self.nzl<=1:
             return np.ones((self.nz,self.nzl))
         lensKernel =   np.zeros((self.nz,self.nzl))
-        if poz_bins is None:
+        if poz_grids is None:
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
                 mask=  (zl<self.zcgrid)
-                kl[mask] =   self.cosmo.Da(zl,self.zcgrid[mask])*self.cosmo.Da(0.,zl)/self.cosmo.Da(0.,self.zcgrid[mask])
+                kl[mask] =   self.cosmo.Da(zl,self.zcgrid[mask])*self.cosmo.Da(0.,zl)\
+                        /self.cosmo.Da(0.,self.zcgrid[mask])
                 kl*=four_pi_G_over_c_squared()
                 # Sigma_M_zl_bin
+                # Surface masss density in lens bin
                 rhoM_ave=self.cosmo.rho_m(zl)
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensKernel[:,i]=kl*rhoM_ave*DaBin
         else:
             assert len(poz_data)==len(poz_best)
-            assert len(poz_data[0])==len(poz_bins)
+            assert len(poz_data[0])==len(poz_grids)
 
-            # determine the lensing kernel
-            lensK =   np.zeros((len(poz_bins),self.nzl))
+            # determine the lensing kernel for each lens bin
+            # on the input poz grid
+            lensK =   np.zeros((len(poz_grids),self.nzl))
             for i,zl in enumerate(self.zlcgrid):
-                kl=np.zeros(len(poz_bins))
-                mask= (zl<poz_bins)
+                kl=np.zeros(len(poz_grids))
+                mask= (zl<poz_grids)
                 #Dsl*Dl/Ds
-                kl[mask] =   self.cosmo.Da(zl,poz_bins[mask])*self.cosmo.Da(0.,zl)/self.cosmo.Da(0.,poz_bins[mask])
+                kl[mask] =   self.cosmo.Da(zl,poz_grids[mask])*self.cosmo.Da(0.,zl)/self.cosmo.Da(0.,poz_grids[mask])
                 kl*=four_pi_G_over_c_squared()
                 # Sigma_M_zl_bin
                 rhoM_ave=self.cosmo.rho_m(zl)
@@ -149,7 +177,7 @@ class cartesianGrid3D():
                 lensK[:,i]=kl*rhoM_ave*DaBin
 
             # determine the average photo-z uncertainty
-            pdfAve=np.zeros((self.nz,len(poz_bins)))
+            pdfAve=np.zeros((self.nz,len(poz_grids)))
             self.pozPdfAve=pdfAve
             for iz in range(self.nz):
                 tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
