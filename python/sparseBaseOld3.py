@@ -154,10 +154,6 @@ class massmapSparsityTask():
             from halolet import nfwlet2D
             self.dict2D =   nfwlet2D(nframe=self.nframe,ngrid=self.nx,smooth_scale=smooth_scale)
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
-        self.shearNolensKerAtom =   np.zeros((self.nframe,self.ny,self.nx),dtype=np.complex128)
-        for iframe in range(self.nframe):
-            self.shearNolensKerAtom[iframe,:,:] \
-            = self.ks2D.transform(self.dict2D.fouaframes[iframe,:,:],outFou=False)
 
         # Read pixelized shear and mask
         sigfname    =   parser.get('prepare','sigmafname')
@@ -173,7 +169,7 @@ class massmapSparsityTask():
         self.mask   =   (self.sigmaS>=1.e-4)
 
         # Estimate Spectrum
-        self.fast_spectrum_norm()
+        self.spectrum_norm()
 
         # Estimate variance plane for alpha
         self.prox_sigmaA(100)
@@ -203,16 +199,6 @@ class massmapSparsityTask():
                 self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)*self.zlscale
         return
 
-    def get_basis_vector(self,ind):
-        assert np.all((np.array(self.shapeA)-np.array(ind))>=0),\
-            'index not in the projector space'
-        alphaTmp    =   np.zeros(self.shapeA)
-        alphaTmp[ind]=  1.
-        return self.main_forward(alphaTmp)
-
-    def project_obs_shear(self):
-        return self.chi2_transpose(self.shearR)     #A_{i\alpha}y_i/(A_{i\alpha}A_{i\alpha})
-
     def main_forward(self,alphaRIn):
         shearOut    =   np.zeros(self.shapeS,dtype=np.complex128)
         for zl in range(self.nlp):
@@ -240,71 +226,52 @@ class massmapSparsityTask():
             alphaRO[zl,:,:,:]=self.dict2D.itranspose(deltaFTmp[zl],outFou=False).real
         return alphaRO
 
-    def gradient_chi2(self,ind=None):
+    def gradient_chi2(self):
         # sparseBase.massmapSparsityTask.gradient_chi2
         # calculate the gradient of the chi2 component
-        if ind is None:
-            shearRTmp       =   self.main_forward(self.alphaR)  #A_{ij} x_j
-            self.shearRRes  =   self.shearR-shearRTmp       #y_i-A_{ij} x_j
-            return -self.chi2_transpose(self.shearRRes)     #-A_{i\alpha}(y_i-A_{ij} x_j)/2
-        else:
-            pass
+        shearRTmp   =   self.main_forward(self.alphaR)  #A_{ij} x_j
+        self.shearRRes   =   self.shearR-shearRTmp      #y_i-A_{ij} x_j
+        return -self.chi2_transpose(self.shearRRes)     #-A_{i\alpha}(y_i-A_{ij} x_j)/2
 
-    def gradient_TSV(self,ind=None):
+    def gradient_TSV(self):
         # sparseBase.massmapSparsityTask.gradient_TSV
         # calculate the gradient of the Total Square Variance(TSV) component
-        if ind is None:
-            # finite difference operator
-            difx    =   np.roll(self.alphaR,1,axis=-1)
-            difx    =   difx-self.alphaR #D1
-            # Transpose of the finite difference operator
-            gradx   =   np.roll(difx,-1,axis=-1)
-            gradx   =   gradx-difx # (S_1)_{i\alpha} (S1)_{i\alpha} x_\alpha
 
-            # The same for the theta2 direction
-            dify    =   np.roll(self.alphaR,1,axis=-2)
-            dify    =   dify-self.alphaR #D2
-            grady   =   np.roll(dify,-1,axis=-2)
-            grady   =   grady-dify # (S)_{ij} (S_2)_{i\alpha} x_\alpha
-            return (gradx+grady)*self.tau
-        else:
-            pass
+        # finite difference operator
+        difx    =   np.roll(self.alphaR,1,axis=-1)
+        difx    =   difx-self.alphaR #D1
+        # Transpose of the finite difference operator
+        gradx   =   np.roll(difx,-1,axis=-1)
+        gradx   =   gradx-difx # (S1)_{i\alpha} (S1)_{i\alpha} x_\alpha
 
-    def gradient_ridge(self,ind=None):
+        # The same for the theta2 direction
+        dify    =   np.roll(self.alphaR,1,axis=-2)
+        dify    =   dify-self.alphaR #D2
+        grady   =   np.roll(dify,-1,axis=-2)
+        grady   =   grady-dify # (S)_{ij} (S)_{i\alpha} x_j
+        return (gradx+grady)*self.tau
+
+    def gradient_ridge(self):
         # sparseBase.massmapSparsityTask.gradient_ridge
-        if ind is None:
-            return self.alphaR*self.eta
-        else:
-            pass
+        return self.alphaR*self.eta
 
-    def gradient(self,ind=None):
+    def gradient(self):
         # sparseBase.massmapSparsityTask.gradient
         # calculate the gradient of the Second order component in loss function
         # wihch includes Total Square Variance(TSV) and chi2 components
         gCh2    =   self.gradient_chi2()
         gTSV    =   self.gradient_TSV()
-        if ind is not None:
-            print(gCh2[ind])
+        gRidge  =   self.gradient_ridge()
+        return gCh2+gTSV+gRidge
 
-        return gCh2+gTSV
-
-    def get_basis_cov(self,ind1,ind2):
-        shearLR1=   np.roll(np.roll(self.shearNolensKerAtom[\
-            ind1[1]],ind1[2],axis=0),ind1[3],axis=1)
-        shearLR2=   np.roll(np.roll(self.shearNolensKerAtom[\
-            ind2[1]],ind2[2],axis=0),ind2[3],axis=1)
-        shearLR1=   shearLR1[None,:,:]*self.lensKernel[:,ind1[0],None,None]
-        shearLR2=   shearLR2[None,:,:]*self.lensKernel[:,ind2[0],None,None]
-        return np.sum(np.conj(shearLR1)*shearLR2*self.mask).real
-
-    def fast_spectrum_norm(self):
-        # sparseBase.massmapSparsityTask.fast_spectrum_norm
+    def spectrum_norm(self):
+        # sparseBase.massmapSparsityTask.spectrum_norm
         # Estimate A_{i\alpha} A_{i\alpha}
         asquareframe=np.zeros((self.nz,self.nframe,self.ny,self.nx))
         for iz in range(self.nz):
             maskF=np.fft.fft2(self.mask[iz,:,:])
             for iframe in range(self.nframe):
-                fun=np.abs(self.shearNolensKerAtom[iframe,:,:])**2.
+                fun=np.abs(self.ks2D.transform(self.dict2D.fouaframes[iframe,:,:],outFou=False))**2.
                 asquareframe[iz,iframe,:,:]=np.fft.ifft2(np.fft.fft2(fun).real*maskF).real
 
         spectrum=np.sum(self.lensKernel[:,:,None,None,None]**2.*asquareframe[:,None,:,:,:],axis=0)
@@ -344,67 +311,37 @@ class massmapSparsityTask():
         return
 
     def pathwise_coordinate_descent(self,iup,niter,threM='ST'):
-        self.lbd_path   =   np.ones(niter)*100
-        self.ind1list   =   []
-        self.projShear  =   self.project_obs_shear()
-        projCor         =   []
+        self.lbd_path=np.ones(niter)*100
+        ind1list    =   []
         for irun in range(1,niter):
-            self.dalphaR=   -self.mu*self.gradient().real
+            self.dalphaR =   -self.mu*self.gradient().real
             # Update thresholds
             snrArray=   np.abs(self.dalphaR)/self.sigmaA
             ind1d   =   np.argpartition(snrArray,-2,axis=None)[-2:]
             ind1st  =   np.unravel_index(ind1d[1],snrArray.shape)
             ind2st  =   np.unravel_index(ind1d[0],snrArray.shape)
             snr12   =   (snrArray[ind1st]+max(snrArray[ind2st],self.lbd))/2.
+
             self.lbd_path[irun]=min(snr12,self.lbd_path[irun-1]*0.99)
+            if irun %3==1:
+                print(irun,snr12,ind1st,self.lbd_path[irun],self.lbd*1.01)
             if self.lbd_path[irun]<=self.lbd*1.01:
                 self.lbd_path[irun:]=self.lbd
                 return
-            #self.thresholds=self.lbd_path[irun]*self.sigmaA
-            self.thresholds=self.lbd*self.sigmaA
+            self.thresholds=self.lbd_path[irun]*self.sigmaA
 
-            if irun%5==1:
-                print(irun,snr12,ind1st,self.lbd_path[irun],self.lbd*1.01)
+            # Determine the coordinates to update
+            if ind1st not in ind1list:
+                ind1list.append(ind1st)
 
-            # update the maximum projector
-            dum     =   self.alphaR[ind1st]+self.dalphaR[ind1st]
-
-            if threM=='ST':
-                self.alphaR[ind1st]  = soft_thresholding(dum,self.thresholds[ind1st])
-            elif threM=='FT':
-                self.alphaR[ind1st]  = firm_thresholding(dum,self.thresholds[ind1st])
-
-            # update the index list
-            if ind1st not in self.ind1list:
-                # if we find new maximum index
-                # add it to our targets
-                cors    =   []
-                for ind in self.ind1list:
-                    cors.append(self.get_basis_cov(ind,ind1st))
-                cors.append(1./self.mu0[ind1st])
-                self.ind1list.append(ind1st)
-                projCor.append(cors)
-                # make a symmetix matrix
-                pad =   len(max(projCor, key=len))
-                atmp=   np.array([i + [0]*(pad-len(i)) for i in projCor])
-                self.projCor=atmp + atmp.T - np.diag(atmp.diagonal())
-                assert self.projCor.shape[0]==len(self.ind1list)
-
-            # update projector
-            for indid in range(min(len(self.ind1list),10)):
-                indid   =   np.random.randint(len(self.ind1list))
-                indU    =   self.ind1list[indid]
-                pps     =   np.array([self.alphaR[ii] for ii in self.ind1list])
-                dch2    =   self.mu[indU]*(self.projShear[indU]-np.sum(self.projCor[indid]*pps))
-                dTSV    =   -self.mu[indU]*self.gradient_TSV()[indU]
-
-                #print(-self.mu[indU]*self.gradient().real[indU])
-                #print(dch2+dTSV)
-                dum     =   self.alphaR[indU]+dch2+dTSV
+            for i,ind in enumerate(ind1list):
+                dum     =   self.alphaR+self.dalphaR
                 if threM=='ST':
-                    self.alphaR[indU]  = soft_thresholding(dum,self.thresholds[indU])
+                    self.alphaR[ind]  = soft_thresholding(dum,self.thresholds)[ind]
                 elif threM=='FT':
-                    self.alphaR[indU]  = firm_thresholding(dum,self.thresholds[indU])
+                    self.alphaR[ind]  = firm_thresholding(dum,self.thresholds)[ind]
+                if i <len(ind1list):
+                    self.dalphaR =   -self.mu*self.gradient().real
 
             # Write (Display) the fits file
             if irun in self.debugList:

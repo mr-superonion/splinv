@@ -50,7 +50,7 @@ class nfwlet2D():
         self.aframes[0,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
 
         for iframe in range(self.nframe-1):
-            iAtomF=haloSim.haloCS02SigmaAtom(r_s=iframe+1,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
+            iAtomF=haloSim.haloCS02SigmaAtom(r_s=2.**iframe,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
             self.fouaframes[iframe+1,:,:]=iAtomF # Fourier Space
             self.aframes[iframe+1,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
 
@@ -88,6 +88,7 @@ class nfwlet2D():
             dataTmp=np.fft.fft2(dataIn)
         else:
             dataTmp=dataIn
+        # the atom is fourier space should be real and symmetric
         for iframe in range(self.nframe):
             dataTmp2=dataTmp*self.fouaframes[iframe,:,:]
             if not outFou:
