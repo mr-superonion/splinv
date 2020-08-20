@@ -348,6 +348,7 @@ class massmapSparsityTask():
         self.ind1list   =   []
         self.projShear  =   self.project_obs_shear()
         projCor         =   []
+        self.thresholds=self.lbd*self.sigmaA
         for irun in range(1,niter):
             self.dalphaR=   -self.mu*self.gradient().real
             # Update thresholds
@@ -356,12 +357,12 @@ class massmapSparsityTask():
             ind1st  =   np.unravel_index(ind1d[1],snrArray.shape)
             ind2st  =   np.unravel_index(ind1d[0],snrArray.shape)
             snr12   =   (snrArray[ind1st]+max(snrArray[ind2st],self.lbd))/2.
-            self.lbd_path[irun]=min(snr12,self.lbd_path[irun-1]*0.99)
+            #self.lbd_path[irun]=min(snr12,self.lbd_path[irun-1]*0.99)
+            self.lbd_path[irun]=snr12
             if self.lbd_path[irun]<=self.lbd*1.01:
                 self.lbd_path[irun:]=self.lbd
                 return
             #self.thresholds=self.lbd_path[irun]*self.sigmaA
-            self.thresholds=self.lbd*self.sigmaA
 
             if irun%5==1:
                 print(irun,snr12,ind1st,self.lbd_path[irun],self.lbd*1.01)
