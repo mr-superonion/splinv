@@ -9,7 +9,6 @@ GNEWTON=6.67428e-11         # m^3/kg/s^2
 KG_PER_SUN=1.98892e30       # kg/M_solar
 M_PER_PARSEC=3.08568025e16  # m/pc
 
-
 def four_pi_G_over_c_squared():
     # = 1.5*H0^2/roh_0/c^2
     # We want it return 4piG/c^2 in unit of Mpc/M_solar

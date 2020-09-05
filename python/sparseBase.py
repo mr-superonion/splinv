@@ -103,8 +103,6 @@ class massmapSparsityTask():
         else:
             self.eta   =   0.
         self.nframe =   parser.getint('sparse','nframe')
-        outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
-        self.outFname   =   os.path.join(self.outDir,outFname)
         # Do debug?
         if parser.has_option('sparse','debugList'):
             self.debugList  =   np.array(json.loads(parser.get('sparse','debugList')))
@@ -124,9 +122,9 @@ class massmapSparsityTask():
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
-            self.zlMin       =   parser.getfloat('lensZ','zlMin')
-            self.zlscale     =   parser.getfloat('lensZ','zlscale')
-        self.zlBin       =   zMeanBin(self.zlMin,self.zlscale,self.nlp)
+            self.zlMin  =   parser.getfloat('lensZ','zlMin')
+            self.zlscale=   parser.getfloat('lensZ','zlscale')
+        self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nlp)
 
         ##source z axis
         self.nz     =   parser.getint('sourceZ','nz')
@@ -159,34 +157,51 @@ class massmapSparsityTask():
             self.shearNolensKerAtom[iframe,:,:] \
             = self.ks2D.transform(self.dict2D.fouaframes[iframe,:,:],outFou=False)
 
-        # Read pixelized shear and mask
+        # Read pixelized sigma map for shear
         sigfname    =   parser.get('prepare','sigmafname')
-        g1fname     =   parser.get('prepare','g1fname')
-        g2fname     =   parser.get('prepare','g2fname')
         self.sigmaS =   pyfits.getdata(sigfname)
-        g1Map=pyfits.getdata(g1fname)
-        g2Map=pyfits.getdata(g2fname)
-        assert g1Map.shape  ==   self.shapeS, \
-            'load wrong pixelized shear, shape map shape: (%d,%d,%d)' %g1Map.shape
         assert self.sigmaS.shape  ==   self.shapeS, \
             'load wrong pixelized std, shape map shape: (%d,%d,%d)' %self.sigmaS.shape
         self.mask   =   (self.sigmaS>=1.e-4)
+        self.sigmaSInv=  np.zeros(self.shapeS)
+        self.sigmaSInv[self.mask]=  1./self.sigmaS[self.mask]
 
-        # Estimate Spectrum
-        self.fast_spectrum_norm()
+        # Estimate diagonal elements of the chi2 operator
+        diagName    =   os.path.join(self.outDir,'diagonal_%s.fits' %self.fieldN)
+        self.fast_chi2diagonal_est(writeto=diagName)
+        self.tau    *=  np.average(self.diagonal.flatten())
+        # Also the weight on projectors (to boost the speed)
+        if self.aprox_method != 'pathwise':
+            self._w =   np.sqrt(self.diagonal+4.*self.eta+1.e-12)
+        else:
+            self._w =   1.
 
-        # Estimate variance plane for alpha
-        self.prox_sigmaA(100)
+        # Estimate sigma map for alpha
         sigmaName   =   os.path.join(self.outDir,'sigmaA_%s.fits' %self.fieldN)
-        pyfits.writeto(sigmaName,self.sigmaA[:,self.display_iframe],overwrite=True)
-        muName   =   os.path.join(self.outDir,'mu_%s.fits' %self.fieldN)
-        pyfits.writeto(muName,self.mu[:,self.display_iframe],overwrite=True)
+        self.prox_sigmaA(writeto=sigmaName)
 
-        # Initialization
+        g1fname     =   parser.get('prepare','g1fname')
+        g2fname     =   parser.get('prepare','g2fname')
+        g1Map       =   pyfits.getdata(g1fname)
+        g2Map       =   pyfits.getdata(g2fname)
+        assert g1Map.shape  ==   self.shapeS, \
+            'load wrong pixelized shear, shape map shape: (%d,%d,%d)' %g1Map.shape
+        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
+
+        # Step size
+        self.mu =   None
+        self.clear_all()
+
+        # preparation for output
+        outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
+        self.outFname   =   os.path.join(self.outDir,outFname)
+        return
+
+    def clear_all(self):
+        # Clear results
         self.alphaR =   np.zeros(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
-        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
         return
 
     def lensing_kernel(self,zlbin,zsbin):
@@ -214,6 +229,9 @@ class massmapSparsityTask():
         return self.chi2_transpose(self.shearR)     #A_{i\alpha}y_i/(A_{i\alpha}A_{i\alpha})
 
     def main_forward(self,alphaRIn):
+        # transform from dictionary space to shear space
+        # self._w is the weight on the forward operator
+        alphaRIn    =   alphaRIn*self._w
         shearOut    =   np.zeros(self.shapeS,dtype=np.complex128)
         for zl in range(self.nlp):
             deltaFZl=   self.dict2D.itransform(alphaRIn[zl,:,:,:],inFou=False)
@@ -224,68 +242,54 @@ class massmapSparsityTask():
 
     def chi2_transpose(self,shearRIn):
         # initializate an empty delta map
-        deltaFTmp       =   np.zeros(self.shapeL,dtype=np.complex128)
+        alphaRO         =   np.zeros(self.shapeA,dtype=np.float64)
         for zs in range(self.nz):
             # For each source plane, we use KS method to get kappa
-            # D operator in the paper
             kappaFZs    =   self.ks2D.itransform(shearRIn[zs],inFou=False)
-            # Lensing Kernel transpose
-            # to density contrast frame
-            deltaFTmp  +=   (self.lensKernel[zs,:,None,None]*kappaFZs)
-        # initialize a projector space
-        alphaRO         =   np.empty(self.shapeA)
-        for zl in range(self.nlp):
-            # transpose of projection operator
-            # Phi in the paper
-            alphaRO[zl,:,:,:]=self.dict2D.itranspose(deltaFTmp[zl],outFou=False).real
-        return alphaRO
+            # Then project to alpha space on source plane
+            alphaRZs    =   self.dict2D.itranspose(kappaFZs,outFou=False).real
+            # Lensing Kernel transpose to density contrast frame
+            alphaRO     +=   (self.lensKernel[zs,:,None,None,None]*alphaRZs)
+        return alphaRO*self._w
 
-    def gradient_chi2(self,ind=None):
+    def gradient_chi2(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient_chi2
         # calculate the gradient of the chi2 component
-        if ind is None:
-            shearRTmp       =   self.main_forward(self.alphaR)  #A_{ij} x_j
-            self.shearRRes  =   self.shearR-shearRTmp       #y_i-A_{ij} x_j
-            return -self.chi2_transpose(self.shearRRes)     #-A_{i\alpha}(y_i-A_{ij} x_j)/2
-        else:
-            pass
+        shearRTmp       =   self.main_forward(alphaR)               #A_{ij} x_j
+        self.shearRRes  =   (self.shearR-shearRTmp)*self.sigmaSInv  #y_i-A_{ij} x_j
+        return -self.chi2_transpose(self.shearRRes*self.sigmaSInv)  #-A_{i\alpha}(y_i-A_{ij}x_j)
 
-    def gradient_TSV(self,ind=None):
+    def gradient_TSV(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient_TSV
         # calculate the gradient of the Total Square Variance(TSV) component
-        if ind is None:
-            # finite difference operator
-            difx    =   np.roll(self.alphaR,1,axis=-1)
-            difx    =   difx-self.alphaR #D1
-            # Transpose of the finite difference operator
-            gradx   =   np.roll(difx,-1,axis=-1)
-            gradx   =   gradx-difx # (S_1)_{i\alpha} (S1)_{i\alpha} x_\alpha
+        # finite difference operator
+        alphaR  =   alphaR*self._w
+        difx    =   np.roll(alphaR,1,axis=-1)
+        difx    =   difx-alphaR #D1
+        # Transpose of the finite difference operator
+        gradx   =   np.roll(difx,-1,axis=-1)
+        gradx   =   gradx-difx # (S_1)_{i\alpha} (S1)_{i\alpha} x_\alpha
 
-            # The same for the theta2 direction
-            dify    =   np.roll(self.alphaR,1,axis=-2)
-            dify    =   dify-self.alphaR #D2
-            grady   =   np.roll(dify,-1,axis=-2)
-            grady   =   grady-dify # (S)_{ij} (S_2)_{i\alpha} x_\alpha
-            return (gradx+grady)*self.tau
-        else:
-            pass
+        # The same for the theta2 direction
+        dify    =   np.roll(alphaR,1,axis=-2)
+        dify    =   dify-alphaR #D2
+        grady   =   np.roll(dify,-1,axis=-2)
+        grady   =   grady-dify # (S)_{ij} (S_2)_{i\alpha} x_\alpha
+        return (gradx+grady)*self.tau*self._w
 
-    def gradient_ridge(self,ind=None):
+    def gradient_ridge(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient_ridge
-        if ind is None:
-            return self.alphaR*self.eta
-        else:
-            pass
+        return alphaR*self.eta*self._w**2.
 
-    def gradient(self,ind=None):
+    def quad_gradient(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient
         # calculate the gradient of the Second order component in loss function
         # wihch includes Total Square Variance(TSV) and chi2 components
-        gCh2    =   self.gradient_chi2()
-        gTSV    =   self.gradient_TSV()
-        if ind is not None:
-            print(gCh2[ind])
-
+        gCh2    =   self.gradient_chi2(alphaR)
+        if self.tau>0.:
+            gTSV    =   self.gradient_TSV(alphaR)
+        else:
+            gTSV    =   0.
         return gCh2+gTSV
 
     def get_basis_cov(self,ind1,ind2):
@@ -297,83 +301,105 @@ class massmapSparsityTask():
         shearLR2=   shearLR2[None,:,:]*self.lensKernel[:,ind2[0],None,None]
         return np.sum(np.conj(shearLR1)*shearLR2*self.mask).real
 
-    def fast_spectrum_norm(self):
-        # sparseBase.massmapSparsityTask.fast_spectrum_norm
+    def fast_chi2diagonal_est(self,writeto=None):
+        # sparseBase.massmapSparsityTask.fast_chi2diagonal_est
         # Estimate A_{i\alpha} A_{i\alpha}
-        asquareframe=np.zeros((self.nz,self.nframe,self.ny,self.nx))
+        asquareframe=   np.zeros((self.nz,self.nframe,self.ny,self.nx))
         for iz in range(self.nz):
-            maskF=np.fft.fft2(self.mask[iz,:,:])
+            maskF   =   np.fft.fft2((self.sigmaSInv[iz]**2.))
             for iframe in range(self.nframe):
                 fun=np.abs(self.shearNolensKerAtom[iframe,:,:])**2.
                 asquareframe[iz,iframe,:,:]=np.fft.ifft2(np.fft.fft2(fun).real*maskF).real
 
-        spectrum=np.sum(self.lensKernel[:,:,None,None,None]**2.*asquareframe[:,None,:,:,:],axis=0)
+        self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
+                *asquareframe[:,None,:,:,:],axis=0)
 
-        # the first frame
-        #spectrum[:,0,:,:]=spectrum[:,0,:,:]+4.*self.tau
-        self.mu0=   1./spectrum
-        spectrum=   spectrum+4.*self.tau+self.eta
-        self.mu =   1./spectrum
+        if writeto is not None:
+            pyfits.writeto(writeto,self.diagonal[:,self.display_iframe],overwrite=True)
         return
 
-    def prox_sigmaA(self,niter):
+    def determine_step_size(self):
+        norm        =   0.
+        for irun in range(800):
+            # generate a normalized random vector
+            np.random.seed(irun)
+            alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)
+            normTmp =   np.sqrt(np.sum(alphaTmp**2.))
+            alphaTmp=   alphaTmp/normTmp
+            # apply the transform matrix to the vector
+            alphaTmp2=  self.quad_gradient(alphaTmp)
+            normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
+            if normTmp2>norm:
+                norm=normTmp2
+        self.mu    = 1./norm/1.15
+        return
+
+    def prox_sigmaA(self,writeto=None):
         logging.info('Estimating sigma map')
+        niter   =   100
+        # A_i\alpha n_i
         outData     =   np.zeros(self.shapeA)
         for irun in range(niter):
             np.random.seed(irun)
             g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
             g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            shearSim=   g1Sim+np.complex128(1j)*g2Sim
+            shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
             alphaRSim=  -self.chi2_transpose(shearSim)
             outData +=  alphaRSim**2.
 
-        #
+        # masked region is assigned with the maximum
         maskL =   np.all(self.sigmaS>1.e-4,axis=0)
         for izlp in range(self.nlp):
             for iframe in range(self.nframe):
                 outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
-        # noi_std/(A_i\alphaA_i\alpha)
-        self.sigmaA =   self.mu*np.sqrt(outData/niter)
+
+        # noi std
+        self.sigmaA =   np.sqrt(outData/niter)
+
+        if writeto is not None:
+            pyfits.writeto(writeto,self.sigmaA[:,self.display_iframe],overwrite=True)
         return
 
     def reconstruct(self):
         #update deltaR
+        alphaRW         =   self.alphaR.copy()*self._w
         for zl in range(self.nlp):
-            alphaRZ         =   self.alphaR[zl].copy()
-            self.deltaR[zl] =   self.dict2D.itransform(alphaRZ,inFou=False,outFou=False)
+            self.deltaR[zl] =   self.dict2D.itransform(alphaRW[zl],inFou=False,outFou=False)
         return
 
-    def pathwise_coordinate_descent(self,iup,niter,threM='ST'):
+    def pathwise_coordinate_descent(self,niter,threM='ST'):
+        # The step size is the inverse of the
+        # diagonal for coordinate descent
+        self.mu         =   1./(self.diagonal+4.*self.tau)
+        thresholds =   self.lbd*self.sigmaA*self.mu
+
+        # Do it pathwisely
         self.lbd_path   =   np.ones(niter)*100
         self.ind1list   =   []
         self.projShear  =   self.project_obs_shear()
         projCor         =   []
-        self.thresholds=self.lbd*self.sigmaA
         for irun in range(1,niter):
-            self.dalphaR=   -self.mu*self.gradient().real
+            self.dalphaR=   -self.mu*self.quad_gradient(self.alphaR).real
             # Update thresholds
-            snrArray=   np.abs(self.dalphaR)/self.sigmaA
+            snrArray=   np.abs(self.dalphaR)/(self.sigmaA*self.mu)
             ind1d   =   np.argpartition(snrArray,-2,axis=None)[-2:]
             ind1st  =   np.unravel_index(ind1d[1],snrArray.shape)
             ind2st  =   np.unravel_index(ind1d[0],snrArray.shape)
             snr12   =   (snrArray[ind1st]+max(snrArray[ind2st],self.lbd))/2.
-            #self.lbd_path[irun]=min(snr12,self.lbd_path[irun-1]*0.99)
             self.lbd_path[irun]=snr12
             if self.lbd_path[irun]<=self.lbd*1.01:
                 self.lbd_path[irun:]=self.lbd
                 return
-            #self.thresholds=self.lbd_path[irun]*self.sigmaA
 
             if irun%5==1:
                 print(irun,snr12,ind1st,self.lbd_path[irun],self.lbd*1.01)
 
             # update the maximum projector
             dum     =   self.alphaR[ind1st]+self.dalphaR[ind1st]
-
             if threM=='ST':
-                self.alphaR[ind1st]  = soft_thresholding(dum,self.thresholds[ind1st])
+                self.alphaR[ind1st]  = soft_thresholding(dum,thresholds[ind1st])
             elif threM=='FT':
-                self.alphaR[ind1st]  = firm_thresholding(dum,self.thresholds[ind1st])
+                self.alphaR[ind1st]  = firm_thresholding(dum,thresholds[ind1st])
 
             # update the index list
             if ind1st not in self.ind1list:
@@ -382,7 +408,7 @@ class massmapSparsityTask():
                 cors    =   []
                 for ind in self.ind1list:
                     cors.append(self.get_basis_cov(ind,ind1st))
-                cors.append(1./self.mu0[ind1st])
+                cors.append(self.diagonal[ind1st])
                 self.ind1list.append(ind1st)
                 projCor.append(cors)
                 # make a symmetix matrix
@@ -399,58 +425,51 @@ class massmapSparsityTask():
                 dch2    =   self.mu[indU]*(self.projShear[indU]-np.sum(self.projCor[indid]*pps))
                 dTSV    =   -self.mu[indU]*self.gradient_TSV()[indU]
 
-                #print(-self.mu[indU]*self.gradient().real[indU])
-                #print(dch2+dTSV)
                 dum     =   self.alphaR[indU]+dch2+dTSV
                 if threM=='ST':
-                    self.alphaR[indU]  = soft_thresholding(dum,self.thresholds[indU])
+                    self.alphaR[indU]  = soft_thresholding(dum,thresholds[indU])
                 elif threM=='FT':
-                    self.alphaR[indU]  = firm_thresholding(dum,self.thresholds[indU])
+                    self.alphaR[indU]  = firm_thresholding(dum,thresholds[indU])
 
             # Write (Display) the fits file
             if irun in self.debugList:
                 self.reconstruct()
                 ratioPlot=self.dalphaR/self.sigmaA
-                """
-                for il in range(self.nlp):
-                    print('max snr in %d lens bin is %.3f' %(il,ratioPlot[il].max()))
-                """
-                print(np.average(np.abs(self.shearRRes)**2.))
+                #for il in range(self.nlp):
+                #    print('max snr in %d lens bin is %.3f' %(il,ratioPlot[il].max()))
                 ratioPlot[ratioPlot<self.lbd]=0.
                 self.debugRatios.append(ratioPlot)
                 self.debugDeltas.append(self.deltaR.real)
                 self.debugAlphas.append(self.alphaR.real)
         return
 
-    def fista_gradient_descent(self,iup,niter,threM='ST'):
-        covInv=0.05 # TODO: Estimate covInv numerically?
-        self.sigmaA=self.sigmaA*covInv
-        self.mu=self.mu*covInv
-        self.thresholds =   self.lbd*self.sigmaA
-        tn=0
+    def fista_gradient_descent(self,niter,w=1.):
+        if self.mu is None:
+            # Determine step size self.mu
+            self.determine_step_size()
+        # The thresholds
+        thresholds =   self.lbd*self.sigmaA*self.mu*w
+        # FISTA algorithms
+        tn      =   1
+        Xp0     =   self.alphaR
         for irun in range(niter):
-            #save old kappaFou
-            self.dalphaR =   -self.mu*self.gradient().real
-            dum     =   self.alphaR+self.dalphaR
-            if threM=='ST':
-                dum  = soft_thresholding(dum,self.thresholds)
-            elif threM=='FT':
-                dum  = firm_thresholding(dum,self.thresholds)
-            #update x_\alpha according to FISTA
+            dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
+            Xp1 =   self.alphaR+dalphaR
+            Xp1 = soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
-            tn   = tnTmp
-            self.alphaR=dum+(ratio*(dum-self.alphaR))
-            # Write (Display) the fits file
+            self.alphaR=Xp1+(ratio*(Xp1-Xp0))
+            tn  = tnTmp
+            Xp0 =   Xp1
             if irun in self.debugList:
                 self.reconstruct()
         return
 
     def process(self,niter=1000):
         if self.aprox_method=='pathwise':
-            self.pathwise_coordinate_descent(0,niter,'ST')
+            self.pathwise_coordinate_descent(niter,'ST')
         elif self.aprox_method=='fista':
-            self.fista_gradient_descent(0,niter,'ST')
+            self.fista_gradient_descent(niter)
         self.reconstruct()
         return
 
