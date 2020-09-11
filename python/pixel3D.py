@@ -135,17 +135,17 @@ class cartesianGrid3D():
                         # 2 is to account for 2 components of shear (g1 and g2)
         return dataOut
 
-    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None):
+    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
         # Note that this lensing kernel is from an average delta in
         # a lens redshfit bin to an average kappa in a source redshift
-        assert (poz_grids is None)==(poz_data is None)==(poz_best is None), \
+        assert (poz_grids is not None)==((poz_data is not None==poz_best is not None) or poz_ave is not None), \
             'Please provide both photo-z bins and photo-z data'
         assert (self.nzl==1)==(self.nz==1), \
             'number of lens plane and source plane'
         if self.nzl<=1:
             return np.ones((self.nz,self.nzl))
         lensKernel =   np.zeros((self.nz,self.nzl))
-        if poz_grids is None:
+        if poz_grids is None and poz_ave is None:
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
                 mask=  (zl<self.zcgrid)
@@ -158,9 +158,6 @@ class cartesianGrid3D():
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensKernel[:,i]=kl*rhoM_ave*DaBin
         else:
-            assert len(poz_data)==len(poz_best)
-            assert len(poz_data[0])==len(poz_grids)
-
             # determine the lensing kernel for each lens bin
             # on the input poz grid
             lensK =   np.zeros((len(poz_grids),self.nzl))
@@ -175,12 +172,16 @@ class cartesianGrid3D():
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensK[:,i]=kl*rhoM_ave*DaBin
 
-            # determine the average photo-z uncertainty
-            pdfAve=np.zeros((self.nz,len(poz_grids)))
-            self.pozPdfAve=pdfAve
-            for iz in range(self.nz):
-                tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
-                pdfAve[iz,:]=np.average(poz_data[tmp_msk],axis=0)
-            lensKernel=pdfAve.dot(lensK)
+            if poz_ave is None:
+                assert len(poz_data)==len(poz_best)
+                assert len(poz_data[0])==len(poz_grids)
+
+                # determine the average photo-z uncertainty
+                poz_ave=np.zeros((self.nz,len(poz_grids)))
+                for iz in range(self.nz):
+                    tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
+                    poz_ave[iz,:]=np.average(poz_data[tmp_msk],axis=0)
+            self.poz_ave=poz_ave
+            lensKernel=poz_ave.dot(lensK)
             self.lensKernel=lensKernel
         return lensKernel
