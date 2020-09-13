@@ -27,7 +27,7 @@ class nfwlet2D():
     --------
     halolet.nfwlet2D(pltDir='plot')
     """
-    def __init__(self,nframe=4,ngrid=64,smooth_scale=3,pltDir=None):
+    def __init__(self,nframe=2,ngrid=64,smooth_scale=3,pltDir=None):
         assert ngrid%2==0,\
                 'Please make sure nx and ny are even numbers'
         # We force ny=nx, the user should ensure that by padding 0
@@ -50,7 +50,8 @@ class nfwlet2D():
         self.aframes[0,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
 
         for iframe in range(self.nframe-1):
-            iAtomF=haloSim.haloCS02SigmaAtom(r_s=2.**iframe,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
+            rs=1.5*(iframe+1.)
+            iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
             self.fouaframes[iframe+1,:,:]=iAtomF # Fourier Space
             self.aframes[iframe+1,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
 

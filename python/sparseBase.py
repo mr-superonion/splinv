@@ -141,7 +141,8 @@ class massmapSparsityTask():
         self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
 
         self.cosmo  =   cosmology.Cosmo(h=1)
-        self.lensing_kernel(self.zlBin,self.zsBin)
+        #self.lensing_kernel(self.zlBin,self.zsBin)
+        self.read_pixel_result(parser)
 
         dicname =   parser.get('sparse','dicname')
         if dicname=='starlet':
@@ -169,7 +170,7 @@ class massmapSparsityTask():
         # Estimate diagonal elements of the chi2 operator
         diagName    =   os.path.join(self.outDir,'diagonal_%s.fits' %self.fieldN)
         self.fast_chi2diagonal_est(writeto=diagName)
-        self.tau    *=  np.average(self.diagonal.flatten())
+        self.tau    =  np.average(self.diagonal.flatten())*self.tau
         # Also the weight on projectors (to boost the speed)
         if self.aprox_method != 'pathwise':
             self._w =   np.sqrt(self.diagonal+4.*self.eta+1.e-12)
@@ -180,35 +181,41 @@ class massmapSparsityTask():
         sigmaName   =   os.path.join(self.outDir,'sigmaA_%s.fits' %self.fieldN)
         self.prox_sigmaA(writeto=sigmaName)
 
-        g1fname     =   parser.get('prepare','g1fname')
-        g2fname     =   parser.get('prepare','g2fname')
-        g1Map       =   pyfits.getdata(g1fname)
-        g2Map       =   pyfits.getdata(g2fname)
-        assert g1Map.shape  ==   self.shapeS, \
-            'load wrong pixelized shear, shape map shape: (%d,%d,%d)' %g1Map.shape
-        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
-
         # Step size
-        self.mu =   None
-        self.clear_all()
+        self.mu     =   None
+        self.clear_all_outcome()
 
         # preparation for output
         outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
         self.outFname   =   os.path.join(self.outDir,outFname)
         return
 
-    def clear_all(self):
+    def clear_all_outcome(self):
         # Clear results
         self.alphaR =   np.zeros(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         return
 
+
+    def read_pixel_result(self,parser):
+        g1fname     =   parser.get('prepare','g1fname')
+        g2fname     =   parser.get('prepare','g2fname')
+        lkfname     =   parser.get('prepare','lkfname')
+        g1Map       =   pyfits.getdata(g1fname)
+        g2Map       =   pyfits.getdata(g2fname)
+        self.lensKernel=pyfits.getdata(lkfname)
+        assert g1Map.shape  ==   self.shapeS, \
+            'load wrong pixelized shear, shape should be: (%d,%d,%d)' %self.shapeS
+        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
+        assert self.lensKernel.shape  ==   (self.nz,self.nlp), \
+            'load wrong lensing kernel, shape should be: (%d,%d)' %(self.nz,self.nlp)
+        return
+
+    """
     def lensing_kernel(self,zlbin,zsbin):
-        """
         # Estimate the lensing kernel (with out poz)
         # the output is in shape (nzs,nzl)
-        """
         logging.info('Calculating lensing kernel')
         if self.nlp<=1:
             self.lensKernel =   np.ones((self.nz,self.nlp))
@@ -217,6 +224,7 @@ class massmapSparsityTask():
             for i,zs in enumerate(zsbin):
                 self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)*self.zlscale
         return
+    """
 
     def get_basis_vector(self,ind):
         assert np.all((np.array(self.shapeA)-np.array(ind))>=0),\

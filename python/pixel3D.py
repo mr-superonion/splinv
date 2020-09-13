@@ -136,9 +136,9 @@ class cartesianGrid3D():
         return dataOut
 
     def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
-        # Note that this lensing kernel is from an average delta in
-        # a lens redshfit bin to an average kappa in a source redshift
-        assert (poz_grids is not None)==((poz_data is not None==poz_best is not None) or poz_ave is not None), \
+        # Mapping from an average delta in a lens redshfit bin
+        # to an average kappa in a source redshift
+        assert (poz_data is not None)==(poz_best is not None), \
             'Please provide both photo-z bins and photo-z data'
         assert (self.nzl==1)==(self.nz==1), \
             'number of lens plane and source plane'
@@ -146,6 +146,7 @@ class cartesianGrid3D():
             return np.ones((self.nz,self.nzl))
         lensKernel =   np.zeros((self.nz,self.nzl))
         if poz_grids is None and poz_ave is None:
+            # Do not use poz
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
                 mask=  (zl<self.zcgrid)
@@ -158,8 +159,7 @@ class cartesianGrid3D():
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensKernel[:,i]=kl*rhoM_ave*DaBin
         else:
-            # determine the lensing kernel for each lens bin
-            # on the input poz grid
+            # Use poz
             lensK =   np.zeros((len(poz_grids),self.nzl))
             for i,zl in enumerate(self.zlcgrid):
                 kl=np.zeros(len(poz_grids))
@@ -172,6 +172,7 @@ class cartesianGrid3D():
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensK[:,i]=kl*rhoM_ave*DaBin
 
+            # Prepare the poz average
             if poz_ave is None:
                 assert len(poz_data)==len(poz_best)
                 assert len(poz_data[0])==len(poz_grids)
@@ -182,6 +183,7 @@ class cartesianGrid3D():
                     tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
                     poz_ave[iz,:]=np.average(poz_data[tmp_msk],axis=0)
             self.poz_ave=poz_ave
+
             lensKernel=poz_ave.dot(lensK)
             self.lensKernel=lensKernel
         return lensKernel
