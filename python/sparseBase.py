@@ -1,43 +1,30 @@
-import json
 import os
 import cosmology
 import numpy as np
-import astropy.io.fits as pyfits
-import ipyvolume as ipv
-import ipyvolume.pylab as pvlt
 
-try:
-    # use lsst.afw.display and firefly backend for display
-    import lsst.log as logging
-    import lsst.afw.image as afwImage
-    haslsst=True
-except ImportError:
-    haslsst=False
+import json
 from configparser import ConfigParser
+import astropy.io.fits as pyfits
+
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
-# LASSO Threshold Functions
 def soft_thresholding(dum,thresholds):
-    # Standard Threshold Function
+    """
+    Standard Threshold Function
+    """
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
 
 def firm_thresholding(dum,thresholds):
-    # Glimpse13 uses f
+    """
+    The firm thresholding used by Glimpse3D2013
+    """
     mask    =   (np.abs(dum)<= thresholds)
     dum[mask]=  0.
     mask    =   (np.abs(dum)>thresholds)
     mask    =   mask&(np.abs(dum)<= 2*thresholds)
     dum[mask]=  np.sign(dum[mask])*(2*np.abs(dum[mask])-thresholds[mask])
-    return dum
-
-def my_thresholding(dum,thresholds):
-    # doesnot work @_@
-    mask    =   (abs(dum)<= thresholds)
-    dum[mask]=  0.
-    mask    =   (abs(dum)>thresholds)
-    dum[mask]=  np.sign(dum[mask])*(abs(dum[mask])-thresholds[mask]**2./abs(dum[mask]))
     return dum
 
 class massmap_ks2D():
@@ -101,8 +88,9 @@ class massmapSparsityTask():
         if parser.has_option('sparse','eta'):           #   For ridge regulation
             self.eta   =   parser.getfloat('sparse','eta')
         else:
-            self.eta   =   0.
-        self.nframe =   parser.getint('sparse','nframe')
+            self.eta    =   0.
+        self.nframe     =   parser.getint('sparse','nframe')
+        minframe   =   parser.getint('sparse','minframe')
         # Do debug?
         if parser.has_option('sparse','debugList'):
             self.debugList  =   np.array(json.loads(parser.get('sparse','debugList')))
@@ -151,7 +139,7 @@ class massmapSparsityTask():
         elif dicname=='nfwlet':
             smooth_scale =   parser.getfloat('transPlane','smooth_scale')
             from halolet import nfwlet2D
-            self.dict2D =   nfwlet2D(nframe=self.nframe,ngrid=self.nx,smooth_scale=smooth_scale)
+            self.dict2D =   nfwlet2D(nframe=self.nframe,minframe=minframe,ngrid=self.nx,smooth_scale=smooth_scale)
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
         self.shearNolensKerAtom =   np.zeros((self.nframe,self.ny,self.nx),dtype=np.complex128)
         for iframe in range(self.nframe):
@@ -170,10 +158,13 @@ class massmapSparsityTask():
         # Estimate diagonal elements of the chi2 operator
         diagName    =   os.path.join(self.outDir,'diagonal_%s.fits' %self.fieldN)
         self.fast_chi2diagonal_est(writeto=diagName)
-        self.tau    =  np.average(self.diagonal.flatten())*self.tau
+        muRatio=   np.zeros(self.shapeA)
+        for izl in range(self.nlp):
+            muRatio[izl]=np.average(self.diagonal[izl].flatten())
+        self.tau    =  muRatio*self.tau
         # Also the weight on projectors (to boost the speed)
         if self.aprox_method != 'pathwise':
-            self._w =   np.sqrt(self.diagonal+4.*self.eta+1.e-12)
+            self._w =   1./np.sqrt(self.diagonal+4.*self.eta+1.e-12)
         else:
             self._w =   1.
 
@@ -214,9 +205,9 @@ class massmapSparsityTask():
 
     """
     def lensing_kernel(self,zlbin,zsbin):
+        # Old code, moved to pixel3D.py
         # Estimate the lensing kernel (with out poz)
         # the output is in shape (nzs,nzl)
-        logging.info('Calculating lensing kernel')
         if self.nlp<=1:
             self.lensKernel =   np.ones((self.nz,self.nlp))
         else:
@@ -233,11 +224,15 @@ class massmapSparsityTask():
         alphaTmp[ind]=  1.
         return self.main_forward(alphaTmp)
 
-    def project_obs_shear(self):
-        return self.chi2_transpose(self.shearR)     #A_{i\alpha}y_i/(A_{i\alpha}A_{i\alpha})
-
     def main_forward(self,alphaRIn):
-        # transform from dictionary space to shear space
+        """
+        Transform from dictionary space to observational space
+
+        Parameters
+        ----------
+        alphaRIn: modes in dictionary space.
+
+        """
         # self._w is the weight on the forward operator
         alphaRIn    =   alphaRIn*self._w
         shearOut    =   np.zeros(self.shapeS,dtype=np.complex128)
@@ -249,18 +244,35 @@ class massmapSparsityTask():
         return shearOut
 
     def chi2_transpose(self,shearRIn):
+        """
+        Traspose operation on observed map
+
+        Parameters
+        ----------
+        shearRIn: input observed map (e.g. opbserved shear map)
+
+        """
+
         # initializate an empty delta map
         alphaRO         =   np.zeros(self.shapeA,dtype=np.float64)
         for zs in range(self.nz):
             # For each source plane, we use KS method to get kappa
             kappaFZs    =   self.ks2D.itransform(shearRIn[zs],inFou=False)
-            # Then project to alpha space on source plane
+            # Then project to alpha (model) space on source plane
             alphaRZs    =   self.dict2D.itranspose(kappaFZs,outFou=False).real
             # Lensing Kernel transpose to density contrast frame
             alphaRO     +=   (self.lensKernel[zs,:,None,None,None]*alphaRZs)
         return alphaRO*self._w
 
     def gradient_chi2(self,alphaR):
+        """
+        Gradient operation of Chi2 act on dictionary space
+
+        Parameters
+        ----------
+        alphaRIn: modes in dictionary space.
+
+        """
         # sparseBase.massmapSparsityTask.gradient_chi2
         # calculate the gradient of the chi2 component
         shearRTmp       =   self.main_forward(alphaR)               #A_{ij} x_j
@@ -268,7 +280,6 @@ class massmapSparsityTask():
         return -self.chi2_transpose(self.shearRRes*self.sigmaSInv)  #-A_{i\alpha}(y_i-A_{ij}x_j)
 
     def gradient_TSV(self,alphaR):
-        # sparseBase.massmapSparsityTask.gradient_TSV
         # calculate the gradient of the Total Square Variance(TSV) component
         # finite difference operator
         alphaR  =   alphaR*self._w
@@ -283,7 +294,16 @@ class massmapSparsityTask():
         dify    =   dify-alphaR #D2
         grady   =   np.roll(dify,-1,axis=-2)
         grady   =   grady-dify # (S)_{ij} (S_2)_{i\alpha} x_\alpha
-        return (gradx+grady)*self.tau*self._w
+
+        # for the z direction
+        """
+        difz    =   np.roll(alphaR,1,axis=-2)
+        difz    =   difz+alphaR #D2
+        gradz   =   np.roll(difz,-1,axis=-2)
+        gradz   =   gradz+difz # (S)_{ij} (S_2)_{i\alpha} x_\alpha
+        """
+        gradz   =   0.
+        return (gradx+grady+gradz)*self.tau*self._w
 
     def gradient_ridge(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient_ridge
@@ -294,7 +314,7 @@ class massmapSparsityTask():
         # calculate the gradient of the Second order component in loss function
         # wihch includes Total Square Variance(TSV) and chi2 components
         gCh2    =   self.gradient_chi2(alphaR)
-        if self.tau>0.:
+        if np.max(self.tau)>0.:
             gTSV    =   self.gradient_TSV(alphaR)
         else:
             gTSV    =   0.
@@ -339,11 +359,10 @@ class massmapSparsityTask():
             normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
-        self.mu    = 1./norm/1.15
+        self.mu    = 1./norm/1.2
         return
 
     def prox_sigmaA(self,writeto=None):
-        logging.info('Estimating sigma map')
         niter   =   100
         # A_i\alpha n_i
         outData     =   np.zeros(self.shapeA)
@@ -363,6 +382,11 @@ class massmapSparsityTask():
 
         # noi std
         self.sigmaA =   np.sqrt(outData/niter)
+
+        for izl in range(self.nlp):
+            thres=np.average(self.diagonal[izl].flatten())/10.
+            maskLP= self.diagonal[izl]>thres
+            self.sigmaA[izl][~maskLP]=1e10
 
         if writeto is not None:
             pyfits.writeto(writeto,self.sigmaA[:,self.display_iframe],overwrite=True)

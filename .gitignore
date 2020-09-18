@@ -1,6 +1,6 @@
 *.pyc
 *.swp
-__*
+__pycache__
 *.bbl
 *.blg
 *.log

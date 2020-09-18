@@ -1,6 +1,7 @@
 import os
 import haloSim
 import numpy as np
+
 import astropy.io.fits as pyfits
 
 class nfwlet2D():
@@ -27,13 +28,14 @@ class nfwlet2D():
     --------
     halolet.nfwlet2D(pltDir='plot')
     """
-    def __init__(self,nframe=2,ngrid=64,smooth_scale=3,pltDir=None):
+    def __init__(self,nframe=2,minframe=2,ngrid=64,smooth_scale=3,pltDir=None):
         assert ngrid%2==0,\
                 'Please make sure nx and ny are even numbers'
         # We force ny=nx, the user should ensure that by padding 0
         self.nx=ngrid
         self.ny=ngrid
         self.nframe=nframe
+        self.minframe=minframe
         self.smooth_scale=smooth_scale
         # shape of output shapelets
         self.shape2=(ngrid,ngrid)
@@ -45,15 +47,19 @@ class nfwlet2D():
         # Real Space
         self.fouaframes=np.zeros(self.shape3)
         self.aframes=np.zeros(self.shape3)
-        # The first frame is Gaussian atom accounting for the smoothing
-        self.fouaframes[0,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=True)
-        self.aframes[0,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
 
-        for iframe in range(self.nframe-1):
-            rs=1.5*(iframe+1.)
-            iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
-            self.fouaframes[iframe+1,:,:]=iAtomF # Fourier Space
-            self.aframes[iframe+1,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
+        for ifr in range(self.nframe):
+            iframe=ifr+self.minframe
+            if iframe==0:
+                # The first frame is Gaussian atom accounting for the smoothing
+                self.fouaframes[ifr,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=True)
+                self.aframes[ifr,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
+            else:
+                # The other frames
+                rs=iframe*self.smooth_scale
+                iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
+                self.fouaframes[ifr,:,:]=iAtomF # Fourier Space
+                self.aframes[ifr,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
 
         if self.pltDir:
             afname  =   os.path.join(self.pltDir,'nfwAtom-nframe%d.fits' %(self.nframe))

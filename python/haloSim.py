@@ -588,11 +588,14 @@ def GausAtom(sigma,ngrid,fou=True):
         if fou:
             x  *=   (2*np.pi);y*=(2*np.pi)
             rT  =   np.sqrt(x**2+y**2)
-            return  np.exp(-(rT*sigma)**2./2.)
+            fun =   np.exp(-(rT*sigma)**2./2.)
+            norm=   np.sqrt(np.sum(fun**2.))/ngrid
         else:
             x  *=   (ngrid);y*=(ngrid)
             rT  =   np.sqrt(x**2+y**2)
-            return  1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
+            fun =   1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
+            norm=   np.sqrt(np.sum(fun**2.))
+        return  fun/norm
     else:
         if fou:
             return np.ones((ngrid,ngrid))

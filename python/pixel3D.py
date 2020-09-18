@@ -110,7 +110,7 @@ class cartesianGrid3D():
         if self.sigma>0:
             rsig=int(self.sigma/self.delta*3+1)
         else:
-            rsig=0.5
+            return
         for iz in range(self.shape[0]):
             if z is not None:
                 mskz=(z>=self.zbound[iz])&(z<self.zbound[iz+1])
@@ -126,10 +126,10 @@ class cartesianGrid3D():
                         continue
                     rl2=(x[mskx]-xc)**2.+(y[mskx]-yc)**2.
                     # convolve with Gaussian kernel
-                    wg=1./np.sqrt(2.*np.pi)/self.sigma*np.exp(-rl2/self.sigma**2./2.)
+                    wg=np.exp(-rl2/self.sigma**2./2.)
                     wgsum=np.sum(wg)
                     wl=wg*ws[mskx]
-                    if wgsum>0.1:
+                    if wgsum>2.:
                         dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
                         #varOut[iz,iy,ix]=2.*np.sum(wg**2.*ws[mskx])/(np.sum(wl))**2.
                         # 2 is to account for 2 components of shear (g1 and g2)
