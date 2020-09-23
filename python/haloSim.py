@@ -210,7 +210,7 @@ class nfw_lensWB00():
         return DeltaSigma1+1j*DeltaSigma2
 
     def lensKernel(self,z_s):
-        """Lensing kernel of halo as function of source redshift.
+        """Lensing kernel from surface density at lens redshfit to source redshift
         @param z_s        redshift of sources.
         """
         # convenience: call with single number
@@ -474,9 +474,8 @@ class nfw_lensTJ03():
         return DeltaSigma1+1j*DeltaSigma2
 
     def lensKernel(self,z_s):
-        """
-        # Note that this lensing kernel is from surface density at lens redshfit
-        # to kappa at source redshift
+        """Lensing kernel from surface density at lens redshfit to source redshift
+        to kappa at source redshift
         Lensing kernel of halo as function of source redshift.
         @param z_s        redshift of sources.
         """
@@ -513,7 +512,7 @@ class nfw_lensTJ03():
         return rhoM_ave*DaBin
 
     def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
-        """NFW Atom
+        """NFW Sigma in a postage stamp
         @param pix_scale    pixel sacle [arcsec]
         @param ngrid        number of pixels on x and y axis
         """
@@ -529,7 +528,7 @@ class nfw_lensTJ03():
         return atomReal
 
     def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
-        """NFW Atom
+        """NFW Delta Sigma in a postage stamp
         @param pix_scale    pixel sacle [arcsec]
         @param ngrid        number of pixels on x and y axis
         """
@@ -545,12 +544,12 @@ class nfw_lensTJ03():
         return atomReal
 
 """
-# The following functions are mainly used for halolet construction
+The following functions are used for halolet construction
 """
 def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     """Make haloTJ03 atom from Fourier space as CS02.
-        https://arxiv.org/pdf/astro-ph/0206508.pdf
-        Eq.(81) Eq.(82)
+    https://arxiv.org/pdf/astro-ph/0206508.pdf
+    Eq.(81) Eq.(82)
     @param r_s        scale radius [unit of pixel].
     @param ngrid      number of pixel in x and y directions.
     @param c          truncation ratio (concentration)
@@ -583,6 +582,10 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
         return np.real(np.fft.ifft2(atomFou))
 
 def GausAtom(sigma,ngrid,fou=True):
+    """ Normalized Gaussian in a postage stamp
+    @param ngrid      number of pixel in x and y directions.
+    @param sigma      scale factortor of the Gaussian function
+    """
     if sigma>0.1:
         x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
         if fou:

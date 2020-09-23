@@ -88,9 +88,9 @@ class cartesianGrid3D():
             zlmax=zlmin+deltazl*(nzl+0.1)
             zlbound=np.arange(zlmin,zlmax,deltazl)
         zlcgrid=(zlbound[:-1]+zlbound[1:])/2.
-        self.zlbound=zlbound
-        self.zlcgrid=zlcgrid
-        self.nzl=nzl
+        self.zlbound=   zlbound
+        self.zlcgrid=   zlcgrid
+        self.nzl    =   nzl
 
         self.cosmo=cosmology.Cosmo(h=1,omega_m=0.3)
         self.lensKernel=None
@@ -136,8 +136,9 @@ class cartesianGrid3D():
         return dataOut
 
     def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
-        # Mapping from an average delta in a lens redshfit bin
-        # to an average kappa in a source redshift
+        """Mapping from an average delta in a lens redshfit bin
+        to an average kappa in a source redshift
+        """
         assert (poz_data is not None)==(poz_best is not None), \
             'Please provide both photo-z bins and photo-z data'
         assert (self.nzl==1)==(self.nz==1), \

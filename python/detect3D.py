@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import ndimage as ndi
 
-def local_maxima_3D(data, ordert=2, orderp=1, threshold=0.5):
+def local_maxima_3D(data, ordert=2, orderp=1, threshold=1.):
     """Detects local maxima in a 3D array
 
     Parameters

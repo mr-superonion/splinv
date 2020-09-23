@@ -129,8 +129,8 @@ class massmapSparsityTask():
         self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
 
         self.cosmo  =   cosmology.Cosmo(h=1)
-        #self.lensing_kernel(self.zlBin,self.zsBin)
         self.read_pixel_result(parser)
+        #self.lensing_kernel(self.zlBin,self.zsBin)
 
         dicname =   parser.get('sparse','dicname')
         if dicname=='starlet':
@@ -157,7 +157,7 @@ class massmapSparsityTask():
 
         # Estimate diagonal elements of the chi2 operator
         diagName    =   os.path.join(self.outDir,'diagonal_%s.fits' %self.fieldN)
-        self.fast_chi2diagonal_est(writeto=diagName)
+        self.fast_chi2diagonal_est()
         muRatio=   np.zeros(self.shapeA)
         for izl in range(self.nlp):
             muRatio[izl]=np.average(self.diagonal[izl].flatten())
@@ -170,7 +170,7 @@ class massmapSparsityTask():
 
         # Estimate sigma map for alpha
         sigmaName   =   os.path.join(self.outDir,'sigmaA_%s.fits' %self.fieldN)
-        self.prox_sigmaA(writeto=sigmaName)
+        self.prox_sigmaA()
 
         # Step size
         self.mu     =   None
@@ -384,9 +384,10 @@ class massmapSparsityTask():
         self.sigmaA =   np.sqrt(outData/niter)
 
         for izl in range(self.nlp):
-            thres=np.average(self.diagonal[izl].flatten())/10.
-            maskLP= self.diagonal[izl]>thres
-            self.sigmaA[izl][~maskLP]=1e10
+            for iframe in range(self.nframe):
+                thres=np.max(self.diagonal[izl,iframe].flatten())/10.
+                maskLP= self.diagonal[izl,iframe]>thres
+                self.sigmaA[izl,iframe][~maskLP]=1e12
 
         if writeto is not None:
             pyfits.writeto(writeto,self.sigmaA[:,self.display_iframe],overwrite=True)
@@ -397,6 +398,8 @@ class massmapSparsityTask():
         alphaRW         =   self.alphaR.copy()*self._w
         for zl in range(self.nlp):
             self.deltaR[zl] =   self.dict2D.itransform(alphaRW[zl],inFou=False,outFou=False)
+        mask=(self.deltaR>1e-3)
+        self.deltaR[~mask]=0.
         return
 
     def pathwise_coordinate_descent(self,niter,threM='ST'):
@@ -474,6 +477,28 @@ class massmapSparsityTask():
                 self.debugDeltas.append(self.deltaR.real)
                 self.debugAlphas.append(self.alphaR.real)
         return
+
+    def adaptive_lasso_weight(self,gamma=1):
+        p   =   np.zeros(self.shapeA)
+        for izl in range(self.nlp):
+            for ifr in range(self.nframe):
+                rsmth   =   int(2**(1.-izl/8.)+0.5)
+                for jsh in range(-rsmth,rsmth+1):
+                    dif    =   np.roll(self.alphaR[izl,ifr],jsh,axis=-2)
+                    for ish in range(-rsmth,rsmth+1):
+                        dif2=  np.roll(dif,ish,axis=-1)
+                        p[izl,ifr] += dif2/(2.*rsmth+1.)**2.
+        p   =   np.abs(p)
+
+        # threshold(for value close to zero)
+        thres_adp=  1./1e10
+        mask=   (p>thres_adp)
+
+        # weight estimation
+        w       =   np.zeros(self.shapeA)
+        w[mask] =   1./(p[mask])**(gamma)
+        w[~mask]=   1./thres_adp
+        return w
 
     def fista_gradient_descent(self,niter,w=1.):
         if self.mu is None:

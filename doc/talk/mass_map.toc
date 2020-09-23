@@ -1,0 +1,3 @@
+\beamer@sectionintoc {1}{Background}{2}{0}{1}
+\beamer@sectionintoc {2}{Method}{10}{0}{2}
+\beamer@sectionintoc {3}{Test on HSC-like Simulation}{16}{0}{3}
