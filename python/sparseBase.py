@@ -156,20 +156,21 @@ class massmapSparsityTask():
         self.sigmaSInv[self.mask]=  1./self.sigmaS[self.mask]
 
         # Estimate diagonal elements of the chi2 operator
-        diagName    =   os.path.join(self.outDir,'diagonal_%s.fits' %self.fieldN)
         self.fast_chi2diagonal_est()
-        muRatio=   np.zeros(self.shapeA)
-        for izl in range(self.nlp):
-            muRatio[izl]=np.average(self.diagonal[izl].flatten())
-        self.tau    =  muRatio*self.tau
-        # Also the weight on projectors (to boost the speed)
+
+        # Also the scale of projectors (to boost the speed)
         if self.aprox_method != 'pathwise':
             self._w =   1./np.sqrt(self.diagonal+4.*self.eta+1.e-12)
         else:
             self._w =   1.
 
+        # Effective tau
+        muRatio=   np.zeros(self.shapeA)
+        for izl in range(self.nlp):
+            muRatio[izl]=np.average(self.diagonal[izl].flatten())
+        self.tau    =  muRatio*self.tau
+
         # Estimate sigma map for alpha
-        sigmaName   =   os.path.join(self.outDir,'sigmaA_%s.fits' %self.fieldN)
         self.prox_sigmaA()
 
         # Step size
@@ -329,9 +330,10 @@ class massmapSparsityTask():
         shearLR2=   shearLR2[None,:,:]*self.lensKernel[:,ind2[0],None,None]
         return np.sum(np.conj(shearLR1)*shearLR2*self.mask).real
 
-    def fast_chi2diagonal_est(self,writeto=None):
-        # sparseBase.massmapSparsityTask.fast_chi2diagonal_est
-        # Estimate A_{i\alpha} A_{i\alpha}
+    def fast_chi2diagonal_est(self):
+        """
+        Estimate the diagonal elements of the Chi2 transform matrix
+        """
         asquareframe=   np.zeros((self.nz,self.nframe,self.ny,self.nx))
         for iz in range(self.nz):
             maskF   =   np.fft.fft2((self.sigmaSInv[iz]**2.))
@@ -341,9 +343,6 @@ class massmapSparsityTask():
 
         self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
                 *asquareframe[:,None,:,:,:],axis=0)
-
-        if writeto is not None:
-            pyfits.writeto(writeto,self.diagonal[:,self.display_iframe],overwrite=True)
         return
 
     def determine_step_size(self):
@@ -362,7 +361,7 @@ class massmapSparsityTask():
         self.mu    = 1./norm/1.2
         return
 
-    def prox_sigmaA(self,writeto=None):
+    def prox_sigmaA(self):
         niter   =   100
         # A_i\alpha n_i
         outData     =   np.zeros(self.shapeA)
@@ -388,9 +387,6 @@ class massmapSparsityTask():
                 thres=np.max(self.diagonal[izl,iframe].flatten())/10.
                 maskLP= self.diagonal[izl,iframe]>thres
                 self.sigmaA[izl,iframe][~maskLP]=1e12
-
-        if writeto is not None:
-            pyfits.writeto(writeto,self.sigmaA[:,self.display_iframe],overwrite=True)
         return
 
     def reconstruct(self):
