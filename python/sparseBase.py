@@ -358,7 +358,7 @@ class massmapSparsityTask():
             normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
-        self.mu    = 1./norm/1.2
+        self.mu    = 1./norm/1.5
         return
 
     def prox_sigmaA(self):
