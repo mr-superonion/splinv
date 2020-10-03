@@ -189,7 +189,6 @@ class massmapSparsityTask():
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         return
 
-
     def read_pixel_result(self,parser):
         g1fname     =   parser.get('prepare','g1fname')
         g2fname     =   parser.get('prepare','g2fname')
@@ -362,25 +361,27 @@ class massmapSparsityTask():
         return
 
     def prox_sigmaA(self):
-        niter   =   100
-        # A_i\alpha n_i
-        outData     =   np.zeros(self.shapeA)
-        for irun in range(niter):
-            np.random.seed(irun)
-            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
-            alphaRSim=  -self.chi2_transpose(shearSim)
-            outData +=  alphaRSim**2.
+        if True:
+            niter   =   100
+            # A_i\alpha n_i
+            outData     =   np.zeros(self.shapeA)
+            for irun in range(niter):
+                np.random.seed(irun)
+                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+                shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
+                alphaRSim=  -self.chi2_transpose(shearSim)
+                outData +=  alphaRSim**2.
 
-        # masked region is assigned with the maximum
-        maskL =   np.all(self.sigmaS>1.e-4,axis=0)
-        for izlp in range(self.nlp):
-            for iframe in range(self.nframe):
-                outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
-
-        # noi std
-        self.sigmaA =   np.sqrt(outData/niter)
+            # masked region is assigned with the maximum
+            maskL =   np.all(self.sigmaS>1.e-4,axis=0)
+            for izlp in range(self.nlp):
+                for iframe in range(self.nframe):
+                    outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
+            # noi std
+            self.sigmaA =   np.sqrt(outData/niter)
+        else:
+            self.sigmaA =   np.ones(self.shapeA)
 
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
@@ -394,11 +395,11 @@ class massmapSparsityTask():
         alphaRW         =   self.alphaR.copy()*self._w
         for zl in range(self.nlp):
             self.deltaR[zl] =   self.dict2D.itransform(alphaRW[zl],inFou=False,outFou=False)
-        mask=(self.deltaR>1e-3)
+        mask=(np.abs(self.deltaR)>1e-3)
         self.deltaR[~mask]=0.
         return
 
-    def pathwise_coordinate_descent(self,niter,threM='ST'):
+    def pathwise_coordinate_descent(self,niter):
         # The step size is the inverse of the
         # diagonal for coordinate descent
         self.mu         =   1./(self.diagonal+4.*self.tau)
@@ -427,10 +428,7 @@ class massmapSparsityTask():
 
             # update the maximum projector
             dum     =   self.alphaR[ind1st]+self.dalphaR[ind1st]
-            if threM=='ST':
-                self.alphaR[ind1st]  = soft_thresholding(dum,thresholds[ind1st])
-            elif threM=='FT':
-                self.alphaR[ind1st]  = firm_thresholding(dum,thresholds[ind1st])
+            self.alphaR[ind1st]  = soft_thresholding(dum,thresholds[ind1st])
 
             # update the index list
             if ind1st not in self.ind1list:
@@ -457,10 +455,7 @@ class massmapSparsityTask():
                 dTSV    =   -self.mu[indU]*self.gradient_TSV()[indU]
 
                 dum     =   self.alphaR[indU]+dch2+dTSV
-                if threM=='ST':
-                    self.alphaR[indU]  = soft_thresholding(dum,thresholds[indU])
-                elif threM=='FT':
-                    self.alphaR[indU]  = firm_thresholding(dum,thresholds[indU])
+                self.alphaR[indU]  = soft_thresholding(dum,thresholds[indU])
 
             # Write (Display) the fits file
             if irun in self.debugList:
@@ -503,12 +498,12 @@ class massmapSparsityTask():
         # The thresholds
         thresholds =   self.lbd*self.sigmaA*self.mu*w
         # FISTA algorithms
-        tn      =   1
+        tn      =   1.
         Xp0     =   self.alphaR
         for irun in range(niter):
             dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
-            Xp1 = soft_thresholding(Xp1,thresholds)
+            Xp1 =   soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
             self.alphaR=Xp1+(ratio*(Xp1-Xp0))
@@ -520,7 +515,7 @@ class massmapSparsityTask():
 
     def process(self,niter=1000):
         if self.aprox_method=='pathwise':
-            self.pathwise_coordinate_descent(niter,'ST')
+            self.pathwise_coordinate_descent(niter)
         elif self.aprox_method=='fista':
             self.fista_gradient_descent(niter)
         self.reconstruct()

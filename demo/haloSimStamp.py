@@ -38,21 +38,29 @@ from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
 class haloSimStampBatchConfig(pexConfig.Config):
-    noiDir  =   pexConfig.Field(dtype=str, default='sims/shapenoise_photoz-202003282257',
-                doc = 'noise and redshift directory name')
-    haloName=   pexConfig.Field(dtype=str, default='sims/haloCat-202009201646.csv',
+    obsDir  =   pexConfig.Field(dtype=str, default='HSC-obs/20200328/',
+                doc = 'obs directory name')
+    haloName=   pexConfig.Field(dtype=str,
+                default='planck-cosmo/nfw-halos/haloCat-202010032144.csv',
                 doc = 'halo catalog file name')
-    configName  =   pexConfig.Field(dtype=str, default='config-pix96-nl15.ini',
+    configName  =   pexConfig.Field(dtype=str,
+                default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
-    outDir  =   pexConfig.Field(dtype=str, default='pix96-nl15/',
+    outDir  =   pexConfig.Field(dtype=str,
+                default='planck-cosmo/pix96-ns10/',
                 doc = 'output directory')
+    """
+    outDir  =   pexConfig.Field(dtype=str,
+                default='HSC-obs/20200328/pixes/',
+                doc = 'output directory')
+    """
 
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
     def validate(self):
         pexConfig.Config.validate(self)
-        assert os.path.isdir(self.noiDir),\
-            'Cannot find noise directory: %s' %self.noiDir
+        assert os.path.isdir(self.obsDir),\
+            'Cannot find observation directory: %s' %self.obsDir
         assert os.path.isfile(self.haloName),\
             'Cannot find halo catalog file: %s' %self.haloName
         assert os.path.isfile(self.configName),\
@@ -87,11 +95,14 @@ class haloSimStampBatchTask(BatchPoolTask):
         #Prepare the pool
         pool=   Pool("haloSimStamp")
         pool.cacheClear()
-        pool.storeSet(noiDir=self.config.noiDir)
+        pool.storeSet(obsDir=self.config.obsDir)
         pool.storeSet(haloName=self.config.haloName)
         pool.storeSet(configName=self.config.configName)
-        pool.storeSet(outDir=self.config.outDir)
         ss  =   pyascii.read(self.config.haloName)[Id]
+        outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(ss['iz'],ss['im']))
+        if not os.path.isdir(outDirH):
+            os.mkdir(outDirH)
+        pool.storeSet(outDirH=outDirH)
         pool.storeSet(ss=ss)
         self.pixelize_Sigma(ss)
         pool.map(self.process,range(100))
@@ -114,16 +125,16 @@ class haloSimStampBatchTask(BatchPoolTask):
         #halo=  haloSim.nfw_lensWB00(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
 
         # Noise catalog
-        noiName =   os.path.join(self.config.noiDir,'sim0.fits')
-        noise   =   pyfits.getdata(noiName)
+        obsName =   os.path.join(self.config.obsDir,'cats','sim0.fits')
+        obs     =   pyfits.getdata(obsName)
 
         # pixelize Sigma field
-        sigmafname=   os.path.join(self.config.outdir,'pixsigma-%d%d.fits' %(iz,im))
-        Sigma   =   halo.Sigma(noise['raR']*3600.,noise['decR']*3600.)
+        Sigmafname=   os.path.join(self.config.outDir,'pixsigma-%d%d.fits' %(iz,im))
+        Sigma   =   halo.Sigma(obs['raR']*3600.,obs['decR']*3600.)
         ztmp    =   gridInfo.zcgrid[0]
         raname  =   'raR'
         decname =   'decR'
-        pixSigma=   gridInfo.pixelize_data(noise[raname],noise[decname],ztmp,Sigma)[0]
+        pixSigma=   gridInfo.pixelize_data(obs[raname],obs[decname],ztmp,Sigma)[0]
         pyfits.writeto(Sigmafname,pixSigma,overwrite=True)
         return
 
@@ -152,8 +163,8 @@ class haloSimStampBatchTask(BatchPoolTask):
         #halo=  haloSim.nfw_lensWB00(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
 
         # Noise catalog
-        noiName =   os.path.join(cache.noiDir,'sim%d.fits' %isim)
-        noise   =   pyfits.getdata(noiName)
+        obsName =   os.path.join(cache.obsDir,'cats','sim%d.fits' %isim)
+        obs   =   pyfits.getdata(obsName)
 
         g1name  =   'g1R'   # random or hsc-like mask
         g2name  =   'g2R'
@@ -161,14 +172,16 @@ class haloSimStampBatchTask(BatchPoolTask):
         decname =   'decR'
         zname   =   'zbest' # best poz or true z
 
-        deltaSigma= halo.DeltaSigmaComplex(noise['raR']*3600.,noise['decR']*3600.)
-        lensKer =   halo.lensKernel(noise['ztrue']) # lensing kernel
+        deltaSigma= halo.DeltaSigmaComplex(obs['raR']*3600.,obs['decR']*3600.)
+        lensKer =   halo.lensKernel(obs['ztrue']) # lensing kernel
         shear   =   deltaSigma*lensKer
-        val     =   shear+noise['g1n']+noise['g2n']*1j
-        g1g2    =   gridInfo.pixelize_data(noise[raname],noise[decname],noise[zname],val)
+        val     =   obs['g1n']+obs['g2n']*1j+shear
+        g1g2    =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val)
 
-        g1fname     =   os.path.join(cache.outDir,'pixShearR-g1-%d%d-sim%d.fits' %(iz,im,isim))
-        g2fname     =   os.path.join(cache.outDir,'pixShearR-g2-%d%d-sim%d.fits' %(iz,im,isim))
+        pnm     =   '%d%d-sim%d' %(iz,im,isim)
+        #pnm     =   'sim%d' %(isim)
+        g1fname     =   os.path.join(cache.outDirH,'pixShearR-g1-%s.fits' %pnm)
+        g2fname     =   os.path.join(cache.outDirH,'pixShearR-g2-%s.fits' %pnm)
         pyfits.writeto(g1fname,g1g2.real,overwrite=True)
         pyfits.writeto(g2fname,g1g2.imag,overwrite=True)
         del g1g2
