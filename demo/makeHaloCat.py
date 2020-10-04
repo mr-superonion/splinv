@@ -8,7 +8,7 @@ omega_m=0.315   # Planck 2018
 #omega_m=0.3    # Toy model
 
 def main():
-    log_m_array=np.linspace(13.3,15.0,8)
+    log_m_array=np.linspace(13.3,15.0,8) # [M_solar/h]
     z_array=np.linspace(0.05,0.8,8)
     names=('iz','im','zh','log10_M200','conc','rs_arcmin')
     data=[]

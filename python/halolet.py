@@ -15,7 +15,6 @@ class nfwlet2D():
     nframe  :   number of frames
     ngrid   :   size of the field (pixel)
     smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
-    pltDir  :   whether plot the atoms for demonstration
 
     Methods
     --------
@@ -26,9 +25,8 @@ class nfwlet2D():
 
     Examples
     --------
-    halolet.nfwlet2D(pltDir='plot')
     """
-    def __init__(self,nframe=2,minframe=2,ngrid=64,smooth_scale=3,pltDir=None):
+    def __init__(self,nframe=2,minframe=0,ngrid=64,smooth_scale=1.5,rs_base=2.5):
         assert ngrid%2==0,\
                 'Please make sure nx and ny are even numbers'
         # We force ny=nx, the user should ensure that by padding 0
@@ -40,7 +38,7 @@ class nfwlet2D():
         # shape of output shapelets
         self.shape2=(ngrid,ngrid)
         self.shape3=(nframe,ngrid,ngrid)
-        self.pltDir=pltDir
+        self.rs_base=rs_base
         self.prepareFrames()
 
     def prepareFrames(self):
@@ -56,16 +54,11 @@ class nfwlet2D():
                 self.aframes[ifr,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
             else:
                 # The other frames
-                rs=iframe*self.smooth_scale
-                iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=9.,smooth_scale=self.smooth_scale)
+                rs=iframe*self.rs_base
+                iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=4.,smooth_scale=self.smooth_scale)
                 self.fouaframes[ifr,:,:]=iAtomF # Fourier Space
                 self.aframes[ifr,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
 
-        if self.pltDir:
-            afname  =   os.path.join(self.pltDir,'nfwAtom-nframe%d.fits' %(self.nframe))
-            pyfits.writeto(afname, self.aframes )
-            fafname =   os.path.join(self.pltDir,'nfwAtom-Fou-nframe%d.fits' %(self.nframe))
-            pyfits.writeto(fafname, self.fouaframes)
         return
 
     def itransform(self,dataIn,inFou=True,outFou=True):
@@ -113,7 +106,6 @@ class starlet2D():
     nframe  :   number of frames
     ngrid   :   size of the field (pixel)
     smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
-    pltDir  :   whether plot the atoms for demonstration
 
     Methods
     --------
@@ -127,9 +119,8 @@ class starlet2D():
 
     Examples
     --------
-    halolet.nfwlet2D(pltDir='plot')
     """
-    def __init__(self,gen=2,nframe=4,ny=64,nx=64,pltDir=None):
+    def __init__(self,gen=2,nframe=4,ny=64,nx=64):
         Coeff_h0 = 3. / 8.;
         Coeff_h1 = 1. / 4.;
         Coeff_h2 = 1. / 16.;
@@ -141,7 +132,6 @@ class starlet2D():
         self.nx=nx
         self.gen=gen
         self.shape=(nframe,ny,nx)
-        self.pltDir=pltDir
         self.prepareFrames()
 
     def prepareFrames(self):
@@ -185,11 +175,6 @@ class starlet2D():
             self.fouframes[iframe,:,:]=np.fft.fft2(self.frames[iframe,:,:]).real
             self.fouaframes[iframe,:,:]=np.fft.fft2(self.aframes[iframe,:,:]).real
 
-        if self.pltDir:
-            afname  =   os.path.join(self.pltDir,'starlet2-gen%d-nframe%d.fits' %(self.gen,self.nframe))
-            pyfits.writeto(afname,self.aframes)
-            fafname  =   os.path.join(self.pltDir,'starlet2-Fou-gen%d-nframe%d.fits' %(self.gen,self.nframe))
-            pyfits.writeto(fafname,self.fouaframes)
         return
 
     def transform(self,dataIn,inFou=True,outFou=True):

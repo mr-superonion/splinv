@@ -97,6 +97,13 @@ class cartesianGrid3D():
         self.pozPdfAve=None
 
     def pixelize_data(self,x,y,z,v,ws=None):
+        """pixelize catalog into the cartesian grid
+        @param x      ra of sources.
+        @param y      dec of sources.
+        @param z      redshifts of sources.
+        @param v      measurements.
+        @param ws     weights.
+        """
         if ws is None:
             ws=np.ones(len(x))/0.25**2.
         xbin=np.int_((x-self.xbound[0])/self.delta)

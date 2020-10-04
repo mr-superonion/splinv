@@ -85,10 +85,6 @@ class massmapSparsityTask():
             self.tau   =   parser.getfloat('sparse','tau')
         else:
             self.tau   =   0.
-        if parser.has_option('sparse','eta'):           #   For ridge regulation
-            self.eta   =   parser.getfloat('sparse','eta')
-        else:
-            self.eta    =   0.
         self.nframe     =   parser.getint('sparse','nframe')
         minframe   =   parser.getint('sparse','minframe')
         # Do debug?
@@ -160,14 +156,14 @@ class massmapSparsityTask():
 
         # Also the scale of projectors (to boost the speed)
         if self.aprox_method != 'pathwise':
-            self._w =   1./np.sqrt(self.diagonal+4.*self.eta+1.e-12)
+            self._w =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-12)
         else:
             self._w =   1.
 
         # Effective tau
         muRatio=   np.zeros(self.shapeA)
         for izl in range(self.nlp):
-            muRatio[izl]=np.average(self.diagonal[izl].flatten())
+            muRatio[izl]=np.max(self.diagonal[izl].flatten())
         self.tau    =  muRatio*self.tau
 
         # Estimate sigma map for alpha
@@ -305,10 +301,6 @@ class massmapSparsityTask():
         gradz   =   0.
         return (gradx+grady+gradz)*self.tau*self._w
 
-    def gradient_ridge(self,alphaR):
-        # sparseBase.massmapSparsityTask.gradient_ridge
-        return alphaR*self.eta*self._w**2.
-
     def quad_gradient(self,alphaR):
         # sparseBase.massmapSparsityTask.gradient
         # calculate the gradient of the Second order component in loss function
@@ -346,7 +338,7 @@ class massmapSparsityTask():
 
     def determine_step_size(self):
         norm        =   0.
-        for irun in range(800):
+        for irun in range(1000):
             # generate a normalized random vector
             np.random.seed(irun)
             alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)
@@ -361,28 +353,33 @@ class massmapSparsityTask():
         return
 
     def prox_sigmaA(self):
-        if True:
-            niter   =   100
-            # A_i\alpha n_i
-            outData     =   np.zeros(self.shapeA)
-            for irun in range(niter):
-                np.random.seed(irun)
-                g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-                g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-                shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
-                alphaRSim=  -self.chi2_transpose(shearSim)
-                outData +=  alphaRSim**2.
+        """Calculate stds of the paramters
+        Note that the std should be all 1 since we normalize the
+        projectors.
+        However, we set some stds to +infty
+        """
+        niter   =   100
+        # A_i\alpha n_i
+        outData     =   np.zeros(self.shapeA)
+        for irun in range(niter):
+            np.random.seed(irun)
+            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+            shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
+            alphaRSim=  -self.chi2_transpose(shearSim)
+            outData +=  alphaRSim**2.
 
-            # masked region is assigned with the maximum
-            maskL =   np.all(self.sigmaS>1.e-4,axis=0)
-            for izlp in range(self.nlp):
-                for iframe in range(self.nframe):
-                    outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
-            # noi std
-            self.sigmaA =   np.sqrt(outData/niter)
-        else:
-            self.sigmaA =   np.ones(self.shapeA)
+        #TODO: Dowe really need it?
+        # masked region is assigned with the maximum
+        maskL =   np.all(self.sigmaS>1.e-4,axis=0)
+        for izlp in range(self.nlp):
+            for iframe in range(self.nframe):
+                outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
+        # noi std
+        self.sigmaA =   np.sqrt(outData/niter)
 
+        # The structures outside of the boundary
+        # set the stds to +infty
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
                 thres=np.max(self.diagonal[izl,iframe].flatten())/10.
