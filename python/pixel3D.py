@@ -92,9 +92,16 @@ class cartesianGrid3D():
         self.zlcgrid=   zlcgrid
         self.nzl    =   nzl
 
-        self.cosmo=cosmology.Cosmo(h=1,omega_m=0.3)
+        # Only for lensing kernel
+        if parser.has_option('cosmology','omega_m'):
+            omega_m=parser.getfloat('cosmology','omega_m')
+        else:
+            omega_m=0.3
+        self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
+
         self.lensKernel=None
         self.pozPdfAve=None
+        return
 
     def pixelize_data(self,x,y,z,v,ws=None):
         """pixelize catalog into the cartesian grid

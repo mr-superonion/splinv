@@ -116,20 +116,25 @@ class haloSimStampBatchTask(BatchPoolTask):
         parser  =   ConfigParser()
         parser.read(self.config.configName)
         gridInfo=   cartesianGrid3D(parser)
+        omega_m =   parser.getfloat('cosmology','omega_m')
 
         # Lens Halo class
         M_200   =   10.**(ss['log10_M200'])
         conc    =   ss['conc']
         zh      =   ss['zh']
-        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
-        #halo=  haloSim.nfw_lensWB00(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
+                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+        """
+        halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
+                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+        """
 
         # Noise catalog
         obsName =   os.path.join(self.config.obsDir,'cats','sim0.fits')
         obs     =   pyfits.getdata(obsName)
 
         # pixelize Sigma field
-        Sigmafname=   os.path.join(self.config.outDir,'pixsigma-%d%d.fits' %(iz,im))
+        Sigmafname= os.path.join(self.config.outDir,'pixsigma-%d%d.fits' %(iz,im))
         Sigma   =   halo.Sigma(obs['raR']*3600.,obs['decR']*3600.)
         ztmp    =   gridInfo.zcgrid[0]
         raname  =   'raR'
@@ -154,17 +159,22 @@ class haloSimStampBatchTask(BatchPoolTask):
         parser  =   ConfigParser()
         parser.read(cache.configName)
         gridInfo=   cartesianGrid3D(parser)
+        omega_m =   parser.getfloat('cosmology','omega_m')
 
         # Lens Halo class
         M_200   =   10.**(ss['log10_M200'])
         conc    =   ss['conc']
         zh      =   ss['zh']
-        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
-        #halo=  haloSim.nfw_lensWB00(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
+                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+        """
+        halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
+                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+        """
 
         # Noise catalog
         obsName =   os.path.join(cache.obsDir,'cats','sim%d.fits' %isim)
-        obs   =   pyfits.getdata(obsName)
+        obs     =   pyfits.getdata(obsName)
 
         g1name  =   'g1R'   # random or hsc-like mask
         g2name  =   'g2R'

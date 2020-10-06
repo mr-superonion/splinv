@@ -124,7 +124,12 @@ class massmapSparsityTask():
         self.shapeL =   (self.nlp,self.ny,self.nx)
         self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
 
-        self.cosmo  =   cosmology.Cosmo(h=1)
+        # For distance calculation
+        if parser.has_option('cosmology','omega_m'):
+            omega_m=parser.getfloat('cosmology','omega_m')
+        else:
+            omega_m=0.3
+        self.cosmo  =   cosmology.Cosmo(h=1,omega_m=omega_m)
         self.read_pixel_result(parser)
         #self.lensing_kernel(self.zlBin,self.zsBin)
 
@@ -200,7 +205,7 @@ class massmapSparsityTask():
         return
 
     """
-    def lensing_kernel(self,zlbin,zsbin):
+    def lensing_kernel(self,zlBin,zsbin):
         # Old code, moved to pixel3D.py
         # Estimate the lensing kernel (with out poz)
         # the output is in shape (nzs,nzl)
@@ -209,7 +214,7 @@ class massmapSparsityTask():
         else:
             self.lensKernel =   np.zeros((self.nz,self.nlp))
             for i,zs in enumerate(zsbin):
-                self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlbin,zs)*self.zlscale
+                self.lensKernel[i,:]    =   self.cosmo.deltacritinv(zlBin,zs)*self.zlscale
         return
     """
 
@@ -349,7 +354,7 @@ class massmapSparsityTask():
             normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
-        self.mu    = 1./norm/1.5
+        self.mu    = 1./norm/2.
         return
 
     def prox_sigmaA(self):
@@ -466,21 +471,32 @@ class massmapSparsityTask():
                 self.debugAlphas.append(self.alphaR.real)
         return
 
-    def adaptive_lasso_weight(self,gamma=1):
+    def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):
+        """Calculate adaptive weight
+        @param gamma:       power of the root-n consistent (preliminary)
+                            estimation
+        @param sm_scale:    top-hat smoothing scale for the root-n
+                            consistent estimation [Mpc/h]
+        """
+        # Smoothing scale in arcmin
+        rsmth0=np.zeros(self.nlp,dtype=int)
+        for iz,zh in enumerate(self.zlBin):
+            rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
+
         p   =   np.zeros(self.shapeA)
         for izl in range(self.nlp):
-            for ifr in range(self.nframe):
-                rsmth   =   int(2**(1.-izl/8.)+0.5)
-                for jsh in range(-rsmth,rsmth+1):
-                    dif    =   np.roll(self.alphaR[izl,ifr],jsh,axis=-2)
-                    for ish in range(-rsmth,rsmth+1):
-                        dif2=  np.roll(dif,ish,axis=-1)
-                        p[izl,ifr] += dif2/(2.*rsmth+1.)**2.
+            rsmth   =   rsmth0[izl]
+            for jsh in range(-rsmth,rsmth+1):
+                # only smooth the point mass frame
+                dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
+                for ish in range(-rsmth,rsmth+1):
+                    dif2=  np.roll(dif,ish,axis=-1)
+                    p[izl,0] += dif2/(2.*rsmth+1.)#**2.
         p   =   np.abs(p)
 
         # threshold(for value close to zero)
-        thres_adp=  1./1e10
-        mask=   (p>thres_adp)
+        thres_adp=  1./1e12
+        mask=   (p**gamma>thres_adp)
 
         # weight estimation
         w       =   np.zeros(self.shapeA)

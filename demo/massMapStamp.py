@@ -40,17 +40,22 @@ from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
 class massMapStampBatchConfig(pexConfig.Config):
-    haloName=   pexConfig.Field(dtype=str, default='planck-cosmo/haloCat-202009201646.csv',
+    haloName=   pexConfig.Field(dtype=str,
+                default='planck-cosmo/nfw-halos/haloCat-202010032144.csv',
                 doc = 'halo catalog file name')
-    configName  =   pexConfig.Field(dtype=str, default='config-pix96-nl20.ini',
+    configName  =   pexConfig.Field(dtype=str,
+                default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
-    outDir  =   pexConfig.Field(dtype=str, default='HSC-obs/20200328/sparse-f1/',
+    outDir  =   pexConfig.Field(dtype=str,
+                default='planck-cosmo/sparse-f1-2/',
                 doc = 'output directory')
     """
-    outDir  =   pexConfig.Field(dtype=str, default='sparse-f1/',
+    outDir  =   pexConfig.Field(dtype=str,
+                default='HSC-obs/20200328/sparse-f1/',
                 doc = 'output directory')
     """
-    pixDir  =   pexConfig.Field(dtype=str, default='HSC-obs/20200328/pixes/',
+    pixDir  =   pexConfig.Field(dtype=str,
+                default='planck-cosmo/pix96-ns10/',
                 doc = 'output directory')
 
     def setDefaults(self):
@@ -68,7 +73,7 @@ class massMapStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        return [(ref, kwargs) for ref in range(1)]
+        return [(ref, kwargs) for ref in range(64)]
 
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
@@ -96,13 +101,18 @@ class massMapStampBatchTask(BatchPoolTask):
         pool.storeSet(haloName=self.config.haloName)
         pool.storeSet(configName=self.config.configName)
         pool.storeSet(pixDir=self.config.pixDir)
-        pool.storeSet(outDir=self.config.outDir)
         ss  =   pyascii.read(self.config.haloName)[Id]
         iz  =   ss['iz']
         im  =   ss['im']
+        outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
+        if not os.path.isdir(outDirH):
+            os.mkdir(outDirH)
+        pool.storeSet(outDirH=outDirH)
         pool.storeSet(ss=ss)
         resList =   pool.map(self.process,range(100))
         resList =   [x for x in resList if x is not None]
+
+        # peak catalogs list
         catA1   =   vstack([cat[0] for cat in resList])
         catA2   =   vstack([cat[1] for cat in resList])
         ofname1 =   os.path.join(self.config.outDir,'src-%d%d-lasso.fits' %(iz,im))
@@ -142,10 +152,10 @@ class massMapStampBatchTask(BatchPoolTask):
         im  =   ss['im']
         #pnm =   '%d%d-sim%d'%(iz,im,isim)
         pnm =   'sim%d' %(isim)
-        outfname1=os.path.join(cache.outDir,'deltaR-%s-lasso.fits' %pnm)
-        outfname2=os.path.join(cache.outDir,'deltaR-%s-alasso2.fits' %pnm)
-        outfname3=os.path.join(cache.outDir,'alphaR-%s-lasso.fits' %pnm)
-        outfname4=os.path.join(cache.outDir,'alphaR-%s-alasso2.fits' %pnm)
+        outfname1=os.path.join(cache.outDirH,'deltaR-%s-lasso.fits' %pnm)
+        outfname2=os.path.join(cache.outDirH,'deltaR-%s-alasso2.fits' %pnm)
+        outfname3=os.path.join(cache.outDirH,'alphaR-%s-lasso.fits' %pnm)
+        outfname4=os.path.join(cache.outDirH,'alphaR-%s-alasso2.fits' %pnm)
         if not (os.path.isfile(outfname1) and os.path.isfile(outfname1)):
             sparse3D    =   massmapSparsityTask(parser)
             sparse3D.process(1500)
@@ -154,8 +164,6 @@ class massMapStampBatchTask(BatchPoolTask):
             pyfits.writeto(outfname1,delta1)
             pyfits.writeto(outfname3,sparse3D.alphaR)
 
-            w   =   sparse3D.adaptive_lasso_weight(gamma=2.)
-            sparse3D.fista_gradient_descent(800,w=w)
             w   =   sparse3D.adaptive_lasso_weight(gamma=2.)
             sparse3D.fista_gradient_descent(800,w=w)
             sparse3D.reconstruct()
@@ -202,19 +210,22 @@ class massMapStampBatchTask(BatchPoolTask):
         parser  =   ConfigParser()
         parser.read(cache.configName)
 
-        #pnm =   '%d%d-sim%d'%(iz,im,isim)
-        pnm =   'sim%d' %(isim)
+        pnm =   '%d%d-sim%d'%(iz,im,isim)
+        #pnm =   'sim%d' %(isim)
 
-        g1fname     =   os.path.join(cache.pixDir,'pixShearR-g1-%s.fits' %pnm)
-        g2fname     =   os.path.join(cache.pixDir,'pixShearR-g2-%s.fits' %pnm)
+        haloDir     =   'halo%d%d' %(iz,im)
+        g1fname     =   os.path.join(cache.pixDir,haloDir,'pixShearR-g1-%s.fits' %pnm)
+        g2fname     =   os.path.join(cache.pixDir,haloDir,'pixShearR-g2-%s.fits' %pnm)
         sigmafname  =   os.path.join(cache.pixDir,'pixStd.fits')
+        lkfname     =   'planck-cosmo/lensing_kernel-pz-nl20.fits'
 
         parser.set('prepare','g1fname',g1fname)
         parser.set('prepare','g2fname',g2fname)
         parser.set('prepare','sigmafname',sigmafname)
+        parser.set('prepare','lkfname',lkfname)
 
         # Reconstruction Init
-        lbd =   0.05
+        lbd =   4.
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
@@ -222,7 +233,6 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('sparse','minframe','0' )
         parser.set('sparse','tau','%s' %tau)
         parser.set('sparse','debugList','[]')
-        parser.set('file','outDir',cache.outDir)
         return parser
 
     @classmethod

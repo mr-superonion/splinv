@@ -61,9 +61,9 @@ class nfw_lensWB00():
         # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance).
         # The factor of 1.63e-5 comes from the following set of prefactors:
         # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3.
-        #(H0=100.
-        #DH=C_LIGHT/1e3/H0
-        #rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
+        # (H0=100.
+        # DH=C_LIGHT/1e3/H0
+        # rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
         # The mass in the equation below is in M_solar/h,
         # which is how the final units are Mpc/h.
         R200 = 1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
