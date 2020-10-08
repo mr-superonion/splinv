@@ -27,9 +27,9 @@ import detect3D
 import numpy as np
 import astropy.io.fits as pyfits
 import astropy.io.ascii as pyascii
-from pixel3D import cartesianGrid3D
 from astropy.table import Table,vstack
 from sparseBase import massmapSparsityTask
+from sparseBase import massmapSparsityTaskNew
 from configparser import ConfigParser
 
 # lsst Tasks
@@ -47,7 +47,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f1-2/',
+                default='planck-cosmo/sparse-f3-3/',
                 doc = 'output directory')
     """
     outDir  =   pexConfig.Field(dtype=str,
@@ -157,14 +157,14 @@ class massMapStampBatchTask(BatchPoolTask):
         outfname3=os.path.join(cache.outDirH,'alphaR-%s-lasso.fits' %pnm)
         outfname4=os.path.join(cache.outDirH,'alphaR-%s-alasso2.fits' %pnm)
         if not (os.path.isfile(outfname1) and os.path.isfile(outfname1)):
-            sparse3D    =   massmapSparsityTask(parser)
+            sparse3D    =   massmapSparsityTaskNew(parser)
             sparse3D.process(1500)
             sparse3D.reconstruct()
             delta1  =   sparse3D.deltaR
             pyfits.writeto(outfname1,delta1)
             pyfits.writeto(outfname3,sparse3D.alphaR)
 
-            w   =   sparse3D.adaptive_lasso_weight(gamma=2.)
+            w   =   sparse3D.adaptive_lasso_weight(gamma=2.,sm_scale=0.)
             sparse3D.fista_gradient_descent(800,w=w)
             sparse3D.reconstruct()
             delta2  =   sparse3D.deltaR
@@ -224,12 +224,15 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('prepare','sigmafname',sigmafname)
         parser.set('prepare','lkfname',lkfname)
 
+        parser.set('lensZ','resolve_lim','0.4')
+        parser.set('lensZ','rs_base','0.12')
+
         # Reconstruction Init
-        lbd =   4.
+        lbd =   5.
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
-        parser.set('sparse','nframe','1' )
+        parser.set('sparse','nframe','3' )
         parser.set('sparse','minframe','0' )
         parser.set('sparse','tau','%s' %tau)
         parser.set('sparse','debugList','[]')
