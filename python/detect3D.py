@@ -56,7 +56,7 @@ def local_minima_3D(data, ordert=2, orderp=1, threshold=1.):
     footprint[orderp, ordert, ordert] = 0
 
     filtered = ndi.minimum_filter(data, footprint=footprint,mode='mirror')
-    mask_local_minima = (data > filtered)& (data<-threshold)
+    mask_local_minima = (data < filtered)& (data<-threshold)
     coords = np.asarray(np.where(mask_local_minima)).T
     values = data[mask_local_minima]
     return coords, values

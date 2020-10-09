@@ -31,6 +31,7 @@ from astropy.table import Table,vstack
 from sparseBase import massmapSparsityTask
 from sparseBase import massmapSparsityTaskNew
 from configparser import ConfigParser
+from pixel3D import cartesianGrid3D
 
 # lsst Tasks
 import lsst.pex.config as pexConfig
@@ -49,11 +50,6 @@ class massMapStampBatchConfig(pexConfig.Config):
     outDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/sparse-f3-3/',
                 doc = 'output directory')
-    """
-    outDir  =   pexConfig.Field(dtype=str,
-                default='HSC-obs/20200328/sparse-f1/',
-                doc = 'output directory')
-    """
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
                 doc = 'output directory')
