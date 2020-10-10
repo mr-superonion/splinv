@@ -54,16 +54,30 @@
 %\email{xiangchong.li@ipmu.jp}
 
 \begin{abstract}
-A new method is developed to reconstruct $3$-D density contrast fields from photometric weak lensing shear measurements.
-The $3$-D density contrast map is modeled as a superposition of basis atoms. The basis atoms are designed to represent 
-the structure of NFW halos which have $2$-D multi-scale NFW surface density profiles on the transverse plane and $1$-D 
-Dirac delta functions in the line-of-sight direction. With the prior assumption that the basis atoms have a spare distribution, 
-the density field is reconstructed using the adaptive lasso algorithm. The method is tested with realistic simulation 
-using HSC-like shape noise and photo-$z$ uncertainties. 
+A new method is developed to reconstruct $3$-D density contrast maps from photometric weak lensing shear measurements.
+The $3$-D density contrast maps is modeled as a summation of basis atoms which are designed to represent the profiles of 
+multi-scale NFW halos. The NFW atoms have $2$-D multi-scale NFW surface density profiles on the transverse plane and 
+$1$-D Dirac delta functions in the line-of-sight direction. With the sparsity prior assumption, the density field 
+is reconstructed using an oracle algorithm: adaptive lasso. Our method is tested with realistic simulations using HSC-like 
+shape noise and photo-$z$ uncertainties.
 {\redColor{Add descriptions on the outcomes of the test on the simulations.}}
 \end{abstract}
 
 \section{Introduction}
+
+\begin{figure*}[!ht]
+    \includegraphics[width=0.98\textwidth]{nfwlet-atom-2D.pdf}
+    \caption{The smoothed basis atoms with different scale radius ($r_s$). The first row shows the smoothed basis atoms in 
+            Fourier space and the second row shows the smoothed basis atoms in Real space. The smoothing kernel is Gaussian
+            with scale of $1.5$ pixels.} \label{fig-atoms2D}
+\end{figure*}
+
+\begin{figure}
+ \includegraphics[width=0.45\textwidth]{nfwlet-atom-1D.pdf}
+ \caption{The $1$-D slices for smoothed basis atoms at $x=0$. The corresponding $2$-D profiles are shown in Figure 
+            \ref{fig-atoms2D}.}
+\end{figure}
+
 Light from distant galaxies is distorted by the intervening inhomogeneous density distribution along the line-of-sight
 due to the influence of gravity. As a result of the light distortion, the shapes of the background galaxies are coherently
 sheared. Such effect, which is known as weak lensing, imprints the information of foreground mass density distribution
@@ -76,7 +90,7 @@ foreground density contrast field ($\delta$) through a linear transformation
  \gamma=\mathbf{T} \delta,
 \end{equation}
 where $\mathbf{T}$ is used to denote the linear transformation operator which includes not only physical lensing effect
-but also includes observational systematic effects from the observation (e.g. pixelization and smoothing of shear field in
+but also observational systematic effects from the observation (e.g. pixelization and smoothing of shear field in
 transverse plane, photo-$z$ uncertainties).
 
 Several large scale surveys target to study the weak lensing effect at high precision level (e.g. HSC \citep{HSC1-data}, KIDS
@@ -92,19 +106,20 @@ probes into the correlation between the matter field and galaxy field, on the ot
 auto-correlation of matter field.
 
 Reconstructions of density map from shear measurements also receive considerable interest. $2$-D density map reconstruction 
-which reconstructs the integration of mass along the line-of-sight direction has been well studied by the community
+which recover an integration of projected mass along the line-of-sight has been well studied within the community
 \citep{massMap-KS1993,WL-massMap-Glimpse2D-Lanusse2016}
-and applied to large scale surveys \citep{HSC1-massMaps,massMapDES-Chang2018,DES-SV-massMap-sparsity}.
+and applied to large scale surveys \citep{HSC1-massMaps,massMapDES-Chang2018,DES-SV-massMap-sparsity}. However, the 
+reconstruction of $3$-D mass map is still a challenging task.
 
 In order to fully reconstruct the $3$-D mass density distribution ($\delta$) from the tomographic shear observations ($\gamma$),
-the density contrast field is modeled as a superposition of basis atoms in a dictionary space
+the density contrast field is modeled as a summation of basis atoms in a model dictionary
 \begin{equation} \label{eq-intro-dict}
  \delta= \mathbf{\Phi} x,
 \end{equation}
 where $\mathbf{\Phi}$ is the transformation operator from the parameters in the dictionary space to the density contrast 
-and $x$ denotes the parameters in the dictionary space. \citet{LSS-massMap-Wiener-Simon2009} reconstruct the density field
+and $x$ denotes the parameters. \citet{LSS-massMap-Wiener-Simon2009} reconstruct the density field
 in Fourier space, which is equivalent to model the mass field with sinusoidial functions. On the other hand,
-\citet{LSS-massMap-Glimpse3D-Leonard2014} models the mass field with Starlets.
+\citet{LSS-massMap-Glimpse3D-Leonard2014} models the mass field with Starlets \citep{Starlet-Starck2015}.
 
 The model parameters are estimated through solving an optimization problem and the estimator is defined as
 \begin{equation}
@@ -117,31 +132,32 @@ the estimation of the parameter ($x$) from the prior assumptions. Such estimatio
 to describe the observations and also align with the prior assumptions. The regularization parameter $\lambda$ adjusts 
 the relative weight between the observations and prior assumptions in the optimization process.
 
-\citet{LSS-massMap-Wiener-Simon2009} propose to use the $l^2$ ridge regulation ($C=\norm{x}^2_2$) to find the best-fit 
+\citet{LSS-massMap-Wiener-Simon2009} propose to use the $l^2$ ridge regulation ($C=\norm{x}^2_2$) to find a sparse 
 solution in Fourier space. \citet{HSC1-massMaps} apply the method of \citet{LSS-massMap-Wiener-Simon2009} to the first 
 year data of the Hyper Suprime-Cam Survey \citep{HSC1-data}. 
 {\redColor{Why we use $l^1$ in this paper, what is the difference between $l^1$ and $l^2$.}}
 
-\citet{LSS-massMap-Glimpse3D-Leonard2014} propose to use the $l^1$ lasso regulation ($C=\norm{x}^1_1$) to find the
-best-fits solution in a Starlets dictionary space. However, the Starlets functions are not designed to model the 
-clumpy mass distributions in the universe and \citet{LSS-massMap-Glimpse3D-Leonard2014} use a greedy descent algorithm 
-to find minima of the loss function, which is not guarateed to converge to the global minima ({\redColor{cite..}}).
+\citet{LSS-massMap-Glimpse3D-Leonard2014} propose to use a derivative version of $l^1$ lasso regulation ($C=\norm{x}^1_1$) 
+to find a sparse solution in the Starlets dictionary space \citep{Starlet-Starck2015}. However, the Starlets functions are 
+not designed to model the profile of clumpy mass in the universe. Moreover, \citet{LSS-massMap-Glimpse3D-Leonard2014} 
+apply a greedy coordinate descent algorithm, which selects the steepest coordinate in each iteration, find the minima of 
+a non-convex loss function. However, the stability of the non-convex optimization has not been fully discussed.
 
 $N$-body simulations have shown that the dark matter is distributed in halos connected by filaments, and the density 
-distribution of a halo follows the NFW profile \citep{halo-NFW1997ApJ}.
-We construct a dictionary which is composed of multi-scale NFW atoms and point mass atoms. The multi-scale NFW atoms are used 
-to model the structures within halos. They follow multi-scale surface density profiles of NFW halos \citep{haloModel-TJ2003-3pt}
-on the transverse plane and Dirac delta function in the line-of-sight direction. By using Dirac delta functions in the 
-line-of-sight direction, the depth of halo is neglected \citep{LSS-massMap-Glimpse3D-Leonard2014} since the resolution 
-scale of the reconstruction in the line-of-sight direction is much larger than the halo scale.
-The point mass atoms are used to model the structures in the filaments and structures smaller than the reachable resolution
-on the transverse plane. Furthermore, the point mass atoms make our dictionary space complete.
+profile of a single halo follows the NFW function \citep{halo-NFW1997ApJ}.
+We construct a dictionary which is composed of multi-scale NFW atoms. The multi-scale NFW atoms are used to model the 
+profiles of halos. The atoms follow multi-scale surface density profiles of NFW functions \citep{haloModel-TJ2003-3pt}
+on the transverse plane.
+The depth of halo is neglected \citep{LSS-massMap-Glimpse3D-Leonard2014} since the resolution scale of the reconstruction 
+in the line-of-sight direction is much larger than the halo scale. Therefore, the Dirac delta function is used to model the
+atoms' profile in the line-of-sight direction. 
 With the prior assumption that the density contrast field is sparse in the dictionary space, the adaptive lasso regularization
 \citep{AdaLASSO-Zou2006} is used to reconstruct a high signal-to-noise-ratio (SNR) density contrast field.
 
-Comparing with \citet{LSS-massMap-Glimpse3D-Leonard2014}, our dictionary space is built up to describe the clumpy mass 
-in the universe which has clear physical a motivation. Moreover, we use adaptive lasso which does not rely on any greedy 
-descent alorithm, therefore the estimation is guarateed to converge to the global minimum.
+Comparing with \citet{LSS-massMap-Glimpse3D-Leonard2014}, our dictionary is built up to describe the clumpy mass 
+in the universe which has a clear physical motivation. Furthermore, the adaptive lasso algorithm is full convex and 
+can be optimized with the FISTA algorithm \citep{FISTA-Beck2009} without relying on any greedy coordinate descent approaches. 
+The stability of this convex optimization has been well studied.
 
 This paper is organized as follows.
 Section \ref{sec:Method} proposes the new method for $3$-D density map reconstruction.
@@ -152,12 +168,11 @@ Section \ref{sec:Sum} summarizes and discusses the future development of the met
 \section{Methodology}
 \label{sec:Method}
 
-In this section, we first review how foreground density distributions induce weak lensing shear distortions on background
-galaxies in section \ref{subsec:method-delta2shear}.
-Then, we introduce the dictionary space used to model the foreground density map in section \ref{subsec:method-dictionary}.
+We first review the lensing process in section \ref{subsec:method-delta2shear}.
+Then, we introduce the dictionary used to model the foreground density maps in section \ref{subsec:method-dictionary}.
 
-Subsequently, in section \ref{subsec:method-Systematics} we discuss several systematic effects from observations which include 
-photo-$z$ uncertainty (section \ref{subsec:method-photoz}),
+Subsequently, in section \ref{subsec:method-Systematics}, we discuss several systematic effects from observations which 
+include photo-$z$ uncertainty (section \ref{subsec:method-photoz}),
 smoothing (section \ref{subsec:method-smoothing}),
 masking(section \ref{subsec:method-msknoise}),
 and pixelization (section \ref{subsec:method-pixel}).
@@ -169,13 +184,7 @@ Finally, we find the the sparse solution in section \ref{subsec:method-reversion
 \subsection{Lensing}
 \label{subsec:method-delta2shear}
 
-\begin{figure*}
-    \includegraphics[width=0.95\textwidth]{nfwlet-atom-2D.pdf}
-    \caption{The NFW models with different scale radius ($r_s$). The first row shows the NFW models in Fourier
-            space and the second row shows the NFW model in Real space.}
-\end{figure*}
-
-The lensing convergence $\kappa$ at the comoving distance $\chi_s$ caused by the foreground inhomogeneous
+The lensing convergence map at the comoving distance $\chi_s$ caused by the foreground inhomogeneous
 density distribution at the comoving distance $\chi_l$ ($\chi_l< \chi_s$) along the line-of-sight is
 \citep{LSS-massMap-Glimpse3D-Leonard2014}
 \begin{equation}
@@ -212,12 +221,12 @@ physical shear distortions influenced by systematics which will be discussed in 
 
 Combining equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}), the physical shear signal is derived as
 \begin{equation}\label{eq-delta2gammat}
-\gamma_L(\vec{\theta},z_s) = \int_0^{z_s} \frac{dz_l}{\delta_{c}(z_l,z_s)} \int d^2 \theta' \vec{D}(\vec{\theta}-\vec{\theta'}) \delta(\vec{\theta'},z_l).
+\gamma_L(\vec{\theta},z_s) = \int_0^{z_s} dz_l K(z_l,z_s) \int d^2 \theta' \vec{D}(\vec{\theta}-\vec{\theta'}) \delta(\vec{\theta'},z_l).
 \end{equation}
 
 To simplify the expression, we define the lensing transform operator as
 \begin{equation}
-\mathbf{Q}=\int_0^{z_s} \frac{dz_l}{\delta_{c}(z_l,z_s)} \int d^2 \theta'  \vec{D}(\vec{\theta}-\vec{\theta'}),
+\mathbf{Q}=\int_0^{z_s} dz_l K(z_l,z_s) \int d^2 \theta'  \vec{D}(\vec{\theta}-\vec{\theta'}),
 \end{equation}
 and eq. (\ref{eq-delta2gammat}) is simplified to
 \begin{equation} \label{eq-delta2gammat-simp}
@@ -226,15 +235,8 @@ and eq. (\ref{eq-delta2gammat}) is simplified to
 
 \subsection{Dictionary}
 \label{subsec:method-dictionary}
-\begin{figure}
- \centering
- \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
- \caption{The source galaxies are binned into $10$ redshift bins according to their mlz best photo-$z$ estimation.
-        The blue histogram is the number distribution of the best photo-$z$ estimation. The vertical dashed lines
-        are the bounds of bins. The galaxies are evenly distributed in each bins.}
-\end{figure}
 
-The density contrast field is modeled as a superposition of basis atoms in the dictionary space $\{\phi_0,\phi_1,...\phi_{N}\}$.
+The density contrast field is modeled as a summation of basis atoms in the dictionary space $\{\phi_0,\phi_1,...\phi_{N}\}$.
 \begin{equation}\label{eq-x2delta}
 \delta(\vec{r}) = \sum_{s=0}^{N} \int d^3 r' \phi_s(\vec{r}-\vec{r'}) x_s(\vec{r'}),
 \end{equation}
@@ -302,9 +304,13 @@ following subsections.
 
 \subsubsection{Photo-$z$ Uncertainty}
 \label{subsec:method-photoz}
+
 \begin{figure}
- \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
- \caption{The $1$-D slices of NFW models with different scale radius ($r_s=0,1,2,4,8$).}
+ \centering
+ \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
+ \caption{The source galaxies are binned into $10$ redshift bins according to their mlz best photo-$z$ estimation.
+        The blue histogram is the number distribution of the best photo-$z$ estimation. The vertical dashed lines
+        are the bounds of bins. The galaxies are evenly distributed in each bins.}
 \end{figure}
 
 Since the photometric redshifts of source galaxies in the current large scale survey are estimated with
@@ -453,9 +459,9 @@ select the related parameters from the parameter space consistently. Moreover, t
 the shrinkage process in the lasso regression. 
 
 \citet{AdaLASSO-Zou2006} proposes the adaptive lasso algorithm which uses adaptive weights to penalize different coefficients 
-in the $l^1$ penalty. The addaptive lasso algorithm is a two-steps process. Lasso estimation is performed in the first step 
-and achieve a preliminary lasso estimation of parameter ($\hat{x'}^{\rm{lasso}}$). In the second step, the lasso estimation is used 
-to weight the penalization on the parameters. With the definition of the adaptive lasso weight 
+in the $l^1$ penalty. The addaptive lasso algorithm is a two-steps process. First, Lasso estimation is performed in the first 
+step and achieve a preliminary lasso estimation of parameter ($\hat{x'}^{\rm{lasso}}$). In the second step, the lasso estimation 
+is used to weight the penalization on the parameters. With the definition of the adaptive lasso weight 
 \begin{equation}
 \hat{w}= \frac{1}{\abs{\hat{x'}^{\rm{lasso}}}^\tau},
 \end{equation}
@@ -556,28 +562,28 @@ The algorithm is described in Algorithm \ref{alg-1}.
 
 \section{Simulation}
 \label{sec:Sim}
-This section simulates lensing shear fields induced by a group of dark matter halos with various halo mass and redshifts.
-HSC-like shape measurement error and photo-$z$ error are added to the shear field.
+
+This section simulates lensing shear fields induced by a group of dark matter halos with various halo masses and redshifts.
+Then the shear distortions are applied to HSC mock catalogs with different realizations of HSC-like shape noises and photo-$z$
+uncertainties.
+
+The $\Lambda$CDM cosmology used for the simulations is from the best fitting result of the final full-mission Planck observation 
+of the cosmic microwave background (CMB) with $H_0=67.4 ~\rm{km~s^{-1} Mpc^{-1}}$ $\Omega_M=0.315$, $\Omega_\Lambda=0.685$
+\citep{cmb-Planck2018-Cosmology}.
 
 \subsection{Weak Lensing Fields}
 
+We sample halos in two dimensional (mass, redshift) plane. The two dimensional plane is divided into eight redshift bins 
+times eight mass bins. The input redshifts and masses are shifted by random values for each halo, respectively.
+
 We simulate weak lensing shear fields of NFW halos according to \citet{haloModel-TJ2003-3pt}
-and sample halos in the mass-redshift plane as shown in Figure \ref{fig:mass-redshift}.
-We assume a dependency of the concentration on the mass and the redshift of a halo as \citep{c-M_Magneticum-Ragagnin2019}
+We assume a dependency of the concentration on the mass and the redshift of a halo 
+\citet[equation (2)]{c-M_Magneticum-Ragagnin2019}
 \begin{equation}
 c_{h}=6.02\times(\frac{M_{200}}{10^{13} M_{\odot}})^{-0.12}(\frac{1.47}{1.+z_h})^{0.16}.
 \end{equation}
 
-
-\begin{figure}[!ht]
- \centering
- \includegraphics[width=0.45\textwidth]{mass-redshift-sampling.pdf}
- \caption{The sampling points of halos in the mass-redshift plane.}
- \label{fig:mass-redshift}
-\end{figure}
-
-\subsection{HSC-like Systematic}
-\subsubsection{Shear Measurement Error}
+\subsection{HSC mock Catalog}
 \begin{figure}[!ht]
  \centering
  \includegraphics[width=0.45\textwidth]{shapeMeasurementError-HSCY1.pdf}
@@ -585,7 +591,9 @@ c_{h}=6.02\times(\frac{M_{200}}{10^{13} M_{\odot}})^{-0.12}(\frac{1.47}{1.+z_h})
  \label{fig:mass-redshift}
 \end{figure}
 
-\subsubsection{Photo-$z$ Error}
+For each galaxy, we randomly assign its redshift following the MLZ photo-$z$ probability distribution function 
+\citep{HSC1-photoz} of the galaxy. The shear values are obtained from the all-sky weak lensing maps at two adjacent 
+redshift slices with linearly interpolation.
 
 \section{Results}
 \label{sec:Res}
@@ -615,6 +623,61 @@ the results with $\tau=0.10$, the middle panel is the result for $\tau=0.15$, th
  \caption{The standard deviation map of shear measurement error for the fifth source bin ($0.69 \leq z < 0.80 $).}
 \end{figure}
 
+
+
+
+We develope a novel method to reconstruct $3$-D density contrast maps from photometric weak lensing shear measurements.
+Our method models $3$-D density contrast maps as a summation of NFW atoms with multiple comoving radius and point mass atoms
+in the $3$-D space binned with photometric redshift. The NFW atoms are used to model the mass in isolated halos and the 
+point mass atoms are used to model the structures close to the resolution limit of the reconstruction. 
+
+With the prior assumption that the basis atoms sparsely distributes in the $3$-D space, the density field is reconstructed 
+using the adaptive lasso algorithm \citep{AdaLASSO-Zou2006} which has the oracle properties. 
+
+
+The method is tested with realistic simulations using HSC-like shape noise and photo-$z$ uncertainties.
+
+
+\begin{figure*}[!ht]
+ \centering
+ \includegraphics[width=0.95\textwidth]{detfalseRate_f1-1.pdf}
+ \includegraphics[width=0.95\textwidth]{detfalseRate_f1-3.pdf}
+ \caption{The upper panels show the detection rate and false peak per square degree for mass map reconstruction with
+point mass atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
+\end{figure*}
+
+
+\begin{figure*}[!ht]
+ \centering
+ \includegraphics[width=0.95\textwidth]{detfalseRate_f3-1.pdf}
+ \includegraphics[width=0.95\textwidth]{detfalseRate_f3-3.pdf}
+ \caption{The upper panels show the detection rate and false peak per square degree for mass map reconstruction with
+NFW atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
+\end{figure*}
+
+\begin{figure*}[!ht]
+ \centering
+ \includegraphics[width=0.95\textwidth]{peak_scatters_f3-1.pdf}
+ \caption{The left panel shows the stacked distribution of deviations of detected peak positions 
+ from the centers of the corresponding input halos. The $x$-axis is for the deviated distance in the transverse plane and the 
+ $y$-axis is for the deviation of the redshift. The peaks inside the dashed black box are regarded as true detections. The 
+ right panel focus on the deviation of detected peaks in the line-of-sight direction. The $x$-axis shows the input redshifts 
+ and the $y$-axis is the redshift of the detected peak. The cross symbols show the average redshift of detected peak for 
+ halos with different input redshift and mass and the error-bars are the scatter of the corresponding peak redshifts. All 
+ of the results in this figure are based on the NFW atoms.}
+\end{figure*}
+
+
+\begin{figure}[!ht]
+ \centering
+ \includegraphics[width=0.45\textwidth]{peak_histograms.pdf}
+ \caption{The histograms of detected peak values for all of the halo and error realizations. The dotted lines with different 
+ colors are for the results of reconstruction with NFW atoms dictionary penalized with different regularization parameter 
+ $\lambda$.}
+\end{figure}
+
+
+\clearpage
 \bibliographystyle{aasjournal}
 \bibliography{citation}
 
