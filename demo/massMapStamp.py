@@ -220,8 +220,8 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('prepare','sigmafname',sigmafname)
         parser.set('prepare','lkfname',lkfname)
 
-        parser.set('lensZ','resolve_lim','0.4')
-        parser.set('lensZ','rs_base','0.12')
+        parser.set('lensZ','resolve_lim','0.4') #pix
+        parser.set('lensZ','rs_base','0.12')    #Mpc/h
 
         # Reconstruction Init
         lbd =   5.
