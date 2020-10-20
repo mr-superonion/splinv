@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f3-3/',
+                default='planck-cosmo/sparse-f3-3/', # -1/2/3 (lbd=3.5/4/5)
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
@@ -69,7 +69,9 @@ class massMapStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        return [(ref, kwargs) for ref in range(64)]
+        #idRange=range(64)
+        idRange=[10000000]
+        return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
@@ -97,14 +99,21 @@ class massMapStampBatchTask(BatchPoolTask):
         pool.storeSet(haloName=self.config.haloName)
         pool.storeSet(configName=self.config.configName)
         pool.storeSet(pixDir=self.config.pixDir)
-        ss  =   pyascii.read(self.config.haloName)[Id]
-        iz  =   ss['iz']
-        im  =   ss['im']
+        if Id<5e4:
+            # halo field
+            ss  =   pyascii.read(self.config.haloName)[Id]
+            iz  =   ss['iz']
+            im  =   ss['im']
+        else:
+            # Noise field
+            ss  =   None
+            iz  =   800
+            im  =   800
+        pool.storeSet(ss=ss)
         outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        pool.storeSet(ss=ss)
         resList =   pool.map(self.process,range(100))
         resList =   [x for x in resList if x is not None]
 
@@ -144,9 +153,13 @@ class massMapStampBatchTask(BatchPoolTask):
         Reconstruct density map
         """
         ss  =   cache.ss
-        iz  =   ss['iz']
-        im  =   ss['im']
-        #pnm =   '%d%d-sim%d'%(iz,im,isim)
+        if ss is not None:
+            iz  =   ss['iz']
+            im  =   ss['im']
+        else:
+            iz      =   800
+            im      =   800
+
         pnm =   'sim%d' %(isim)
         outfname1=os.path.join(cache.outDirH,'deltaR-%s-lasso.fits' %pnm)
         outfname2=os.path.join(cache.outDirH,'deltaR-%s-alasso2.fits' %pnm)
@@ -188,9 +201,12 @@ class massMapStampBatchTask(BatchPoolTask):
         y0  =   gridInfo.ybound[0]
         z0  =   gridInfo.zlbound[0]
 
-        src['dRA']   =   (x0+src['ix']*dx)*60.
+        src['dRA']   =   (x0+src['ix']*dx)*60. # centroid is 0
         src['dDEC']  =   (y0+src['iy']*dy)*60.
-        src['dZ']    =   z0+src['iz']*dz-ss['zh']
+        if ss is not None:
+            src['dZ']    =   z0+src['iz']*dz-ss['zh']
+        else:
+            src['dZ']    =   z0+src['iz']*dz
         return
 
     def prepare(self,cache,isim):
@@ -198,8 +214,12 @@ class massMapStampBatchTask(BatchPoolTask):
         Prepare for the computation
         """
         ss  =   cache.ss
-        iz  =   ss['iz']
-        im  =   ss['im']
+        if ss is not None:
+            iz  =   ss['iz']
+            im  =   ss['im']
+        else:
+            iz      =   800
+            im      =   800
         self.log.info('processing halo iz: %d, im: %d, realization: %d' %(iz,im,isim))
 
         # pixelaztion class
@@ -207,7 +227,6 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.read(cache.configName)
 
         pnm =   '%d%d-sim%d'%(iz,im,isim)
-        #pnm =   'sim%d' %(isim)
 
         haloDir     =   'halo%d%d' %(iz,im)
         g1fname     =   os.path.join(cache.pixDir,haloDir,'pixShearR-g1-%s.fits' %pnm)
@@ -224,7 +243,7 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('lensZ','rs_base','0.12')    #Mpc/h
 
         # Reconstruction Init
-        lbd =   5.
+        lbd =   5.0
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
