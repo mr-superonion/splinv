@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f3-3/', # -1/2/3 (lbd=3.5/4/5)
+                default='planck-cosmo/sparse-f3-2/',
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
@@ -243,7 +243,7 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('lensZ','rs_base','0.12')    #Mpc/h
 
         # Reconstruction Init
-        lbd =   5.0
+        lbd =   4.0
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
