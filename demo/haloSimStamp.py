@@ -70,7 +70,9 @@ class haloSimStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        return [(ref, kwargs) for ref in range(64)]
+        #idRange=range(64)
+        idRange=[10000000]
+        return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
@@ -98,14 +100,23 @@ class haloSimStampBatchTask(BatchPoolTask):
         pool.storeSet(obsDir=self.config.obsDir)
         pool.storeSet(haloName=self.config.haloName)
         pool.storeSet(configName=self.config.configName)
-        ss  =   pyascii.read(self.config.haloName)[Id]
-        outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(ss['iz'],ss['im']))
+        if Id<5e4:
+            # halo field
+            ss  =   pyascii.read(self.config.haloName)[Id]
+            iz  =   ss['iz']
+            im  =   ss['im']
+            self.pixelize_Sigma(ss)
+        else:
+            # Noise field
+            ss  =   None
+            iz  =   800
+            im  =   800
+        pool.storeSet(ss=ss)
+        outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        pool.storeSet(ss=ss)
-        self.pixelize_Sigma(ss)
-        pool.map(self.process,range(100))
+        pool.map(self.process,range(100,1000))
         return
 
     def pixelize_Sigma(self,ss):
@@ -122,9 +133,11 @@ class haloSimStampBatchTask(BatchPoolTask):
         M_200   =   10.**(ss['log10_M200'])
         conc    =   ss['conc']
         zh      =   ss['zh']
+        # TJ03 halo
         halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
                     redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
         """
+        # WB00 halo
         halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
                     redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
         """
@@ -150,28 +163,6 @@ class haloSimStampBatchTask(BatchPoolTask):
         @param ss       halo source
         """
 
-        ss  =   cache.ss
-        iz  =   ss['iz']
-        im  =   ss['im']
-        self.log.info('simulating halo iz: %d, im: %d, realization: %d' %(iz,im,isim))
-
-        # pixelaztion class
-        parser  =   ConfigParser()
-        parser.read(cache.configName)
-        gridInfo=   cartesianGrid3D(parser)
-        omega_m =   parser.getfloat('cosmology','omega_m')
-
-        # Lens Halo class
-        M_200   =   10.**(ss['log10_M200'])
-        conc    =   ss['conc']
-        zh      =   ss['zh']
-        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
-                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
-        """
-        halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
-                    redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
-        """
-
         # Noise catalog
         obsName =   os.path.join(cache.obsDir,'cats','sim%d.fits' %isim)
         obs     =   pyfits.getdata(obsName)
@@ -182,20 +173,48 @@ class haloSimStampBatchTask(BatchPoolTask):
         decname =   'decR'
         zname   =   'zbest' # best poz or true z
 
-        deltaSigma= halo.DeltaSigmaComplex(obs['raR']*3600.,obs['decR']*3600.)
-        lensKer =   halo.lensKernel(obs['ztrue']) # lensing kernel
-        shear   =   deltaSigma*lensKer
+        parser  =   ConfigParser()
+        parser.read(cache.configName)
+        gridInfo=   cartesianGrid3D(parser)
+
+        ss  =   cache.ss
+        if ss is not None:
+            iz  =   ss['iz']
+            im  =   ss['im']
+            self.log.info('simulating halo iz: %d, im: %d, realization: %d' %(iz,im,isim))
+
+            # pixelaztion class
+            omega_m =   parser.getfloat('cosmology','omega_m')
+
+            # Lens Halo class
+            M_200   =   10.**(ss['log10_M200'])
+            conc    =   ss['conc']
+            zh      =   ss['zh']
+            # TJ03 halo
+            halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
+                        redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+            """
+            # WB00 halo
+            halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
+                        redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
+            """
+            deltaSigma= halo.DeltaSigmaComplex(obs['raR']*3600.,obs['decR']*3600.)
+            lensKer =   halo.lensKernel(obs['ztrue']) # lensing kernel
+            shear   =   deltaSigma*lensKer
+        else:
+            shear   =   0.
+            iz      =   800
+            im      =   800
+
         val     =   obs['g1n']+obs['g2n']*1j+shear
         g1g2    =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val)
 
         pnm     =   '%d%d-sim%d' %(iz,im,isim)
-        #pnm     =   'sim%d' %(isim)
         g1fname     =   os.path.join(cache.outDirH,'pixShearR-g1-%s.fits' %pnm)
         g2fname     =   os.path.join(cache.outDirH,'pixShearR-g2-%s.fits' %pnm)
         pyfits.writeto(g1fname,g1g2.real,overwrite=True)
         pyfits.writeto(g2fname,g1g2.imag,overwrite=True)
         del g1g2
-        del lensKer
         del shear
         del val
         gc.collect()

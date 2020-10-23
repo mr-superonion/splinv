@@ -202,3 +202,15 @@ class cartesianGrid3D():
             lensKernel=poz_ave.dot(lensK)
             self.lensKernel=lensKernel
         return lensKernel
+
+    def lensing_kernel_infty(self):
+        """Mapping from an average delta in a lens redshfit bin
+        to an average kappa in a source redshift at z=+infty
+        """
+        lensKernel =   np.zeros((self.nz,self.nzl))
+        kl  =   self.cosmo.Da(0.,self.zlcgrid)*four_pi_G_over_c_squared()
+        # Surface masss density in lens bin
+        rhoM_ave=self.cosmo.rho_m(self.zlcgrid)
+        DaBin=self.cosmo.Da(self.zlbound[:-1],self.zlbound[1:])
+        lensKernel=kl*rhoM_ave*DaBin
+        return lensKernel
