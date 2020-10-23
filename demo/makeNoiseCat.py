@@ -12,10 +12,10 @@ tn      =   '9347.fits'
 def rotCatalog(e1, e2, phi=None):
     if phi  ==  None:
         phi = 2.0 * np.pi * np.random.rand(len(e1))
-    cs = np.cos(phi)
-    ss = np.sin(phi)
-    e1_rot = e1 * cs + e2 * ss
-    e2_rot = (-1.0) * e1 * ss + e2 * cs
+    cs      =   np.cos(phi)
+    ss      =   np.sin(phi)
+    e1_rot  =   e1 * cs + e2 * ss
+    e2_rot  =   (-1.0) * e1 * ss + e2 * cs
     return e1_rot, e2_rot
 
 def measShear(cdata):
@@ -51,8 +51,13 @@ def main():
     pdata   =   pdata[mask]
     ra      =   ra[mask]
     dec     =   dec[mask]
-    raR     =   np.random.rand(len(ra))-0.5
-    decR    =   np.random.rand(len(dec))-0.5
+    if os.path.exists('HSC-obs/20200328/cats/sim0.fits'):
+        data0=  pyfits.getdata('HSC-obs/20200328/cats/sim0.fits')
+        raR =   data0['raR']
+        decR=   data0['decR']
+    else:
+        raR     =   np.random.rand(len(ra))-0.5
+        decR    =   np.random.rand(len(dec))-0.5
     zBest   =   cdata['mlz_photoz_best']
     g1,g2   =   measShear(cdata)
 
@@ -61,7 +66,6 @@ def main():
     poz_bins=pyfits.getdata(bfn)['BINS']
     nobj, nbin = pdata.shape
     assert len(poz_bins)==nbin
-
 
     pdata   =   pdata.astype(float)
     pdata   /=  np.sum(pdata,axis=1).reshape(nobj, 1)
@@ -75,12 +79,12 @@ def main():
         print('processing mock: %d' %imock)
         np.random.seed(imock)
         tableMock   =   astTab.Table(data=np.empty((nobj,len(names))),names=names)
-        tzmc  =   np.empty(nobj, dtype=float)
+        tzmc        =   np.empty(nobj, dtype=float)
         # Monte Carlo z
-        r     =   np.random.random(size=nobj)
+        r           =   np.random.random(size=nobj)
         for i in range(nobj):
             tzmc[i] =   np.interp(r[i], cdf[i], poz_bins)
-        g1n,g2n =   rotCatalog(g1,g2)
+        g1n,g2n     =   rotCatalog(g1,g2)
         tableMock['raH']    =   ra
         tableMock['decH']   =   dec
         tableMock['raR']    =   raR
@@ -89,7 +93,7 @@ def main():
         tableMock['g2n']    =   g2n
         tableMock['zbest']  =   zBest
         tableMock['ztrue']  =   tzmc
-        tableMock.write('HSC-obs/20200328/cats/sim%d.fits' %imock)
+        tableMock.write('HSC-obs/20200328/cats/sim%d.fits' %imock,overwrite=True)
         del tableMock
         del g1n,g2n
         del tzmc

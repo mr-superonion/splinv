@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f3-2/',
+                default='planck-cosmo/sparse-f3-3/',
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
@@ -114,7 +114,7 @@ class massMapStampBatchTask(BatchPoolTask):
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        resList =   pool.map(self.process,range(100))
+        resList =   pool.map(self.process,range(1000))
         resList =   [x for x in resList if x is not None]
 
         # peak catalogs list
@@ -165,7 +165,7 @@ class massMapStampBatchTask(BatchPoolTask):
         outfname2=os.path.join(cache.outDirH,'deltaR-%s-alasso2.fits' %pnm)
         outfname3=os.path.join(cache.outDirH,'alphaR-%s-lasso.fits' %pnm)
         outfname4=os.path.join(cache.outDirH,'alphaR-%s-alasso2.fits' %pnm)
-        if not (os.path.isfile(outfname1) and os.path.isfile(outfname1)):
+        if not (os.path.isfile(outfname1) and os.path.isfile(outfname2)):
             sparse3D    =   massmapSparsityTaskNew(parser)
             sparse3D.process(1500)
             sparse3D.reconstruct()
@@ -243,7 +243,7 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('lensZ','rs_base','0.12')    #Mpc/h
 
         # Reconstruction Init
-        lbd =   4.0
+        lbd =   5.0
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )

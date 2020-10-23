@@ -116,7 +116,7 @@ class haloSimStampBatchTask(BatchPoolTask):
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        pool.map(self.process,range(100))
+        pool.map(self.process,range(100,1000))
         return
 
     def pixelize_Sigma(self,ss):
