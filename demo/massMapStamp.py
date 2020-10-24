@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f3-3/',
+                default='planck-cosmo/sparse-f3-3-2/',
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
