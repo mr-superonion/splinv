@@ -56,12 +56,14 @@ Reducing the line-of-sight smearing.}
 
 \begin{abstract}
 A new method is developed to reconstruct $3$-D density contrast maps from photometric weak lensing shear measurements.
-The $3$-D density contrast maps is modeled as a summation of NFW basis atoms which have $2$-D multi-scale NFW surface 
+The $3$-D density contrast maps are modeled as a summation of the NFW basis atoms which have $2$-D multi-scale NFW surface 
 density profiles on the transverse plane and $1$-D Dirac delta functions in the line-of-sight direction. With the prior 
 assumption that the density fields can be sparsely represented by the NFW basis atoms, it is reconstructed using an 
 oracle algorithm: adaptive lasso. Our method is tested with realistic simulations using the HSC-like shape noise and 
 photo-$z$ uncertainty.
-{\redColor{Add descriptions on the outcomes of the test on the simulations.}}
+Our findings are summarized as folllows: 1) The global minima solution of the standard lasso algorithm suffers from a
+smear of structure in the line-of-sight direction even in the absence of shape nosie.
+2) The global minima solution of addaptive lasso algorithm significantly removes the line-of-sight smear of structure.
 \end{abstract}
 
 \section{Introduction}
@@ -271,8 +273,8 @@ and eq. (\ref{eq-delta2gammat}) is simplified to
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.42\textwidth]{delta-3-7-pz-nn-lasso.png}
-\includegraphics[width=0.42\textwidth]{delta-3-7-pz-nn-alasso.png}
+\includegraphics[width=0.49\textwidth]{delta-3-7-pz-nn-lasso.pdf}
+\includegraphics[width=0.49\textwidth]{delta-3-7-pz-nn-alasso.pdf}
 \caption{The result of density map reconstruction with standard lasso (left) and adaptive lasso (right). The input density 
         map is from a NFW halo with mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$. The lasso reconstruction 
         smear the density field along the line-of-sight direction. Noises on shear measurements are neglected in the 
@@ -733,11 +735,10 @@ For each galaxy, we randomly assign its redshift following the MLZ photo-$z$ pro
 \subsection{NFW atoms}
 \label{subsec:test-nfw}
 
-
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.42\textwidth]{delta-1-7-pz-wn-PM-falsepeakproblem.png}
-\includegraphics[width=0.42\textwidth]{delta-1-7-pz-wn-NFW-falsepeakproblem.png}
+\includegraphics[width=0.49\textwidth]{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}
+\includegraphics[width=0.49\textwidth]{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
 \caption{The result of density map reconstruction with  Point Mass atoms (left) and  NFW atoms (right). The input density 
         map is from a NFW halo with mass $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$. The reconstruction 
         with point mass atoms has many false peaks at different redshfits.
