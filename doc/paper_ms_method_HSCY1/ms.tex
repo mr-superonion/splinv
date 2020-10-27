@@ -22,16 +22,26 @@
 \usepackage{natbib}
 \usepackage{commath}
 \hypersetup{breaklinks}
+
 \DeclareMathOperator{\arccosh}{arccosh}
 \newcommand \redColor{\color{red}}
 \renewcommand\labelenumi{(\roman{enumi})}
 \renewcommand\theenumi\labelenumi
 
 \usepackage{algorithm,algcompatible}
+\usepackage[-]{callouts}
 
 %\DeclareMathOperator*{\argmax}{\arg\!\max}
 \algnewcommand\INPUT{\item[\textbf{Input:}]}
 \algnewcommand\OUTPUT{\item[\textbf{Output:}]}
+
+\newcommand{\includezraphics}[1]{
+\begin{annotate}{
+\includegraphics[width=0.43\textwidth]{#1}}{0.45}
+\arrow { -6., -4}{ -6., 4}
+\note {-6.,4.5}{$\huge{z}$}
+\end{annotate}
+}
 
 \makeatother
 %\newcommand{\jcap}{JCAP}
@@ -59,8 +69,8 @@ Reducing the line of sight smearing.}
 A new method is developed to reconstruct $3$-D density contrast maps from photometric weak-lensing shear measurements.
 The $3$-D density contrast maps are modeled as a summation of the NFW basis atoms which have $2$-D multi-scale NFW surface
 density profiles on the transverse plane and $1$-D Dirac delta functions in the line of sight direction. With the prior
-assumption that the density fields can be sparsely represented by the NFW basis atoms, it is reconstructed using an
-oracle algorithm: adaptive lasso. Our method is tested with realistic simulations using the HSC-like shape noise and
+assumption that the density fields can be sparsely represented by the NFW basis atoms, the density fields are reconstructed 
+using an oracle algorithm: adaptive lasso. Our method is tested with realistic simulations using the HSC-like shape noise and
 photo-$z$ uncertainty.
 Our findings are summarized as folllows: 1) The global minima solution of the standard lasso algorithm suffers from a
 smear of structure in the line of sight direction even in the absence of shape nosie.
@@ -71,16 +81,16 @@ smear of structure in the line of sight direction even in the absence of shape n
 
 \begin{figure*}[!t]
     \includegraphics[width=1.\textwidth]{nfwlet-atom-2D.pdf}
-    \caption{The smoothed basis atoms. The first row shows the smoothed basis atoms in Fourier space
-            and the second row shows the smoothed basis atoms in Real space.
-            The first column is point mass atom and the other columns are multi-scale NFW atoms.
-            The smoothing kernel is Gaussian with scale of $1.5$ pixels.} \label{fig-atoms2D}
+    \caption{The smoothed pixelized basis atoms. The upper row shows the basis atoms in Fourier space
+            and the lower row shows the basis atoms in Real space.
+            The leftmost column is point mass atom and the other columns are multi-scale NFW atoms.
+            The smoothing kernel is Gaussian with standard deviation of $1.5$ pixels.} \label{fig-atoms2D}
 \end{figure*}
 
 \begin{figure}
  \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
- \caption{The $1$-D slices for smoothed basis atoms at $x=0$. The corresponding $2$-D profiles are shown in Figure
-        \ref{fig-atoms2D}.} \label{fig-atoms1D}
+ \caption{The $1$-D slices for smoothed pixelized basis atoms at $x=0$. The corresponding $2$-D profiles are 
+        shown in Figure \ref{fig-atoms2D}.} \label{fig-atoms1D}
 \end{figure}
 
 Light from distant galaxies is distorted by the intervening inhomogeneous density distribution along the line of sight
@@ -102,11 +112,11 @@ Several large scale surveys target to study the weak-lensing effect at high prec
 \citep{KIDS13}, DES \citep{DES05}, LSST \citep{LSSTScienceBook}, Euclid \citep{Euclid2011}, WFIRST \citep{WFIRST15}).
 
 The primary goal of most weak-lensing surveys is to constrain the cosmology model through $2$-point correlations. The studies
-include galaxy-galaxy lensing which cross correlating the shear field ($\gamma$) with the positions of foreground galaxies
+include galaxy$-$galaxy lensing which cross correlating the shear field ($\gamma$) with the positions of foreground galaxies
 \citep{gglens-GAMA-Han2014,gglens-BossCFHTMore2015,gglens-DES1},
 and cosmic shear which auto-correlates the shear measurements
 \citep{cosmicShearRealKids450,cosmicShear-DES1,cosmicShear_HSC1_Chiaki2019,cosmicShear_HSC1_Hamana2019}.
-Since shear is directly related to the matter distribution as shown in eq. (\ref{eq-intro-delta2shear}), Galaxy-galaxy lensing
+Since shear is directly related to the matter distribution as shown in eq. (\ref{eq-intro-delta2shear}), Galaxy$-$galaxy lensing
 probes into the correlation between the matter field and galaxy field, on the other hand, cosmic shear probes into the
 auto-correlation of matter field.
 
@@ -121,7 +131,7 @@ the density contrast field is modeled as a summation of basis atoms in a model d
 \begin{equation} \label{eq-intro-dict}
  \delta= \mathbf{\Phi} x,
 \end{equation}
-where $\mathbf{\Phi}$ is the transformation operator from the parameters in the dictionary space to the density contrast
+where $\mathbf{\Phi}$ is the transformation operator from the projection parameters to the density contrast,
 and $x$ denotes the parameters. \citet{LSS-massMap-Wiener-Simon2009} reconstruct the density field
 in Fourier space, which is equivalent to model the mass field with sinusoidial functions. On the other hand,
 \citet{LSS-massMap-Glimpse3D-Leonard2014} models the mass field with Starlets \citep{Starlet-Starck2015}.
@@ -185,7 +195,7 @@ In Section \ref{sec:Sum}, we summarize and discuss the future development of the
  \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
  \caption{The source galaxies are binned into $10$ redshift bins according to their MLZ best photo-$z$ estimation.
         The blue histogram is the number distribution of the best photo-$z$ estimation. The vertical dashed lines
-        are the bounds of bins. The galaxies are evenly distributed in each bins.} \label{fig-bestpz}
+        are the boundaries of the bins. The galaxies are equal-number binned.} \label{fig-bestpz}
 \end{figure}
 
 We first review the lensing process in section \ref{subsec:method-delta2shear}.
@@ -278,8 +288,8 @@ and eq. (\ref{eq-delta2gammat}) is simplified to
 
 \begin{figure*}[!t]
 \centering
-\subfigure[lasso]{\includegraphics[width=0.49\textwidth]{delta-3-7-pz-nn-lasso.pdf}}
-\subfigure[adaptive lasso]{\includegraphics[width=0.49\textwidth]{delta-3-7-pz-nn-alasso.pdf}}
+\subfigure[lasso]{\includezraphics{delta-3-7-pz-nn-lasso.pdf}}
+\subfigure[adaptive lasso]{\includezraphics{delta-3-7-pz-nn-alasso.pdf}}
 \caption{The result of density map reconstruction with standard lasso (left) and adaptive lasso (right). The input density
         map is from a NFW halo with mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$. The lasso reconstruction
         smear the density field along the line of sight direction (vertical direction in the plots). Noises on shear measurements
@@ -380,10 +390,11 @@ the photo-$z$ uncertainty changes the shear as
 where we use $\rightarrow$ to denote the changes of shear by the systematic operator.
 
 
-Figure \ref{fig-bestpz} shows the histogram of the best MLZ photo-$z$ estimation \cite{HSC1-photoz} for galaxies in tract
-9347 of HSC S16A data release \citep{HSC1-data}. These Galaxies are divided into ten source galaxy bins according to the
-photo-$z$ best estimation and the boundaries of the bins are shown as vertical dash lines in Figure \ref{fig-bestpz}.
-Figure \ref{fig-pdfpz} shows the average probability density function (PDF) in for galaxies in each redshift bin.
+Figure \ref{fig-bestpz} shows the histogram of the best Machine Learning and photo-Z \citep[MLZ]{MLZ-TPZ2013} photometric redshift estimation 
+from \cite{HSC1-photoz} for galaxies in the tract 9347 of the HSC S16A data release \citep{HSC1-data}. These Galaxies are divided 
+into ten source galaxy bins according to the photo-$z$ best estimation and the boundaries of the bins are shown as vertical dash 
+lines in Figure \ref{fig-bestpz}. Figure \ref{fig-pdfpz} shows the average probability density function (PDF) in for galaxies 
+in each redshift bin.
 
 The left panel of Figure \ref{fig-corlensKer} shows the lensing kernels for lenses at five different redshifts as functions
 of source galaxy redshfit bins. The dashed lines are the lensing kernel for spectroscopic redshfits with neglectable redshift
@@ -407,8 +418,10 @@ that the photo-$z$ uncertainties further increase the correlations between lensi
 \begin{figure}[!t]
  \centering
  \includegraphics[width=0.45\textwidth]{shapeMeasurementError-HSCY1.pdf}
- \caption{The Histogram of HSC-like shear measurement error (including errors from shape noise and photon noise) on the
-        first component of shear ($g_1$).}
+ \caption{The histograms of the HSC-like shear measurement error (including both from shape noise and from photon noise) 
+        on the first component of shear ($g_1$) for galaxies (blue lines) and smoothed pixels (orange lines). The solid
+        steps are the sampled histograms, and the dashed lines are the normalized gaussian distributions which have the
+        same standard deviations as the corresponding histograms.}
  \label{fig:mass-redshift}
 \end{figure}
 
@@ -468,7 +481,8 @@ same scale as the pixels.
 \begin{figure}[!t]
  \centering
  \includegraphics[width=0.45\textwidth]{noise_std_map_pix.pdf}
- \caption{The standard deviation map of shear measurement error for the fifth source bin ($0.69 \leq z < 0.80 $).}
+ \caption{The standard deviation pixel map of the HSC-like shear measurement error for the fifth source galaxy bin 
+        ($0.69 \leq z < 0.80 $).}
 \end{figure}
 
 \subsubsection{Masking}
@@ -478,8 +492,8 @@ same scale as the pixels.
  \centering
  \includegraphics[width=0.95\textwidth]{detfalseRate_f3-1.pdf}
  \includegraphics[width=0.95\textwidth]{detfalseRate_f3-3.pdf}
- \caption{The upper panels show the detection rate and false peak per square degree for mass map reconstruction with
-NFW atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
+ \caption{The upper panels show the halo detection rate and the number of false peaks per square degree for mass map 
+ reconstruction with NFW atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
 \end{figure*}
 
 In real observations, shear measurements are available in a finite region of the sky and the boundary of the region is
@@ -524,13 +538,14 @@ eq. (\ref{eq-x2gamma-final}) is written as
 \begin{figure*}[!t]
  \centering
  \includegraphics[width=0.95\textwidth]{peak_scatters_f3-1.pdf}
- \caption{The left panel shows the stacked distribution of deviations of detected peak positions
- from the centers of the corresponding input halos. The $x$-axis is for the deviated distance in the transverse plane and the
- $y$-axis is for the deviation of the redshift. The peaks inside the dashed black box are regarded as true detections. The
- right panel focus on the deviation of detected peaks in the line of sight direction. The $x$-axis shows the input redshifts
- and the $y$-axis is the redshift of the detected peak. The cross symbols show the average redshift of detected peak for
- halos with different input redshift and mass and the error-bars are the scatter of the corresponding peak redshifts. All
- of the results in this figure are based on the NFW atoms.}
+ \caption{The left panel shows the stacked $2$-D distribution of the deviations of detected peak positions
+ from the centers of the corresponding input halos. The $x$-axis is for the deviated distance in the transverse plane, and 
+ the $y$-axis is for the deviation of the redshift. For each simulatin, the peaks inside the dashed black box with the
+ minimal deviations (in unit of pixel) are defined as true detections. 
+ The right panel focuses on the deviation of detected peaks in the line of sight direction. The $x$-axis is the input 
+ halo redshifts, and the $y$-axis is the redshift of the detected peak. The `$\cross$' denotes the average redshift of 
+ detected peaks for each halo over different realizations, and the error-bars are the scatters of the corresponding peak 
+ redshifts. All of the results in this figure are based on the NFW dictionary with $\lambda=3.5$.}
 \end{figure*}
 
 We pixelize the smoothed shear field into a $N_\theta \times N_\theta \times N_s$ grid, where $N_\theta$
@@ -678,7 +693,7 @@ The algorithm is described in Algorithm \ref{alg-1}.
 \OUTPUT  $\delta$: $3$-D array of density contrast
 \STATE Normalize column vectors of $\mathbf{A}$
 \STATE Estimate step size $\mu$ and $\mathbf{\Sigma}$
-\STATE \textbf{Initialization:} ‎
+\STATE \textbf{Initialization:}
 \STATE $x'^{(1)} = 0$
 \STATE $\hat{w}=1$, $\lambda=\lambda_{\rm{ls}}$
 \STATE $t^{(1)}=1$,$i=1$, $j=1$
@@ -689,7 +704,7 @@ The algorithm is described in Algorithm \ref{alg-1}.
         \STATE $x'_{n+1} \leftarrow x'^{(x+1)}+ \frac{t^{(n)}-1}{t^{(n+1)}}(x'^{(n+1)}-x'^{(n)})$
         \STATE $i=i+1$
     \ENDWHILE
-\STATE \textbf{Reinitialization:} ‎
+\STATE \textbf{Reinitialization:}
 \STATE $\hat{w}=\abs{\hat{x'}^{\rm{lasso}}}^{-2}$, $\lambda=\lambda_{\rm{als}}$
 \STATE $\hat{x'}^{(1)} = x'^{(N_{\rm{iter}})}$
 \STATE $t^{(1)}=1$, $i=1$
@@ -707,8 +722,8 @@ The algorithm is described in Algorithm \ref{alg-1}.
  \centering
  \includegraphics[width=0.95\textwidth]{detfalseRate_f1-1.pdf}
  \includegraphics[width=0.95\textwidth]{detfalseRate_f1-3.pdf}
- \caption{The upper panels show the detection rate and false peak per square degree for mass map reconstruction with
-point mass atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
+ \caption{The upper panels show the halo detection rate and the number of false peak per square degree for mass map 
+ reconstruction with point mass atoms and $\lambda=3.5$. The low panels show the results for $\lambda=5.0$. }
 \end{figure*}
 
 In this section, we simulate weak-lensing shear fields induced by a group of halos with various halo masses
@@ -743,19 +758,20 @@ By randomly rotating the galaxies in the shape catalog, we simulate HSC-like she
 with different realizations.
 The positions of the galaxies are randomized so that the galaxies homogeneously distributed in a one square degree
 stamp.
-For each galaxy, we randomly assign its redshift following the MLZ photo-$z$ probability distribution function
-\citep{HSC1-photoz} of the galaxy.
+For each galaxy, we randomly assign its redshift following the MLZ photo-$z$ probability distribution function from
+\citep{HSC1-photoz}.
 
 \subsection{NFW atoms}
 \label{subsec:test-nfw}
 
 \begin{figure*}[!t]
 \centering
-\subfigure[Point Mass: $\lambda=3.5$]{\includegraphics[width=0.45\textwidth]{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}}
-\subfigure[NFW: $\lambda=3.5$]{\includegraphics[width=0.45\textwidth]{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}}
-\subfigure[Point Mass: $\lambda=5.0$]{\includegraphics[width=0.45\textwidth]{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}}
-\subfigure[NFW: $\lambda=5.0$]{\includegraphics[width=0.45\textwidth]{delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}}
-\caption{The result of density map reconstruction with  Point Mass atoms (left) and  NFW atoms (right). The input density
+\subfigure[Point Mass: $\lambda=3.5$]{\includezraphics{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}}
+\subfigure[NFW: $\lambda=3.5$]{\includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}}
+\subfigure[Point Mass: $\lambda=5.0$]{\includezraphics{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}}
+\subfigure[NFW: $\lambda=5.0$]{\includezraphics{delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}}
+\caption{The results of density maps reconstruction with Point Mass atoms (left) and  NFW atoms (right) with 
+        $\lambda=3.5$ (upper) and $\lambda=5.0$ (lower). The input density
         map is from a NFW halo with mass $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$.
         } \label{fig-lassoVsadaLasso}
 \end{figure*}
