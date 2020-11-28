@@ -16,7 +16,6 @@
 \usepackage{graphicx,subfigure}
 \renewcommand\thesubfigure{(\roman{subfigure})}
 
-
 \usepackage{textcomp}
 \usepackage{epstopdf}
 \usepackage{natbib}
@@ -25,6 +24,7 @@
 
 \DeclareMathOperator{\arccosh}{arccosh}
 \newcommand \redColor{\color{red}}
+
 \renewcommand\labelenumi{(\roman{enumi})}
 \renewcommand\theenumi\labelenumi
 
@@ -49,10 +49,10 @@
 \begin{document}
 \title{Sparsity Weak Lensing $3$-D Density Map Reconstruction:
 Reducing the line of sight smearing.}
-%\author{Xiangchong Li}
-%\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
-%\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
-%University of Tokyo, Kashiwa 277-8583, Japan}
+\author{Xiangchong Li}
+\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
+\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
+University of Tokyo, Kashiwa 277-8583, Japan}
 %\author{Masamune Oguri}
 %\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
 %\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
@@ -99,8 +99,10 @@ relative redshift bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
 
 \begin{figure}
  \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
- \caption{The $1$-D slices for smoothed pixelized basis atoms at $x=0$. The corresponding $2$-D profiles are
-        shown in Figure \ref{fig-atoms2D}.} \label{fig-atoms1D}
+    \caption{The $1$-D slices for smoothed pixelized basis atoms at $x=0$. The
+        corresponding $2$-D profiles are shown in Figure \ref{fig-atoms2D}.
+        }
+ \label{fig-atoms1D}
 \end{figure}
 
 Light from distant galaxies is distorted by the intervening inhomogeneous
@@ -187,7 +189,7 @@ of $l^1$ lasso regulation ($C=\norm{x}^1_1$) to find a sparse solution in the
 Starlets dictionary space \citep{Starlet-Starck2015}.
 \citet{LSS-massMap-Glimpse3D-Leonard2014} apply a greedy coordinate descent
 algorithm, which selects the steepest coordinate in each iteration, to find the
-minima of a non-convex loss function penalized with the firm thresholding
+minimum of a non-convex loss function penalized with the firm thresholding
 function. \citet{LSS-massMap-Glimpse3D-Leonard2014} significantly reduce the
 smearing along the line of sight. However, the stability of the non-convex
 optimization and greedy coordinate descent algorithm has not been fully
@@ -315,9 +317,9 @@ where
 D(\vec{\theta})=-\frac{1}{\pi}(\theta_1-i\theta_2)^{-2}.
 \end{equation}
 Here we denote the physical shear distortion field as $\gamma_L$ and we note
-that the final observed shear measurements are also physical shear distortions
-influenced by systematic errors from observatins. The systematic errors will be
-discussed in Section \ref{subsec:method-Systematics}.
+that the final observed shear measurements are influenced by systematic errors
+from observations. The systematic errors will be discussed in Section
+\ref{subsec:method-Systematics}.
 
 Combining equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}),
 the expectation of lensing shear signal is
@@ -703,7 +705,7 @@ x'_{\beta}&=x_{\beta}\mathcal{N}_{\beta}^{\frac{1}{2}}.\\
 
 \subsubsection{Adaptive lasso}
 
-The lasso algorithm uses $l^1$ norm of the projection coefficient field as to
+The lasso algorithm uses $l^1$ norm of the projection coefficient field to
 regularize the modeling, and the estimator is defined as
 \begin{equation}
 \hat{x'}^{\rm{lasso}}=\argmin_{x} \left\{ \frac{1}{2}\norm{\Sigma^{-\frac{1}{2}}(\gamma- \mathbf{A'} x')}_2^2+ \lambda_{\rm{ls}} \norm{x'}^1_1\right\},
@@ -719,17 +721,17 @@ transforming matrix $\mathbf{A'}$ are highly correlated, the lasso cannot
 select the relevant parameters from the parameter space consistently.
 Moreover, the estimated parameters are biased due to the shrinkage in the lasso
 regression. We note that, for the density map reconstruction problem, the
-column vectors are highly correlated because, as shown in Figure
-\ref{fig-corlensKer}, the lensing kernels for lenses at different redshifts are
-highly correlated. Therefore, the lasso algorithm cannot select the consistent
-mass in the line of sight direction, and the reconstructed mass suffers from
-smears in the line of sight direction even in the absence of noise on shear
-measurements.  Figure \ref{fig-lassoVsadaLasso} shows the reconstructions of a
-single halo's mass map with halo mass equals $M_{200}=10^{15} ~h^{-1}M_{\odot}$
-at redshift $0.35$. The noises on shear measurements are not included in the
-simulation.  The left panel of Figure \ref{fig-lassoVsadaLasso} is the
-reconstruction with the lasso algorithm, which shows a significant smear along
-the line of sight.
+column vectors are highly correlated even in the absence of photometric
+redshift uncertainties because, as shown in Figure \ref{fig-corlensKer}, the
+lensing kernels for lenses at different redshifts are highly correlated.
+Therefore, the lasso algorithm cannot select the consistent mass in the line of
+sight direction, and the reconstructed mass suffers from smears in the line of
+sight direction even in the absence of noise on shear measurements.  Figure
+\ref{fig-lassoVsadaLasso} shows the reconstructions of a single halo's mass map
+with halo mass equals $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$.
+The noises on shear measurements are not included in the simulation.  The left
+panel of Figure \ref{fig-lassoVsadaLasso} is the reconstruction with the lasso
+algorithm, which shows a significant smear along the line of sight.
 
 \citet{AdaLASSO-Zou2006} proposes the adaptive lasso algorithm, which uses
 adaptive weights to penalize different projection coefficients in the $l^1$
@@ -775,19 +777,22 @@ i}x'_{i}) (\gamma_{\beta}-A'_{\beta j}x'_{j}).
  \includegraphics[width=0.45\textwidth]{peak_histograms.pdf}
  \caption{The histograms of detected peak values from all of the simulations.
      The solid lines with different colors are the results of reconstructions
-     with the NFW dictionary penalized with different regularization parameter:
+     with the NFW dictionary penalized with different regularization parameters:
      $\lambda=3.5,4.0,5.0$. The dashed lines are the results of reconstructions
      from pure noise fields.
     }\label{fig-peakHist}
 \end{figure}
 
-In this work, we apply the Fast Iterative Soft Thresholding Algorithm (FISTA) of
-\citet{FISTA-Beck2009} to find the global minima of the adaptive lasso's loss
-function.
+\citet{FISTA-Beck2009} proposed the Fast Iterative Soft Thresholding Algorithm
+(FISTA) to solve the lasso problem.  Since the lasso's loss function and the
+adaptive lasso's loss function only differ in their penalization terms. The
+FISTA is also applicable to the adaptive lasso problem. We apply the FISTA to
+solve the preliminary lasso estimation and the final adaptive lasso estimation.
 
-The coefficients are initialized as $x_i^{(1)}=0$. According to the FISTA
-algorithm, we iteratively update the projection coefficient field ($x$). In the
-$n$'th iteration, a temporary update is first calculated as
+Here we start from the lasso preliminary estimation. The coefficients are
+initialized as $x_i^{(1)}=0$. According to the FISTA algorithm, we iteratively
+update the projection coefficient field ($x$). In the $n$'th iteration, a
+temporary update is first calculated as
 \begin{equation}
 x'^{(n+1)}_{i}=\mathrm{ST}_{\lambda} \left(x'^{(n)}_{i} -\mu \partial_i G(x'^{(n)})\right),
 \end{equation}
@@ -795,6 +800,9 @@ where $\mathrm{ST}$ is the soft thresholding function defined as
 \begin{equation}
 \mathrm{ST}_{\lambda} \left(x'\right) = \mathrm{sign} (x') \max \left(\abs{x'}-\lambda,0\right).
 \end{equation}
+The soft thresholding is a part of the lasso algorithm. It selects the
+estimations with amplitude larger than $\lambda$, and shrink the estimations by
+$\lambda$.
 $\mu$ is the step size of the gradient descent iteration.  $\partial_i
 G(x'^{(n)})$ refers to the $i$'th element of the gradient vector of $G$ at
 point $x'^{(n)}$:
@@ -802,19 +810,19 @@ point $x'^{(n)}$:
 \partial_i G(x'^{(n)})=\Sigma^{-1}_{\alpha\beta}\Re\left(A'^{*}_{\alpha i}(\gamma_{\beta}-A'_{\beta j}x'_{j})\right),
 \end{equation}
 where $\Re\left( \bullet \right)$ is the function returns the real part of the
-input function. The FISTA algorithm requires an additional step amounting to a
+input function. The FISTA algorithm requires an additional update amounting to a
 weighted average between
 $x'^{(n+1)}$ and $x'^{(n)}$:
 \begin{equation}
 \begin{split}
 t^{(n+1)}&=\frac{1+\sqrt{1+4(t^{(n)})^2}}{2},\\
-x'_{n+1} &\leftarrow x'^{(x+1)}+ \frac{t^{(n)}-1}{t^{(n+1)}}(x'^{(n+1)}-x'^{(n)}),
+x'^{(n+1)} &\leftarrow x'^{(x+1)}+ \frac{t^{(n)}-1}{t^{(n+1)}}(x'^{(n+1)}-x'^{(n)}),
 \end{split}
 \end{equation}
 where the relative weight is initialized as $t^{(1)}=1$.
 
-Note that the FISTA algorithm converges as long as the gradient descent step
-size $\mu$ satisfies
+The FISTA algorithm converges as long as the gradient descent step size $\mu$
+satisfies
 \begin{equation}
  0< \mu < \frac{1}{ \norm{\mathbf{A^{\dagger}} \mathbf{\Sigma}^{-1} \mathbf{A} }},
 \end{equation}
@@ -828,9 +836,15 @@ vector. The spectral norm of the matrix $\mathbf{A^{\dagger}}
 \mathbf{\Sigma}^{-1} \mathbf{A}$ is determined as the maximum $l^2$ norm of the
 transformed vectors.
 
-\subsubsection{The Algorithm}
+As summarized in Algorithm \ref{alg-1}, we first initial the projection
+coefficients as zero and use the FISTA algorithm to find the global minimum of
+the lasso loss function. Such a global minimum is the preliminary estimation.
+We then use the preliminary lasso estimation to weight the coefficients and
+construct the adaptive lasso loss function. Finally, we set the preliminary
+lasso estimation as the warm start of the adaptive lasso estimation and use the
+FISTA algorithm again to find the adaptive lasso loss function's global minimum,
+which is the final solution.
 
-The algorithm is described in Algorithm \ref{alg-1}.
 
 \begin{algorithm}[H]
 \renewcommand{\thealgorithm}{}
@@ -847,9 +861,11 @@ The algorithm is described in Algorithm \ref{alg-1}.
 \STATE $t^{(1)}=1$,$i=1$, $j=1$
 \WHILE{$j \leq 2$}
     \WHILE{$i \leq N_{\rm{iter}}$}
+        \STATE \# soft thresholding
         \STATE $x'^{(n+1)}_{i}=\mathrm{ST}_{\hat{w}\lambda} \left(x'^{(n)}_{i} -\mu \partial_i G(x'^{(n)})\right)$
+        \STATE \# FISTA algorithm
         \STATE $t^{(n+1)}=\frac{1+\sqrt{1+4(t^{(n)})^2}}{2}$
-        \STATE $x'_{n+1} \leftarrow x'^{(x+1)}+ \frac{t^{(n)}-1}{t^{(n+1)}}(x'^{(n+1)}-x'^{(n)})$
+        \STATE $x'^{(n+1)} \leftarrow x'^{(x+1)}+ \frac{t^{(n)}-1}{t^{(n+1)}}(x'^{(n+1)}-x'^{(n)})$
         \STATE $i=i+1$
     \ENDWHILE
 \STATE \textbf{Reinitialization:}
@@ -885,7 +901,7 @@ The algorithm is described in Algorithm \ref{alg-1}.
     and $\lambda=5.0$ (lower). The input density map is from a NFW halo with
     mass $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$. The
     vertical direction is the line of sight direction, and the lower boundaries
-    and upper boundaries of the boxes are $0.01$ and $0.85$, respectively.
+    and upper boundaries of the boxes are $z=0.01$ and $z=0.85$, respectively.
         } \label{fig-NFWvsPM}
 \end{figure*}
 
@@ -910,7 +926,7 @@ $\Omega_\Lambda=0.685$ \citep{cmb-Planck2018-Cosmology}.
 We sample halos in a two-dimensional redshift-mass plane. The redshift-mass
 plane is evenly divided into eight redshift bins and eight mass bins. We
 randomly shift the input halo redshifts and halo masses from the bins' centers
-by a small amount. The concentration of the NFW halo is set to as a function of
+by a small amount. The concentration of the NFW halo is set as a function of
 the halo's mass ($M_{200}$) and redshift ($z_{h}$) according to
 \citet{c-M_Magneticum-Ragagnin2019}
 \begin{equation}
@@ -951,47 +967,56 @@ demonstrated in Figure \ref{fig-noistdmap}.  \citep{HSC1-photoz}.
 
 In this subsection, we test the performance of our algorithm with the default
 setup that models the matter density field with multi-scale NFW atoms. The
-dictionary is constructed with three frames of different comoving scale radius:
-$0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$ Mpc.  The
-truncation radius (concentration) is set to four times the scale radius for
-the atoms in the dictionary. We test the algorithm with different
-regularization parameters for the preliminary lasso ranging from $3.5$ to
-$5.0$. The regularization parameter for the adaptive lasso is set to
-$\lambda_{\rm{als}}=\lambda_{\rm{ls}}^{\gamma+1}$.
+dictionary is constructed with three frames of different NFW comoving scale
+radius: $0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$ Mpc.  The
+truncation radius (concentration) is set to four times the scale radius for the
+atoms in the dictionary.
+
+We test the algorithm with different regularization parameters for the
+preliminary lasso estimation which range from $3.5$ to $5.0$. The
+regularization parameter for the adaptive lasso is set to
+$\lambda_{\rm{als}}=\lambda_{\rm{ls}}^{\tau+1}$.
+Here, we note that both the preliminary lasso estimation and the final adaptive
+estimation select the modes with signal to noise ratios (SNRs) greater than
+$\lambda_{\rm{ls}}$ in each iteration. While the final adaptive lasso
+estimation further enhances the growth of the modes with preliminary
+estimations greater than $\lambda_{\rm{ls}}$.
 
 This paper does not go beyond the resolution limit defined by the Gaussian
 smoothing kernel with the scale: $1.\arcmin 5$ and the pixel scale
 that equals $1\arcmin$. We smooth the reconstructed density with the same
 Gaussian kernel in each lens redshift plane.
 
-After the reconstruction of each density field, we detect the peaks on the
-density map. The stacked $2$-D histogram from all of the simulated boxes for
-the offsets of the detected peak positions from the input halo is demonstrated
-in the left panel of Figure \ref{fig-detoffsets}. For each simulation, we find
-the positive peak closest to the input position (in the pixel unit), and if the
-closest peak lay inside the region denoted with the dashed box in the left
-panel of Figure \ref{fig-detoffsets}, we take it as a true detection of the
-input halo. Other detected peaks, which include both positive and negative
-peaks, are taken as false peak detections. The right panel of Figure
-\ref{fig-detoffsets} shows the average redshift of true detections for each
-halo.  The estimated redshifts are lower than the true redshifts by about
-$0.03$ for halos in the low-redshift range ($z\leq 0.4$). For halos at
-$0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$.
+We detect the peaks on the density map after the reconstruction. The stacked
+$2$-D histogram, from all of the simulations, for the offsets of the detected
+peak positions from the input halos' positions is shown in the left panel of
+Figure \ref{fig-detoffsets}.
+
+For each simulation, we find the positive peak closest to the input position
+(in the pixel unit), and if the closest peak lay inside the region denoted with
+the dashed box in the left panel of Figure \ref{fig-detoffsets}, we take it as
+a true peak detection of the input halo. Other detected peaks, which include both
+positive and negative peaks, are taken as false peaks. The right
+panel of Figure \ref{fig-detoffsets} shows the average redshift of true
+detections for each halo. The estimated redshifts are lower than the true
+redshifts by about $0.03$ for halos in the low-redshift range ($z\leq 0.4$).
+For halos at $0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$.
 
 Figure \ref{fig-detFalsRateNFW} shows the detection rate (left panels) and the
 number of false peaks per square degree (right panel) for each simulated halo.
 The figure include results of different penalization parameters: $\lambda=3.5$
 (upper panel) and $\lambda=5.0$ (lower panel).  We find that with the increase
 of the penalization parameter, the detection rate decreases. On the other hand,
-the number of false peaks also decreases.  Figure \ref{fig-peakHist} shows the
-histograms, which are normalized by the number of simulations, for all
-detected peaks with different penalization parameters. We also plot the
-corresponding histograms for peaks detected from pure noise fields for
-comparison. From the left panels of Figure \ref{fig-NFWvsPM}, which show the
-$3$-D density maps reconstructed with different penalization parameters for a
-halo with $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$ , we also
-find that the number of false detections significantly decreases as the
-penalization parameter increases.
+the number of false peaks also decreases.
+
+Figure \ref{fig-peakHist} shows the histograms, which are normalized by the
+number of simulations, for all detected peaks with different penalization
+parameters. We also plot the corresponding histograms for peaks detected from
+pure noise fields for comparison. From the left panels of Figure
+\ref{fig-NFWvsPM}, which show the $3$-D density maps reconstructed with
+different penalization parameters for a halo with $M_{200}=10^{15.02}
+~h^{-1}M_{\odot}$ at redshift $0.164$ , we also find that the number of false
+peaks significantly decreases as the penalization parameter increases.
 
 
 \subsection{Point mass atoms}
@@ -1004,30 +1029,36 @@ to $3.5$ and $5.0$.  Inspired by \citet{structureAdaLasso-Pramanik2020}, which
 propose to incorporate external group information into different adaptive lasso
 penalization weights by setting the penalization weights for projection
 coefficients in the same group to the average of the adaptive weights in this
-group, we smooth the preliminary lasso estimation in each lens redshift bins
-with a top-hat filter of comoving scale $0.25~h^{-1}$ Mpc, which is denoted as
-$\hat{x}^{\rm{ls}}_{\rm{sm}}$ and the penalization weights are set to
-$1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\gamma$.  The regularization parameter for
-the adaptive lasso is set to $\lambda_{\rm{als}}=\lambda_{\rm{ls}}$.
+group, we smooth the preliminary lasso estimation in each lens redshift bin
+with a top-hat filter of comoving scale $0.25~h^{-1}$ Mpc. The smoothed
+preliminary lasso estimation is denoted as $\hat{x}^{\rm{ls}}_{\rm{sm}}$, and
+the penalization weights are set to $1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\tau$.
+The regularization parameter for the adaptive lasso is set to
+$\lambda_{\rm{als}}=\lambda_{\rm{ls}}$.
 
 As we have done on the NFW dictionary's reconstruction, we smooth the
 reconstructed density maps with the Gaussian kernel (scale radius equals
 $1.\arcmin 5$) in each lens redshift plane.
 
 Figure \ref{fig-detFalsRatePM} shows the detection rate (left panels) and the
-number of false peaks per square degree (right panel) for each simulated halo.
-The figure includes results of different penalization parameters: $\lambda=3.5$
-(upper panel) and $\lambda=5.0$ (lower panel). The right panels of Figure
-\ref{fig-NFWvsPM} show the $3$-D density maps reconstructed with different
-penalization parameters for a halo with $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$
-at redshift $0.164$. Comparing with the results for the NFW dictionary, we find
-that the number of false peaks for the point mass dictionary is much larger
-than that of the NFW dictionary. As demonstrated in the right panels of Figure
-\ref{fig-NFWvsPM}, the reconstructions with the point mass dictionary tend to
-assign masses to different redshifts in the neighboring region of the halo
-center. Since the NFW atoms' profiles are more consistent with the input halo
-profiles than the point mass profiles, the reconstructed structures from the
-NFW dictionary are sparser than those from the point mass dictionary.
+number of false peaks per square degree (right panel) for each setup of halo
+mass and redshift.
+This figure includes results of different penalization parameters:
+$\lambda=3.5$ (upper panel) and $\lambda=5.0$ (lower panel). The right panels
+of Figure \ref{fig-NFWvsPM} show the $3$-D density maps reconstructed with
+different penalization parameters for a halo with $M_{200}=10^{15.02}
+~h^{-1}M_{\odot}$ at redshift $0.164$.
+Comparing with the results of the NFW dictionary, we find that the number of
+false peaks in the mass map reconstructed with the point mass dictionary is
+much larger than the NFW dictionary.
+
+As demonstrated in the right panels of Figure \ref{fig-NFWvsPM}, the mass
+reconstructions with the point mass dictionary tend to assign masses to
+several different redshift bins in the neighboring region of the halo center.
+While the NFW dictionary produces consistent mass reconstructions.
+Since the NFW atoms' profiles are more consistent with the mass profiles of the
+input halos than the profile of a point mass, there are less false structures
+reconstructed with the NFW dictionary.
 
 \section{Summary}
 \label{sec:Sum}
@@ -1057,6 +1088,11 @@ error and HSC-like photo-$z$ uncertainty. The results are summarized as follows:
 \end{enumerate}
 
 
+\section*{Acknowledgements}
+We thank Yin Li and Jiaxin Han for useful discussion.
+
+This work was supported by Global Science Graduate Course (GSGC) program of
+University of Tokyo and JSPS KAKENHI (JP19J22222).
 \bibliographystyle{aasjournal}
 \bibliography{citation}
 
