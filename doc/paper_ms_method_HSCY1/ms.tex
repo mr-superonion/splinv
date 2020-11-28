@@ -49,10 +49,10 @@
 \begin{document}
 \title{Sparsity Weak Lensing $3$-D Density Map Reconstruction:
 Reducing the line of sight smearing.}
-\author{Xiangchong Li}
-\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
-\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
-University of Tokyo, Kashiwa 277-8583, Japan}
+%\author{Xiangchong Li}
+%\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
+%\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
+%University of Tokyo, Kashiwa 277-8583, Japan}
 %\author{Masamune Oguri}
 %\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
 %\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
@@ -93,7 +93,8 @@ relative redshift bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
         atoms in Fourier space, and the lower row shows the basis atoms in Real
         space.  The leftmost column is the point mass atom, and the other
         columns are the multi-scale NFW atoms.  The smoothing kernel is
-        Gaussian with a standard deviation of $1.5$ pixels.
+        Gaussian with a standard dev
+        iation of $1.5$ pixels.
         } \label{fig-atoms2D}
 \end{figure*}
 
@@ -105,13 +106,14 @@ relative redshift bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
  \label{fig-atoms1D}
 \end{figure}
 
-Light from distant galaxies is distorted by the intervening inhomogeneous
-density distribution along the line of sight due to the gravity's influence.
+Weak lensing refers to the phenomenon that light from distant galaxies is
+distorted by the intervening inhomogeneous density distribution along the line
+of sight due to gravity's influence.
 As a result of the light distortion, the shapes of the background galaxies are
-coherently distorted. Such effect, which is known as weak-lensing, imprints the
-information of foreground mass density distribution to the background galaxy
-images and offers a direct probe into the mass density distribution in our
-universe \citep[see][for recent reviews]{revKilbinger15,revRachel17}.
+coherently distorted. The lensing effect imprints the information of
+foreground mass density distribution to the background galaxy images and offers
+a direct probe into the mass density distribution in our universe
+\citep[see][for recent reviews]{revKilbinger15,revRachel17}.
 
 The expected shear measurements ($\gamma$) on distant galaxies are related to
 the foreground density contrast field ($\delta$) through a linear
@@ -121,9 +123,9 @@ transformation operator, which includes not only physical lensing effect but
 also systematic effects from observations (e.g., pixelization and smoothing of
 the shear field in the transverse plane, photo-$z$ uncertainty).
 
-Several large-scale surveys target to study the weak-lensing effect at high
+Several large-scale surveys target to study the weak-lensing effect at a high
 precision level (e.g., HSC \citep{HSC1-data}, KIDS \citep{KIDS13}, DES
-\citep{DES05}, LSST \citep{LSSTScienceBook}, Euclid \citep{Euclid2011}, WFIRST
+\citep{DES05}, LSST \citep{LSSTScienceBook}, Euclid \citep{Euclid2011}, NGRST
 \citep{WFIRST15}).
 
 The primary goal of most weak-lensing surveys is to constrain the cosmology
@@ -207,7 +209,7 @@ direction is much larger than the halo scale. Therefore, we set the NFW atoms'
 profile in the line of sight direction as the Dirac delta function.  Moreover,
 we assume that the halos are sparsely distributed in the universe.  With the
 sparsity prior, the adaptive lasso regularization \citep{AdaLASSO-Zou2006} is
-used to reconstruct the density field.  In contrast to the lasso
+used to reconstruct the density field.  We find that, in contrast to the lasso
 estimator that smears the structure along the line of sight, the adaptive lasso
 can significantly reduce the smearing effect.
 
@@ -777,22 +779,30 @@ i}x'_{i}) (\gamma_{\beta}-A'_{\beta j}x'_{j}).
  \includegraphics[width=0.45\textwidth]{peak_histograms.pdf}
  \caption{The histograms of detected peak values from all of the simulations.
      The solid lines with different colors are the results of reconstructions
-     with the NFW dictionary penalized with different regularization parameters:
-     $\lambda=3.5,4.0,5.0$. The dashed lines are the results of reconstructions
-     from pure noise fields.
+     with the NFW dictionary penalized with different regularization
+     parameters: $\lambda=3.5,4.0,5.0$. The dashed lines are the corresponding
+     results of reconstructions from pure noise fields.
     }\label{fig-peakHist}
+ \includegraphics[width=0.45\textwidth]{detfalse_threshold.pdf}
+ \caption{Number of detections for true peaks (solid lines) and false
+     peaks (dashed lines) as functions of selection thresholds.
+     The lines with different colors are the results of reconstructions
+     with the NFW dictionary penalized with different regularization
+     parameters: $\lambda=3.5,4.0,5.0$.
+    }\label{fig-detfalse_threshold}
 \end{figure}
 
-\citet{FISTA-Beck2009} proposed the Fast Iterative Soft Thresholding Algorithm
+\citet{FISTA-Beck2009} propose the Fast Iterative Soft Thresholding Algorithm
 (FISTA) to solve the lasso problem.  Since the lasso's loss function and the
 adaptive lasso's loss function only differ in their penalization terms. The
 FISTA is also applicable to the adaptive lasso problem. We apply the FISTA to
-solve the preliminary lasso estimation and the final adaptive lasso estimation.
+solve both the preliminary lasso estimation and the final adaptive lasso
+estimation.
 
 Here we start from the lasso preliminary estimation. The coefficients are
 initialized as $x_i^{(1)}=0$. According to the FISTA algorithm, we iteratively
-update the projection coefficient field ($x$). In the $n$'th iteration, a
-temporary update is first calculated as
+update the projection coefficient field ($x$). Taking the $n$'th iteration as
+an example, a temporary update is first calculated as
 \begin{equation}
 x'^{(n+1)}_{i}=\mathrm{ST}_{\lambda} \left(x'^{(n)}_{i} -\mu \partial_i G(x'^{(n)})\right),
 \end{equation}
@@ -1018,6 +1028,11 @@ different penalization parameters for a halo with $M_{200}=10^{15.02}
 ~h^{-1}M_{\odot}$ at redshift $0.164$ , we also find that the number of false
 peaks significantly decreases as the penalization parameter increases.
 
+We note that when detecting galaxy clusters from the weak lensing mass maps in
+real observations\citep{HSC1-massMap-cluster}, peaks greater than an ad-hoc
+threshold is chosen as galaxy cluster candidates to suppress the number of
+false detection. Figure \ref{fig-detfalse_threshold} shows the numbers of true
+detections and false detections as functions of detection thresholds.
 
 \subsection{Point mass atoms}
 \label{subsec:test-pm}
@@ -1087,9 +1102,13 @@ error and HSC-like photo-$z$ uncertainty. The results are summarized as follows:
      The relative redshift bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
 \end{enumerate}
 
+We will apply the method to the shear measurements of the HSC survey
+\citep{HSC1-catalog,FPFSHSC1-Li2020} to perform galaxy cluster detection in our
+future work.
+
 
 \section*{Acknowledgements}
-We thank Yin Li and Jiaxin Han for useful discussion.
+We thank Yin Li and Jiaxin Han for useful discussions.
 
 This work was supported by Global Science Graduate Course (GSGC) program of
 University of Tokyo and JSPS KAKENHI (JP19J22222).

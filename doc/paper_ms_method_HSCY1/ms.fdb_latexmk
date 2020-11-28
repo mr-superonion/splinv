@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex ms"] 1606541132 "ms.aux" "ms.bbl" "ms" 1606541133
+["bibtex ms"] 1606559978 "ms.aux" "ms.bbl" "ms" 1606559979
   "./aasjournal.bst" 1603151474 37514 eb8cd7d6002e174d031081537b4ccfa9 ""
-  "citation.bib" 1606382573 45588 61e557e8d80318cd7bc68e3efdd0450d ""
-  "ms.aux" 1606541132 21453 66bed13f19c348f6ed414af1c76a731b "pdflatex"
+  "citation.bib" 1606559936 48568 55f8601a736e8759d29eb1f0fc674238 ""
+  "ms.aux" 1606559979 21948 f0ba7d43a89d867b498bda40ac4d565c "pdflatex"
   (generated)
   "ms.bbl"
   "ms.blg"
-["pdflatex"] 1606541132 "ms.tex" "ms.pdf" "ms" 1606541133
+["pdflatex"] 1606559978 "ms.tex" "ms.pdf" "ms" 1606559979
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1591545468 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texmf-dist/fonts/tfm/adobe/helvetic/phvr.tfm" 1591545468 2504 ba6584b616b92101c768b6c4ffb32dd0 ""
   "/usr/share/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1591545468 1120 1e8878807317373affa7f7bba4cf2f6a ""
@@ -48,7 +48,6 @@
   "/usr/share/texmf-dist/fonts/tfm/public/cm/cmsy8.tfm" 1591545468 1120 8b7d695260f3cff42e636090a8002094 ""
   "/usr/share/texmf-dist/fonts/tfm/public/cm/cmsy9.tfm" 1591545468 1116 25a7bf822c58caf309a702ef79f4afbb ""
   "/usr/share/texmf-dist/fonts/tfm/public/cm/cmti10.tfm" 1591545468 1480 aa8e34af0eb6a2941b776984cf1dfdc4 ""
-  "/usr/share/texmf-dist/fonts/tfm/public/cm/cmti8.tfm" 1591545468 1504 1747189e0441d1c18f3ea56fafc1c480 ""
   "/usr/share/texmf-dist/fonts/tfm/public/cm/cmti9.tfm" 1591545468 1476 cccc6cc4935c18ec3d5623b77ecb8b74 ""
   "/usr/share/texmf-dist/fonts/tfm/public/latex-fonts/lasy10.tfm" 1591545468 520 82a3d37183f34b6eb363a161dfc002c2 ""
   "/usr/share/texmf-dist/fonts/tfm/public/latex-fonts/lasy5.tfm" 1591545468 520 d082ac03a1087bc1ec2a06e24a9f68c0 ""
@@ -85,7 +84,6 @@
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1591545468 32716 08e384dc442464e7285e891af9f45947 ""
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb" 1591545468 32442 c975af247b6702f7ca0c299af3616b80 ""
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb" 1591545468 37944 359e864bd06cde3b1cf57bb20757fb06 ""
-  "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb" 1591545468 35660 fb24af7afbadb71801619f1415838111 ""
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb" 1591545468 36310 f5ddc6715cc60deb16d9db5ded6a9391 ""
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmbsy9.pfb" 1591545468 27817 24c2fd675d684d30218eed425386b567 ""
   "/usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb" 1591545468 30457 bc0868ebece724ed7c3d37e3d9bff7bd ""
@@ -253,11 +251,12 @@
   "detfalseRate_f1-3.pdf" 1603151474 227577 953a79151a5a3152ffe7fc73cbe9e04e ""
   "detfalseRate_f3-1.pdf" 1603756314 227772 591e43002fefd0e0db6ed31949186fb3 ""
   "detfalseRate_f3-3.pdf" 1603756314 227367 37054c8312a13901bbd0b4ed85b8cd6e ""
+  "detfalse_threshold.pdf" 1606556809 157320 aa4e1e278326eb4561220788878b4ac6 ""
   "lensing_kernel.pdf" 1603778233 171530 e9b3b4400521be3a7d386b7ef06ca764 ""
   "mlz-poz.pdf" 1603791539 185100 9afd248da1ebe17dc12387271daaaa1b ""
-  "ms.aux" 1606541132 21453 66bed13f19c348f6ed414af1c76a731b "pdflatex"
-  "ms.bbl" 1606541132 17625 2c7826b2168b2f4a54de0b3be70e7bae "bibtex ms"
-  "ms.tex" 1606541073 53829 2f39eeb36ae2094aa121073afd3b091a ""
+  "ms.aux" 1606559979 21948 f0ba7d43a89d867b498bda40ac4d565c "pdflatex"
+  "ms.bbl" 1606559978 18213 fc8bf1db53b3e1438fc2c6d5ea8fa51e "bibtex ms"
+  "ms.tex" 1606559975 54863 18ec9565bafa4d3c7d903fc2e97d64e8 ""
   "nfwlet-atom-1D.pdf" 1603151474 162100 c4f4fe1514ff60cc52f1855bf65b440c ""
   "nfwlet-atom-2D.pdf" 1603151474 157509 f0475576c36fed11ff627e9f862a190f ""
   "noise_std_map_pix.pdf" 1603151474 112922 771528891a82e0d5ff139eb282ea5020 ""
@@ -266,6 +265,6 @@
   "photo-z_binning.pdf" 1603791581 92194 642f049e939c28285047a3967fe22851 ""
   "shapeMeasurementError-HSCY1.pdf" 1603801712 286191 6318aebe00c5e5103dc3584df07eb1a5 ""
   (generated)
-  "ms.log"
   "ms.pdf"
   "ms.aux"
+  "ms.log"
