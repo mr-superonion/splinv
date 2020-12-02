@@ -71,7 +71,7 @@ class haloSimStampRunner(TaskRunner):
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
         #idRange=range(64)
-        idRange=[10000000]
+        idRange=[640000]
         return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
@@ -105,18 +105,20 @@ class haloSimStampBatchTask(BatchPoolTask):
             ss  =   pyascii.read(self.config.haloName)[Id]
             iz  =   ss['iz']
             im  =   ss['im']
+            nsim=   100
             self.pixelize_Sigma(ss)
         else:
             # Noise field
             ss  =   None
             iz  =   800
             im  =   800
+            nsim=   1000
         pool.storeSet(ss=ss)
         outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        pool.map(self.process,range(100,1000))
+        pool.map(self.process,range(nsim))
         return
 
     def pixelize_Sigma(self,ss):

@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f3-3-2/',
+                default='planck-cosmo/sparse-f1-3-2/',
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
@@ -70,7 +70,7 @@ class massMapStampRunner(TaskRunner):
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
         #idRange=range(64)
-        idRange=[10000000]
+        idRange=[640000]
         return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
@@ -99,22 +99,24 @@ class massMapStampBatchTask(BatchPoolTask):
         pool.storeSet(haloName=self.config.haloName)
         pool.storeSet(configName=self.config.configName)
         pool.storeSet(pixDir=self.config.pixDir)
-        if Id<5e4:
+        if Id<640000:
             # halo field
             ss  =   pyascii.read(self.config.haloName)[Id]
             iz  =   ss['iz']
             im  =   ss['im']
+            nsim=   100
         else:
             # Noise field
             ss  =   None
-            iz  =   800
-            im  =   800
+            iz  =   int(Id//800)
+            im  =   int(Id%800)
+            nsim=   1000
         pool.storeSet(ss=ss)
         outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
         if not os.path.isdir(outDirH):
             os.mkdir(outDirH)
         pool.storeSet(outDirH=outDirH)
-        resList =   pool.map(self.process,range(1000))
+        resList =   pool.map(self.process,range(nsim))
         resList =   [x for x in resList if x is not None]
 
         # peak catalogs list
@@ -234,20 +236,25 @@ class massMapStampBatchTask(BatchPoolTask):
         sigmafname  =   os.path.join(cache.pixDir,'pixStd.fits')
         lkfname     =   'planck-cosmo/lensing_kernel-pz-nl20.fits'
 
+        nframe      =   1
+        if nframe==1:
+            rs_base=0.
+        else:
+            rs_base=0.12
         parser.set('prepare','g1fname',g1fname)
         parser.set('prepare','g2fname',g2fname)
         parser.set('prepare','sigmafname',sigmafname)
         parser.set('prepare','lkfname',lkfname)
 
         parser.set('lensZ','resolve_lim','0.4') #pix
-        parser.set('lensZ','rs_base','0.12')    #Mpc/h
+        parser.set('lensZ','rs_base','%s' %rs_base)    #Mpc/h
 
         # Reconstruction Init
         lbd =   5.0
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
-        parser.set('sparse','nframe','3' )
+        parser.set('sparse','nframe','%d' %nframe )
         parser.set('sparse','minframe','0' )
         parser.set('sparse','tau','%s' %tau)
         parser.set('sparse','debugList','[]')

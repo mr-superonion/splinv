@@ -109,6 +109,8 @@ class nfwShearlet2D():
         for izl in range(self.nzl):
             rz      =   self.rs_base/self.cosmo.Dc(0.,self.zlBin[izl])*60.*180./np.pi
             for ifr in range(self.nframe)[::-1]:
+                # For each lens redshfit bins, we begin from the
+                # frame with largest angular scale radius
                 rs  =   (ifr+1)*rz
                 if rs<self.resolve_lim:
                     self.rs_frame[izl,ifr]=0.
