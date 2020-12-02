@@ -371,9 +371,6 @@ INPUT ./detfalseRate_f3-3.pdf
 INPUT peak_histograms.pdf
 INPUT ./peak_histograms.pdf
 INPUT ./peak_histograms.pdf
-INPUT detfalse_threshold.pdf
-INPUT ./detfalse_threshold.pdf
-INPUT ./detfalse_threshold.pdf
 INPUT delta-1-7-pz-wn-NFW-falsepeakproblem.pdf
 INPUT ./delta-1-7-pz-wn-NFW-falsepeakproblem.pdf
 INPUT ./delta-1-7-pz-wn-NFW-falsepeakproblem.pdf
@@ -392,6 +389,9 @@ INPUT ./detfalseRate_f1-1.pdf
 INPUT detfalseRate_f1-3.pdf
 INPUT ./detfalseRate_f1-3.pdf
 INPUT ./detfalseRate_f1-3.pdf
+INPUT detfalse_threshold.pdf
+INPUT ./detfalse_threshold.pdf
+INPUT ./detfalse_threshold.pdf
 INPUT ms.bbl
 INPUT ms.bbl
 INPUT ms.aux
