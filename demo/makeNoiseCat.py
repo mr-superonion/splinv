@@ -6,12 +6,15 @@ import numpy as np
 import astropy.table as astTab
 import astropy.io.fits as pyfits
 
-datDir  =   "/work/xiangchong.li/work/S16ACatalogs/"
+if False:
+    #GW
+    datDir  =   "/work/xiangchong.li/work/S16ACatalogs/"
+else:
+    #sshfsGW
+    datDir  =   "/home/xiangchong/work/gw_ipmu/work/S16ACatalogs/"
 tn      =   '9347.fits'
 
 def rotCatalog(e1, e2, phi=None):
-    if phi  ==  None:
-        phi = 2.0 * np.pi * np.random.rand(len(e1))
     cs      =   np.cos(phi)
     ss      =   np.sin(phi)
     e1_rot  =   e1 * cs + e2 * ss
@@ -72,7 +75,7 @@ def main():
     cdf     =   np.empty(shape=(nobj, nbin), dtype=float)
     np.cumsum(pdata, axis=1, out=cdf)
 
-    mRange  =   range(100,1000)
+    mRange  =   range(1000,2500)
     names   =   ('raH','decH','raR','decR','g1n','g2n','zbest','ztrue')
 
     for imock in mRange:
@@ -84,7 +87,8 @@ def main():
         r           =   np.random.random(size=nobj)
         for i in range(nobj):
             tzmc[i] =   np.interp(r[i], cdf[i], poz_bins)
-        g1n,g2n     =   rotCatalog(g1,g2)
+        phi = 2.0 * np.pi * np.random.rand(nobj)
+        g1n,g2n     =   rotCatalog(g1,g2,phi)
         tableMock['raH']    =   ra
         tableMock['decH']   =   dec
         tableMock['raR']    =   raR
@@ -96,6 +100,7 @@ def main():
         tableMock.write('HSC-obs/20200328/cats/sim%d.fits' %imock,overwrite=True)
         del tableMock
         del g1n,g2n
+        del phi
         del tzmc
         gc.collect()
     return
