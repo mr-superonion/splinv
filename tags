@@ -1,0 +1,1022 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
+Acknowledgements	doc/paper_ms_method_HSCY1/ms.tex	/^\\section*{Acknowledgements}$/;"	s
+AdaLASSO-Zou2006	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{AdaLASSO-Zou2006,$/;"	a
+Adaptive lasso	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{Adaptive lasso}$/;"	b	subsection:Methodology""Density map reconstruction
+Background	doc/talk/mass_map.tex	/^\\section{Background}$/;"	s
+C_LIGHT	python/haloSim.py	/^C_LIGHT=2.99792458e8        # m\/s$/;"	v
+C_LIGHT	python/pixel3D.py	/^C_LIGHT=2.99792458e8        # m\/s$/;"	v
+ConfigClass	demo/haloSimStamp.py	/^    ConfigClass = haloSimStampBatchConfig$/;"	v	class:haloSimStampBatchTask
+ConfigClass	demo/massMapStamp.py	/^    ConfigClass = massMapStampBatchConfig$/;"	v	class:massMapStampBatchTask
+ConfigClass	demo/old/binSplit.py	/^    ConfigClass = binSplitBatchConfig$/;"	v	class:binSplitBatchTask
+ConfigClass	python/old/glInverse2D_s16a.py	/^    ConfigClass = glInverse2D_s16aBatchConfig$/;"	v	class:glInverse2D_s16aBatchTask
+ConfigClass	python/old/glInverse3D_s16a.py	/^    ConfigClass = glInverse3D_s16aBatchConfig$/;"	v	class:glInverse3D_s16aBatchTask
+ConfigClass	python/old/sparse3D.py	/^    ConfigClass = sparse3DBatchConfig$/;"	v	class:sparse3DBatchTask
+ConfigClass	python/old/sparse3D.py	/^    ConfigClass = sparse3DConfig$/;"	v	class:sparse3DTask
+ConfigClass	python/old/sparse3D_s16a.py	/^    ConfigClass = sparse3D_s16aBatchConfig$/;"	v	class:sparse3D_s16aBatchTask
+Cosmology	notebook/nfw_halo.py	/^class Cosmology(object):$/;"	c
+DES-SV-massMap-sparsity	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{DES-SV-massMap-sparsity,$/;"	a
+DES05	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{DES05,$/;"	a
+Da	notebook/nfw_halo.py	/^    def Da(self, z, z_ref=0):$/;"	m	class:Cosmology
+DeltaSigma	python/haloSim.py	/^    def DeltaSigma(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03
+DeltaSigma	python/haloSim.py	/^    def DeltaSigma(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00
+DeltaSigmaAtom	python/haloSim.py	/^    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):$/;"	m	class:nfw_lensTJ03
+DeltaSigmaAtom	python/haloSim.py	/^    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):$/;"	m	class:nfw_lensWB00
+DeltaSigmaComplex	python/haloSim.py	/^    def DeltaSigmaComplex(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03
+DeltaSigmaComplex	python/haloSim.py	/^    def DeltaSigmaComplex(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00
+Demo	README.md	/^# Demo$/;"	c
+Density map reconstruction	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Density map reconstruction}$/;"	u	section:Methodology
+Dictionary	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Dictionary}$/;"	u	section:Methodology
+Download	README.md	/^## Download$/;"	s
+E	notebook/nfw_halo.py	/^    def E(self, a):$/;"	m	class:Cosmology
+Euclid2011	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{Euclid2011,$/;"	a
+FISTA	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{FISTA}$/;"	b	subsection:Methodology""Density map reconstruction
+FISTA-Beck2009	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{FISTA-Beck2009,$/;"	a
+FPFSHSC1-Li2020	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{FPFSHSC1-Li2020,$/;"	a
+GNEWTON	python/haloSim.py	/^GNEWTON=6.67428e-11         # m^3\/kg\/s^2$/;"	v
+GNEWTON	python/pixel3D.py	/^GNEWTON=6.67428e-11         # m^3\/kg\/s^2$/;"	v
+GausAtom	python/haloSim.py	/^def GausAtom(sigma,ngrid,fou=True):$/;"	f
+HSC1-catalog	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{HSC1-catalog,$/;"	a
+HSC1-data	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{HSC1-data,$/;"	a
+HSC1-massMap-cluster	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{HSC1-massMap-cluster,$/;"	a
+HSC1-massMaps	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{HSC1-massMaps,$/;"	a
+HSC1-photoz	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{HSC1-photoz,$/;"	a
+Install	README.md	/^# Install$/;"	c
+Introduction	doc/paper_ms_method_HSCY1/ms.tex	/^\\section{Introduction}$/;"	s
+KG_PER_SUN	python/haloSim.py	/^KG_PER_SUN=1.98892e30       # kg\/M_solar$/;"	v
+KG_PER_SUN	python/pixel3D.py	/^KG_PER_SUN=1.98892e30       # kg\/M_solar$/;"	v
+KIDS13	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{KIDS13,$/;"	a
+KIDS_VIKING-Hildebrant2020	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{KIDS_VIKING-Hildebrant2020,$/;"	a
+LSS-massMap-Glimpse3D-Leonard2014	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{LSS-massMap-Glimpse3D-Leonard2014,$/;"	a
+LSS-massMap-Wiener-Simon2009	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{LSS-massMap-Wiener-Simon2009,$/;"	a
+LSSTScienceBook	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{LSSTScienceBook,$/;"	a
+Lensing	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Lensing}$/;"	u	section:Methodology
+MLZ-TPZ2013	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{MLZ-TPZ2013,$/;"	a
+M_PER_PARSEC	python/haloSim.py	/^M_PER_PARSEC=3.08568025e16  # m\/pc$/;"	v
+M_PER_PARSEC	python/pixel3D.py	/^M_PER_PARSEC=3.08568025e16  # m\/pc$/;"	v
+Masking	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{Masking}$/;"	b	subsection:Methodology""Systematics
+Method	doc/talk/mass_map.tex	/^\\section{Method}$/;"	s
+Methodology	doc/paper_ms_method_HSCY1/ms.tex	/^\\section{Methodology}$/;"	s
+NFW atoms	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{NFW atoms}$/;"	u	section:Tests
+NFWHalo	notebook/nfw_halo.py	/^class NFWHalo(object):$/;"	c
+Notebook	README.md	/^# Notebook$/;"	c
+Photo-$z$ Uncertainty	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{Photo-$z$ Uncertainty}$/;"	b	subsection:Methodology""Systematics
+Pixelization	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{Pixelization}$/;"	b	subsection:Methodology""Systematics
+Point mass atoms	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Point mass atoms}$/;"	u	section:Tests
+Requirements	README.md	/^## Requirements$/;"	s
+RunnerClass	demo/haloSimStamp.py	/^    RunnerClass = haloSimStampRunner$/;"	v	class:haloSimStampBatchTask
+RunnerClass	demo/massMapStamp.py	/^    RunnerClass = massMapStampRunner$/;"	v	class:massMapStampBatchTask
+RunnerClass	demo/old/binSplit.py	/^    RunnerClass = binSplitRunner$/;"	v	class:binSplitBatchTask
+RunnerClass	python/old/glInverse2D_s16a.py	/^    RunnerClass = glInverse2D_s16aRunner$/;"	v	class:glInverse2D_s16aBatchTask
+RunnerClass	python/old/glInverse3D_s16a.py	/^    RunnerClass = glInverse3D_s16aRunner$/;"	v	class:glInverse3D_s16aBatchTask
+RunnerClass	python/old/sparse3D.py	/^    RunnerClass = sparse3DRunner$/;"	v	class:sparse3DBatchTask
+RunnerClass	python/old/sparse3D_s16a.py	/^    RunnerClass = sparse3D_s16aRunner$/;"	v	class:sparse3D_s16aBatchTask
+Setup the environment:	README.md	/^## Setup the environment:$/;"	s
+Sigma	python/haloSim.py	/^    def Sigma(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03
+Sigma	python/haloSim.py	/^    def Sigma(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00
+SigmaAtom	python/haloSim.py	/^    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):$/;"	m	class:nfw_lensTJ03
+SigmaAtom	python/haloSim.py	/^    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):$/;"	m	class:nfw_lensWB00
+Sigma_M_bin	python/haloSim.py	/^    def Sigma_M_bin(self,z_bin_min,z_bin_max):$/;"	m	class:nfw_lensTJ03
+Sigma_M_bin	python/haloSim.py	/^    def Sigma_M_bin(self,z_bin_min,z_bin_max):$/;"	m	class:nfw_lensWB00
+Simulations	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Simulations}$/;"	u	section:Tests
+Smoothing	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsubsection{Smoothing}$/;"	b	subsection:Methodology""Systematics
+Starlet-Starck2015	doc/paper_ms_method_HSCY1/citation.bib	/^@INBOOK{Starlet-Starck2015,$/;"	i
+Summary	doc/paper_ms_method_HSCY1/ms.tex	/^\\section{Summary}$/;"	s
+Systematics	doc/paper_ms_method_HSCY1/ms.tex	/^\\subsection{Systematics}$/;"	u	section:Methodology
+Test on HSC-like Simulation	doc/talk/mass_map.tex	/^\\section{Test on HSC-like Simulation}$/;"	s
+Tests	doc/paper_ms_method_HSCY1/ms.tex	/^\\section{Tests}$/;"	s
+WFIRST15	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{WFIRST15,$/;"	a
+WL-massMap-Glimpse2D-Lanusse2016	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{WL-massMap-Glimpse2D-Lanusse2016,$/;"	a
+_DefaultName	demo/haloSimStamp.py	/^    _DefaultName = "haloSimStampBatch"$/;"	v	class:haloSimStampBatchTask
+_DefaultName	demo/massMapStamp.py	/^    _DefaultName = "massMapStampBatch"$/;"	v	class:massMapStampBatchTask
+_DefaultName	demo/old/binSplit.py	/^    _DefaultName = "binSplitBatch"$/;"	v	class:binSplitBatchTask
+_DefaultName	python/old/glInverse2D_s16a.py	/^    _DefaultName = "glInverse2D_s16aBatch"$/;"	v	class:glInverse2D_s16aBatchTask
+_DefaultName	python/old/glInverse3D_s16a.py	/^    _DefaultName = "glInverse3D_s16aBatch"$/;"	v	class:glInverse3D_s16aBatchTask
+_DefaultName	python/old/sparse3D.py	/^    _DefaultName = "sparse3D"$/;"	v	class:sparse3DTask
+_DefaultName	python/old/sparse3D.py	/^    _DefaultName = "sparse3DBatch"$/;"	v	class:sparse3DBatchTask
+_DefaultName	python/old/sparse3D_s16a.py	/^    _DefaultName = "sparse3D_s16aBatch"$/;"	v	class:sparse3D_s16aBatchTask
+__DdRs	python/haloSim.py	/^    def __DdRs(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03	file:
+__DdRs	python/haloSim.py	/^    def __DdRs(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00	file:
+__DeltaSigma	python/haloSim.py	/^    def __DeltaSigma(self,x):$/;"	m	class:nfw_lensWB00	file:
+__DeltaSigma	python/haloSim.py	/^    def __DeltaSigma(self,x0):$/;"	m	class:nfw_lensTJ03	file:
+__Sigma	python/haloSim.py	/^    def __Sigma(self,x):$/;"	m	class:nfw_lensWB00	file:
+__Sigma	python/haloSim.py	/^    def __Sigma(self,x0):$/;"	m	class:nfw_lensTJ03	file:
+__angKernel	notebook/nfw_halo.py	/^    def __angKernel(self, x):$/;"	m	class:Cosmology	file:
+__cos2phi	python/haloSim.py	/^    def __cos2phi(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03	file:
+__cos2phi	python/haloSim.py	/^    def __cos2phi(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00	file:
+__eq__	notebook/nfw_halo.py	/^    def __eq__(self, other): return repr(self) == repr(other)$/;"	m	class:Cosmology
+__eq__	notebook/nfw_halo.py	/^    def __eq__(self, other): return repr(self) == repr(other)$/;"	m	class:NFWHalo
+__farcth	notebook/nfw_halo.py	/^    def __farcth (self, x):$/;"	m	class:NFWHalo	file:
+__gamma	notebook/nfw_halo.py	/^    def __gamma(self, x, ks):$/;"	m	class:NFWHalo	file:
+__hash__	notebook/nfw_halo.py	/^    def __hash__(self): return hash(repr(self))$/;"	m	class:Cosmology
+__hash__	notebook/nfw_halo.py	/^    def __hash__(self): return hash(repr(self))$/;"	m	class:NFWHalo
+__init__	demo/haloSimStamp.py	/^    def __init__(self,**kwargs):$/;"	m	class:haloSimStampBatchTask
+__init__	demo/massMapStamp.py	/^    def __init__(self,**kwargs):$/;"	m	class:massMapStampBatchTask
+__init__	demo/old/binSplit.py	/^    def __init__(self,**kwargs):$/;"	m	class:binSplitBatchTask
+__init__	notebook/nfw_halo.py	/^    def __init__(self, mass, conc, redshift, halo_pos=PositionD(0,0),$/;"	m	class:NFWHalo
+__init__	notebook/nfw_halo.py	/^    def __init__(self, omega_m=0.3, omega_lam=0.7):$/;"	m	class:Cosmology
+__init__	python/haloSim.py	/^    def __init__(self,mass,conc,redshift,ra,dec,omega_m=0.3):$/;"	m	class:nfw_lensTJ03
+__init__	python/haloSim.py	/^    def __init__(self,mass,conc,redshift,ra,dec,omega_m=0.3):$/;"	m	class:nfw_lensWB00
+__init__	python/halolet.py	/^    def __init__(self,gen=2,nframe=4,ny=64,nx=64):$/;"	m	class:starlet2D
+__init__	python/halolet.py	/^    def __init__(self,nframe=2,minframe=0,ngrid=64,smooth_scale=1.5,rs_base=2.5):$/;"	m	class:nfwlet2D
+__init__	python/halolet.py	/^    def __init__(self,ny,nx):$/;"	m	class:massmap_ks2D
+__init__	python/halolet.py	/^    def __init__(self,parser):$/;"	m	class:nfwShearlet2D
+__init__	python/old/glInverse2D_s16a.py	/^    def __init__(self,**kwargs):$/;"	m	class:glInverse2D_s16aBatchTask
+__init__	python/old/glInverse3D_s16a.py	/^    def __init__(self,**kwargs):$/;"	m	class:glInverse3D_s16aBatchTask
+__init__	python/old/sparse3D.py	/^    def __init__(self,**kwargs):$/;"	m	class:sparse3DBatchTask
+__init__	python/old/sparse3D.py	/^    def __init__(self,**kwargs):$/;"	m	class:sparse3DTask
+__init__	python/old/sparse3D_s16a.py	/^    def __init__(self,**kwargs):$/;"	m	class:sparse3D_s16aBatchTask
+__init__	python/old/sparseBaseOld.py	/^    def __init__(self,ny,nx):$/;"	m	class:massmap_ks2D
+__init__	python/old/sparseBaseOld.py	/^    def __init__(self,shearR,nMap,nframe=4,lbd=4,doDebug=False):$/;"	m	class:massmap_sparsity_2D
+__init__	python/old/sparseBaseOld.py	/^    def __init__(self,sources,nframe=4,lbd=5,doDebug=False):$/;"	m	class:massmap_sparsity_3D
+__init__	python/old/sparseBaseOld.py	/^    def __init__(self,sources,parser):$/;"	m	class:massmapSparsityTask
+__init__	python/old/sparseBaseOld2.py	/^    def __init__(self,ny,nx):$/;"	m	class:massmap_ks2D
+__init__	python/old/sparseBaseOld2.py	/^    def __init__(self,sources,parser):$/;"	m	class:massmapSparsityTask
+__init__	python/old/sparseBaseOld3.py	/^    def __init__(self,ny,nx):$/;"	m	class:massmap_ks2D
+__init__	python/old/sparseBaseOld3.py	/^    def __init__(self,parser):$/;"	m	class:massmapSparsityTask
+__init__	python/pixel3D.py	/^    def __init__(self,parser):$/;"	m	class:cartesianGrid3D
+__init__	python/sparseBase.py	/^    def __init__(self,ny,nx):$/;"	m	class:massmap_ks2D
+__init__	python/sparseBase.py	/^    def __init__(self,parser):$/;"	m	class:massmapSparsityTask
+__init__	python/sparseBase.py	/^    def __init__(self,parser):$/;"	m	class:massmapSparsityTaskNew
+__kappa	notebook/nfw_halo.py	/^    def __kappa(self, x, ks):$/;"	m	class:NFWHalo	file:
+__ks	notebook/nfw_halo.py	/^    def __ks(self, z_s):$/;"	m	class:NFWHalo	file:
+__ne__	notebook/nfw_halo.py	/^    def __ne__(self, other): return not self.__eq__(other)$/;"	m	class:Cosmology
+__ne__	notebook/nfw_halo.py	/^    def __ne__(self, other): return not self.__eq__(other)$/;"	m	class:NFWHalo
+__omega	notebook/nfw_halo.py	/^    def __omega(self, a):$/;"	m	class:NFWHalo	file:
+__reduce__	demo/haloSimStamp.py	/^    def __reduce__(self):$/;"	m	class:haloSimStampBatchTask
+__reduce__	demo/massMapStamp.py	/^    def __reduce__(self):$/;"	m	class:massMapStampBatchTask
+__reduce__	demo/old/binSplit.py	/^    def __reduce__(self):$/;"	m	class:binSplitBatchTask
+__reduce__	python/old/glInverse2D_s16a.py	/^    def __reduce__(self):$/;"	m	class:glInverse2D_s16aBatchTask
+__reduce__	python/old/glInverse3D_s16a.py	/^    def __reduce__(self):$/;"	m	class:glInverse3D_s16aBatchTask
+__reduce__	python/old/sparse3D.py	/^    def __reduce__(self):$/;"	m	class:sparse3DBatchTask
+__reduce__	python/old/sparse3D_s16a.py	/^    def __reduce__(self):$/;"	m	class:sparse3D_s16aBatchTask
+__repr__	notebook/nfw_halo.py	/^    def __repr__(self):$/;"	m	class:Cosmology
+__repr__	notebook/nfw_halo.py	/^    def __repr__(self):$/;"	m	class:NFWHalo
+__sin2phi	python/haloSim.py	/^    def __sin2phi(self,ra_s,dec_s):$/;"	m	class:nfw_lensTJ03	file:
+__sin2phi	python/haloSim.py	/^    def __sin2phi(self,ra_s,dec_s):$/;"	m	class:nfw_lensWB00	file:
+__str__	notebook/nfw_halo.py	/^    def __str__(self):$/;"	m	class:Cosmology
+__str__	notebook/nfw_halo.py	/^    def __str__(self):$/;"	m	class:NFWHalo
+_getConfigName	demo/haloSimStamp.py	/^    def _getConfigName(self):$/;"	m	class:haloSimStampBatchTask
+_getConfigName	demo/massMapStamp.py	/^    def _getConfigName(self):$/;"	m	class:massMapStampBatchTask
+_getConfigName	demo/old/binSplit.py	/^    def _getConfigName(self):$/;"	m	class:binSplitBatchTask
+_getConfigName	python/old/glInverse2D_s16a.py	/^    def _getConfigName(self):$/;"	m	class:glInverse2D_s16aBatchTask
+_getConfigName	python/old/glInverse3D_s16a.py	/^    def _getConfigName(self):$/;"	m	class:glInverse3D_s16aBatchTask
+_getConfigName	python/old/sparse3D.py	/^    def _getConfigName(self):$/;"	m	class:sparse3DBatchTask
+_getConfigName	python/old/sparse3D_s16a.py	/^    def _getConfigName(self):$/;"	m	class:sparse3D_s16aBatchTask
+_getConvergence	notebook/nfw_halo.py	/^    def _getConvergence(self, pos_x, pos_y, z_s):$/;"	m	class:NFWHalo
+_getEupsVersionsName	demo/haloSimStamp.py	/^    def _getEupsVersionsName(self):$/;"	m	class:haloSimStampBatchTask
+_getEupsVersionsName	demo/massMapStamp.py	/^    def _getEupsVersionsName(self):$/;"	m	class:massMapStampBatchTask
+_getEupsVersionsName	demo/old/binSplit.py	/^    def _getEupsVersionsName(self):$/;"	m	class:binSplitBatchTask
+_getEupsVersionsName	python/old/glInverse2D_s16a.py	/^    def _getEupsVersionsName(self):$/;"	m	class:glInverse2D_s16aBatchTask
+_getEupsVersionsName	python/old/glInverse3D_s16a.py	/^    def _getEupsVersionsName(self):$/;"	m	class:glInverse3D_s16aBatchTask
+_getEupsVersionsName	python/old/sparse3D.py	/^    def _getEupsVersionsName(self):$/;"	m	class:sparse3DBatchTask
+_getEupsVersionsName	python/old/sparse3D_s16a.py	/^    def _getEupsVersionsName(self):$/;"	m	class:sparse3D_s16aBatchTask
+_getLensing	notebook/nfw_halo.py	/^    def _getLensing(self, pos_x, pos_y, z_s):$/;"	m	class:NFWHalo
+_getMagnification	notebook/nfw_halo.py	/^    def _getMagnification(self, pos_x, pos_y, z_s):$/;"	m	class:NFWHalo
+_getMetadataName	demo/haloSimStamp.py	/^    def _getMetadataName(self):$/;"	m	class:haloSimStampBatchTask
+_getMetadataName	demo/massMapStamp.py	/^    def _getMetadataName(self):$/;"	m	class:massMapStampBatchTask
+_getMetadataName	demo/old/binSplit.py	/^    def _getMetadataName(self):$/;"	m	class:binSplitBatchTask
+_getMetadataName	python/old/glInverse2D_s16a.py	/^    def _getMetadataName(self):$/;"	m	class:glInverse2D_s16aBatchTask
+_getMetadataName	python/old/glInverse3D_s16a.py	/^    def _getMetadataName(self):$/;"	m	class:glInverse3D_s16aBatchTask
+_getMetadataName	python/old/sparse3D.py	/^    def _getMetadataName(self):$/;"	m	class:sparse3DBatchTask
+_getMetadataName	python/old/sparse3D_s16a.py	/^    def _getMetadataName(self):$/;"	m	class:sparse3D_s16aBatchTask
+_getShear	notebook/nfw_halo.py	/^    def _getShear(self, pos_x, pos_y, z_s, reduced=True):$/;"	m	class:NFWHalo
+_makeArgumentParser	demo/haloSimStamp.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:haloSimStampBatchTask
+_makeArgumentParser	demo/massMapStamp.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:massMapStampBatchTask
+_makeArgumentParser	demo/old/binSplit.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:binSplitBatchTask
+_makeArgumentParser	python/old/glInverse2D_s16a.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:glInverse2D_s16aBatchTask
+_makeArgumentParser	python/old/glInverse3D_s16a.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:glInverse3D_s16aBatchTask
+_makeArgumentParser	python/old/sparse3D.py	/^    def _makeArgumentParser(cls):$/;"	m	class:sparse3DTask
+_makeArgumentParser	python/old/sparse3D.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:sparse3DBatchTask
+_makeArgumentParser	python/old/sparse3D_s16a.py	/^    def _makeArgumentParser(cls, *args, **kwargs):$/;"	m	class:sparse3D_s16aBatchTask
+_opt_params	notebook/nfw_halo.py	/^    _opt_params = { 'halo_pos' : PositionD , 'omega_m' : float , 'omega_lam' : float }$/;"	v	class:NFWHalo
+_req_params	notebook/nfw_halo.py	/^    _req_params = { 'mass' : float , 'conc' : float , 'redshift' : float }$/;"	v	class:NFWHalo
+_single_params	notebook/nfw_halo.py	/^    _single_params = []$/;"	v	class:NFWHalo
+_takes_rng	notebook/nfw_halo.py	/^    _takes_rng = False$/;"	v	class:NFWHalo
+a	notebook/nfw_halo.py	/^    def a(self, z):$/;"	m	class:Cosmology
+adaptive_lasso_weight	python/sparseBase.py	/^    def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):$/;"	m	class:massmapSparsityTask
+adaptive_lasso_weight	python/sparseBase.py	/^    def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):$/;"	m	class:massmapSparsityTaskNew
+addInfoSparse	demo/old/makeConfigS16a.py	/^def addInfoSparse(parser,lbd,fieldName):$/;"	f
+afwCoord	python/old/sparse3D.py	/^import lsst.afw.coord as afwCoord$/;"	I
+afwDet	python/old/sparse3D.py	/^import lsst.afw.detection as afwDet$/;"	I
+afwGeom	python/old/sparse3D.py	/^import lsst.afw.geom as afwGeom$/;"	I
+afwImage	python/old/sparseBaseOld3.py	/^    import lsst.afw.image as afwImage$/;"	I
+afwImg	python/old/sparse3D.py	/^import lsst.afw.image as afwImg$/;"	I
+afwMath	python/old/sparse3D.py	/^import lsst.afw.math as afwMath$/;"	I
+afwTable	python/old/sparse3D.py	/^import lsst.afw.table as afwTable$/;"	I
+alg-1	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{alg-1}$/;"	l
+aprox_method	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^aprox_method= fista$/;"	k	section:sparse
+aprox_method	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^aprox_method= fista$/;"	k	section:sparse
+astTab	demo/makeHaloCat.py	/^import astropy.table as astTab$/;"	I
+astTab	demo/makeNoiseCat.py	/^import astropy.table as astTab$/;"	I
+astTab	demo/old/haloSimS16a.py	/^import astropy.table as astTab$/;"	I
+astTab	demo/old/prepareMassMapZPDF_s16a.py	/^import astropy.table as astTab$/;"	I
+astTab	demo/old/prepareMassMap_s16a.py	/^import astropy.table as astTab$/;"	I
+binDir	demo/old/glInverse.py	/^    binDir      =   '\/work\/xiangchong.li\/superonionGW\/packages\/Glimpse\/build'$/;"	v
+binSplitBatchConfig	demo/old/binSplit.py	/^class binSplitBatchConfig(pexConfig.Config):$/;"	c
+binSplitBatchTask	demo/old/binSplit.py	/^class binSplitBatchTask(BatchPoolTask):$/;"	c
+binSplitRunner	demo/old/binSplit.py	/^class binSplitRunner(TaskRunner):$/;"	c
+c-M_Magneticum-Ragagnin2019	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{c-M_Magneticum-Ragagnin2019,$/;"	a
+cartesianGrid3D	python/pixel3D.py	/^class cartesianGrid3D():$/;"	c
+chi2_transpose	python/old/sparseBaseOld3.py	/^    def chi2_transpose(self,shearRIn):$/;"	m	class:massmapSparsityTask
+chi2_transpose	python/sparseBase.py	/^    def chi2_transpose(self,shearRIn):$/;"	m	class:massmapSparsityTask
+chi2_transpose	python/sparseBase.py	/^    def chi2_transpose(self,shearRIn):$/;"	m	class:massmapSparsityTaskNew
+clear_all_outcome	python/sparseBase.py	/^    def clear_all_outcome(self):$/;"	m	class:massmapSparsityTask
+clear_all_outcome	python/sparseBase.py	/^    def clear_all_outcome(self):$/;"	m	class:massmapSparsityTaskNew
+cmb-Planck2018-Cosmology	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{cmb-Planck2018-Cosmology,$/;"	a
+configDir	demo/old/haloSimS16a.py	/^        configDir   =   's16a3D\/pix-0.05\/nframe-3\/lambda-3.5\/' $/;"	v
+configName	demo/haloSimStamp.py	/^    configName  =   pexConfig.Field(dtype=str,$/;"	v	class:haloSimStampBatchConfig
+configName	demo/massMapStamp.py	/^    configName  =   pexConfig.Field(dtype=str,$/;"	v	class:massMapStampBatchConfig
+configName	demo/old/glInverse.py	/^configName  =   '\/work\/xiangchong.li\/superonionGW\/code\/kappaMap_Private\/config\/s16a%sConf/;"	v
+configName	demo/old/haloSimS16a.py	/^        configName  =   os.path.join(configDir,'config_lbd3.5_%s.ini' %fdName)$/;"	v
+configName	demo/old/makeConfigS16a.py	/^        configName  =   os.path.join(outDir,'config_lbd%.1f_%s.ini' %(lbd,fieldName))$/;"	v
+configName	demo/old/pixCartesian3DBatchRun.py	/^configName  =   'stampSim\/HSC-like\/process-equalNum10\/config.ini'$/;"	v
+configName	demo/prepareLensingKernel.py	/^configName  =   'planck-cosmo\/config-pix96-%s.ini' %ver$/;"	v
+configName2	demo/old/glInverse.py	/^    configName2 =   os.path.join(glDir,'s16aConfig%s_%d.ini' %(dimen,ngrid\/2))$/;"	v
+cosmicShear-DES1	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{cosmicShear-DES1,$/;"	a
+cosmicShearRealKids450	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{cosmicShearRealKids450,$/;"	a
+cosmicShear_HSC1_Chiaki2019	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{cosmicShear_HSC1_Chiaki2019,$/;"	a
+cosmicShear_HSC1_Hamana2019	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{cosmicShear_HSC1_Hamana2019,$/;"	a
+cosmology	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[cosmology]$/;"	s
+cosmology	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[cosmology]$/;"	s
+dafBase	demo/old/binSplit.py	/^import lsst.daf.base as dafBase$/;"	I
+dafBase	python/old/sparse3D.py	/^import lsst.daf.base as dafBase$/;"	I
+datDir	demo/makeNoiseCat.py	/^    datDir  =   "\/work\/xiangchong.li\/work\/S16ACatalogs\/"$/;"	v
+datDir	demo/prepareLensingKernel.py	/^datDir      =   '\/work\/xiangchong.li\/work\/S16ACatalogs\/'$/;"	v
+debugList	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^debugList=  []$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^debugList=  [0,5,10,15,20,25,30,40,50,60,70,80,90]$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^debugList=  [0,5,10,15,20,25,30,40,50,60,70,80,90]$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^debugList=  [0,5,10,15,20,25,30,40,50,60,70,80,90]$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^debugList=  []$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^debugList=  []$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^debugList=  []$/;"	k	section:sparse
+debugList	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^debugList=  []$/;"	k	section:sparse
+decname	demo/old/pixCartesian3DBatchRun.py	/^decname =   'decR'$/;"	v
+determine_step_size	python/sparseBase.py	/^    def determine_step_size(self):$/;"	m	class:massmapSparsityTask
+determine_step_size	python/sparseBase.py	/^    def determine_step_size(self):$/;"	m	class:massmapSparsityTaskNew
+determine_thresholds	python/old/sparseBaseOld.py	/^    def determine_thresholds(self,dalphaR):$/;"	m	class:massmapSparsityTask
+determine_thresholds	python/old/sparseBaseOld2.py	/^    def determine_thresholds(self,dalphaR):$/;"	m	class:massmapSparsityTask
+dicname	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dicname	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^dicname =   nfwlet$/;"	k	section:sparse
+dimen	demo/old/glInverse.py	/^dimen       =   '3D'$/;"	v
+dodebug	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^dodebug = no$/;"	k	section:sparse
+dodebug	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^dodebug = no$/;"	k	section:sparse
+e2phiFou	python/haloSim.py	/^def e2phiFou(shape):$/;"	f
+e2phiFou	python/halolet.py	/^    def e2phiFou(self,shape):$/;"	m	class:massmap_ks2D
+e2phiFou	python/old/kmapUtilities.py	/^def e2phiFou(shape):$/;"	f
+e2phiFou	python/old/sparseBaseOld.py	/^    def e2phiFou(self,shape):$/;"	m	class:massmap_ks2D
+e2phiFou	python/old/sparseBaseOld2.py	/^    def e2phiFou(self,shape):$/;"	m	class:massmap_ks2D
+e2phiFou	python/old/sparseBaseOld3.py	/^    def e2phiFou(self,shape):$/;"	m	class:massmap_ks2D
+e2phiFou	python/sparseBase.py	/^    def e2phiFou(self,shape):$/;"	m	class:massmap_ks2D
+eq-delta2gamma-final	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-delta2gamma-final}$/;"	l
+eq-delta2gamma-poz	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-delta2gamma-poz}$/;"	l
+eq-delta2gammat	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-delta2gammat}$/;"	l
+eq-delta2gammat-simp	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation} \\label{eq-delta2gammat-simp}$/;"	l
+eq-delta2kappa	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-delta2kappa}$/;"	l
+eq-intro-delta2shear	doc/paper_ms_method_HSCY1/ms.tex	/^transformation: \\begin{equation} \\label{eq-intro-delta2shear} \\gamma=\\mathbf{T}$/;"	l
+eq-intro-dict	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation} \\label{eq-intro-dict}$/;"	l
+eq-kappa2gamma	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-kappa2gamma}$/;"	l
+eq-lossFun	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-lossFun}$/;"	l
+eq-numDesSmooth	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-numDesSmooth}$/;"	l
+eq-x2delta	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-x2delta}$/;"	l
+eq-x2gamma-final	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-x2gamma-final}$/;"	l
+eq-x2gamma-simple	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-x2gamma-simple}$/;"	l
+eq-x2gammat	doc/paper_ms_method_HSCY1/ms.tex	/^\\begin{equation}\\label{eq-x2gammat}$/;"	l
+estimate_sigma	demo/old/pixCartesian3DBatchRun.py	/^def estimate_sigma():$/;"	f
+eta	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^eta=0.$/;"	k	section:sparse
+eta	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^eta=0.$/;"	k	section:sparse
+fast_chi2diagonal_est	python/sparseBase.py	/^    def fast_chi2diagonal_est(self):$/;"	m	class:massmapSparsityTask
+fast_chi2diagonal_est	python/sparseBase.py	/^    def fast_chi2diagonal_est(self):$/;"	m	class:massmapSparsityTaskNew
+fdNames	demo/old/makeConfigS16a.py	/^    fdNames =  np.load('.\/fieldInfo.npy',allow_pickle=True).item().keys()$/;"	v
+fieldList	demo/old/haloSimS16a.py	/^    fieldList   =  np.load('.\/fieldInfo.npy',allow_pickle=True).item().keys() $/;"	v
+fig_NFWvsPM	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_NFWvsPM}$/;"	l
+fig_atoms1D	doc/paper_ms_method_HSCY1/ms.tex	/^ \\label{fig_atoms1D}$/;"	l
+fig_atoms2D	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_atoms2D}$/;"	l
+fig_bestpz	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_bestpz}$/;"	l
+fig_corlensKer	doc/paper_ms_method_HSCY1/ms.tex	/^        }\\label{fig_corlensKer}$/;"	l
+fig_detFalsRateNFW	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_detFalsRateNFW}$/;"	l
+fig_detFalsRatePM	doc/paper_ms_method_HSCY1/ms.tex	/^        }\\label{fig_detFalsRatePM}$/;"	l
+fig_detfalse_threshold	doc/paper_ms_method_HSCY1/ms.tex	/^    }\\label{fig_detfalse_threshold}$/;"	l
+fig_detoffsets	doc/paper_ms_method_HSCY1/ms.tex	/^     } \\label{fig_detoffsets}$/;"	l
+fig_lassoVsadaLasso	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_lassoVsadaLasso}$/;"	l
+fig_noiseHistogram	doc/paper_ms_method_HSCY1/ms.tex	/^ \\label{fig_noiseHistogram}$/;"	l
+fig_noistdmap	doc/paper_ms_method_HSCY1/ms.tex	/^        } \\label{fig_noistdmap}$/;"	l
+fig_pdfpz	doc/paper_ms_method_HSCY1/ms.tex	/^        }\\label{fig_pdfpz}$/;"	l
+fig_peakHist	doc/paper_ms_method_HSCY1/ms.tex	/^    }\\label{fig_peakHist}$/;"	l
+file	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[file]$/;"	s
+file	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[file]$/;"	s
+firm_thresholding	python/old/sparseBaseOld.py	/^def firm_thresholding(dum,thresholds):$/;"	f
+firm_thresholding	python/old/sparseBaseOld2.py	/^def firm_thresholding(dum,thresholds):$/;"	f
+firm_thresholding	python/old/sparseBaseOld3.py	/^def firm_thresholding(dum,thresholds):$/;"	f
+firm_thresholding	python/sparseBase.py	/^def firm_thresholding(dum,thresholds):$/;"	f
+fista_gradient_descent	python/old/sparseBaseOld3.py	/^    def fista_gradient_descent(self,iup,niter,threM='ST'):$/;"	m	class:massmapSparsityTask
+fista_gradient_descent	python/sparseBase.py	/^    def fista_gradient_descent(self,niter,w=1.):$/;"	m	class:massmapSparsityTask
+fista_gradient_descent	python/sparseBase.py	/^    def fista_gradient_descent(self,niter,w=1.):$/;"	m	class:massmapSparsityTaskNew
+four_pi_G_over_c_squared	python/haloSim.py	/^def four_pi_G_over_c_squared():$/;"	f
+four_pi_G_over_c_squared	python/pixel3D.py	/^def four_pi_G_over_c_squared():$/;"	f
+frameDir	demo/old/makeConfigS16a.py	/^    frameDir=   os.path.join(pixDir,'nframe-%d' %nframe)$/;"	v
+g1Map	demo/old/ksInverse.py	/^    g1Map       =   fitsio.read(os.path.join(simDir,'g1Map_grid%s.fits'%(ngrid)))$/;"	v
+g1Map	demo/old/myInverse2D.py	/^g1Map   =   pyfits.getdata('simulation%s\/g1Map_grid%s.fits' %(isim,npix))$/;"	v
+g1fname	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^g1fname   =  pixelize-equalNum-nl10\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1fname	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^g1fname   =  pixelize-equalNum-nl20\/pixShearR-g1-4-4-zt.fits$/;"	k	section:prepare
+g1name	demo/old/pixCartesian3DBatchRun.py	/^g1name  =   'g1R'$/;"	v
+g2Map	demo/old/ksInverse.py	/^    g2Map       =   fitsio.read(os.path.join(simDir,'g2Map_grid%s.fits'%(ngrid)))$/;"	v
+g2Map	demo/old/myInverse2D.py	/^g2Map   =   pyfits.getdata('simulation%s\/g2Map_grid%s.fits' %(isim,npix))$/;"	v
+g2fname	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^g2fname   =  pixelize-equalNum-nl10\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2fname	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^g2fname   =  pixelize-equalNum-nl20\/pixShearR-g2-4-4-zt.fits$/;"	k	section:prepare
+g2name	demo/old/pixCartesian3DBatchRun.py	/^g2name  =   'g2R'$/;"	v
+getConvergence	notebook/nfw_halo.py	/^    def getConvergence(self, pos, z_s, units=arcsec):$/;"	m	class:NFWHalo
+getFieldInfo	demo/old/makeConfigS16a.py	/^def getFieldInfo(fieldName,pix_scale):$/;"	f
+getFieldInfo	python/old/glInverse2D_s16a.py	/^    def getFieldInfo(self,fieldName,pix_scale):$/;"	m	class:glInverse2D_s16aBatchTask
+getFieldInfo	python/old/glInverse3D_s16a.py	/^    def getFieldInfo(self,fieldName,pix_scale):$/;"	m	class:glInverse3D_s16aBatchTask
+getLensing	notebook/nfw_halo.py	/^    def getLensing(self, pos, z_s, units=arcsec):$/;"	m	class:NFWHalo
+getMagnification	notebook/nfw_halo.py	/^    def getMagnification(self, pos, z_s, units=arcsec):$/;"	m	class:NFWHalo
+getShear	notebook/nfw_halo.py	/^    def getShear(self, pos, z_s, units=arcsec, reduced=True):$/;"	m	class:NFWHalo
+getTargetList	demo/haloSimStamp.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:haloSimStampRunner
+getTargetList	demo/massMapStamp.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:massMapStampRunner
+getTargetList	demo/old/binSplit.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:binSplitRunner
+getTargetList	python/old/glInverse2D_s16a.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:glInverse2D_s16aRunner
+getTargetList	python/old/glInverse3D_s16a.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:glInverse3D_s16aRunner
+getTargetList	python/old/sparse3D.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:sparse3DRunner
+getTargetList	python/old/sparse3D_s16a.py	/^    def getTargetList(parsedCmd, **kwargs):$/;"	m	class:sparse3D_s16aRunner
+get_basis_cov	python/sparseBase.py	/^    def get_basis_cov(self,ind1,ind2):$/;"	m	class:massmapSparsityTask
+get_basis_vector	python/sparseBase.py	/^    def get_basis_vector(self,ind):$/;"	m	class:massmapSparsityTask
+get_basis_vector	python/sparseBase.py	/^    def get_basis_vector(self,ind):$/;"	m	class:massmapSparsityTaskNew
+gglens-BossCFHTMore2015	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{gglens-BossCFHTMore2015,$/;"	a
+gglens-DES1	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{gglens-DES1,$/;"	a
+gglens-GAMA-Han2014	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{gglens-GAMA-Han2014,$/;"	a
+glDir	demo/old/glInverse.py	/^glDir       =   'glResult%s-lambda%s\/'%(isim,lbd)$/;"	v
+glInverse2D_s16aBatchConfig	python/old/glInverse2D_s16a.py	/^class glInverse2D_s16aBatchConfig(pexConfig.Config):$/;"	c
+glInverse2D_s16aBatchTask	python/old/glInverse2D_s16a.py	/^class glInverse2D_s16aBatchTask(BatchPoolTask):$/;"	c
+glInverse2D_s16aRunner	python/old/glInverse2D_s16a.py	/^class glInverse2D_s16aRunner(TaskRunner):$/;"	c
+glInverse3D_s16aBatchConfig	python/old/glInverse3D_s16a.py	/^class glInverse3D_s16aBatchConfig(pexConfig.Config):$/;"	c
+glInverse3D_s16aBatchTask	python/old/glInverse3D_s16a.py	/^class glInverse3D_s16aBatchTask(BatchPoolTask):$/;"	c
+glInverse3D_s16aRunner	python/old/glInverse3D_s16a.py	/^class glInverse3D_s16aRunner(TaskRunner):$/;"	c
+gradient	python/old/sparseBaseOld.py	/^    def gradient(self):$/;"	m	class:massmapSparsityTask
+gradient	python/old/sparseBaseOld.py	/^    def gradient(self):$/;"	m	class:massmap_sparsity_2D
+gradient	python/old/sparseBaseOld.py	/^    def gradient(self):$/;"	m	class:massmap_sparsity_3D
+gradient	python/old/sparseBaseOld2.py	/^    def gradient(self):$/;"	m	class:massmapSparsityTask
+gradient	python/old/sparseBaseOld3.py	/^    def gradient(self):$/;"	m	class:massmapSparsityTask
+gradient_TSV	python/old/sparseBaseOld.py	/^    def gradient_TSV(self):$/;"	m	class:massmapSparsityTask
+gradient_TSV	python/old/sparseBaseOld2.py	/^    def gradient_TSV(self):$/;"	m	class:massmapSparsityTask
+gradient_TSV	python/old/sparseBaseOld3.py	/^    def gradient_TSV(self):$/;"	m	class:massmapSparsityTask
+gradient_TSV	python/sparseBase.py	/^    def gradient_TSV(self,alphaR):$/;"	m	class:massmapSparsityTask
+gradient_TSV	python/sparseBase.py	/^    def gradient_TSV(self,alphaR):$/;"	m	class:massmapSparsityTaskNew
+gradient_chi2	python/old/sparseBaseOld.py	/^    def gradient_chi2(self):$/;"	m	class:massmapSparsityTask
+gradient_chi2	python/old/sparseBaseOld2.py	/^    def gradient_chi2(self):$/;"	m	class:massmapSparsityTask
+gradient_chi2	python/old/sparseBaseOld3.py	/^    def gradient_chi2(self):$/;"	m	class:massmapSparsityTask
+gradient_chi2	python/sparseBase.py	/^    def gradient_chi2(self,alphaR):$/;"	m	class:massmapSparsityTask
+gradient_chi2	python/sparseBase.py	/^    def gradient_chi2(self,alphaR):$/;"	m	class:massmapSparsityTaskNew
+gradient_ridge	python/old/sparseBaseOld3.py	/^    def gradient_ridge(self):$/;"	m	class:massmapSparsityTask
+gridInfo	demo/old/pixCartesian3DBatchRun.py	/^gridInfo    =   cartesianGrid3D(parser)$/;"	v
+h_cos	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^h_cos = 0.674$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^h_cos = 1.$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^h_cos = 1.$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^h_cos = 1.$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^h_cos = 1.$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^h_cos = 1.$/;"	k	section:cosmology
+h_cos	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^h_cos = 1.$/;"	k	section:cosmology
+halo-NFW1997ApJ	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{halo-NFW1997ApJ,$/;"	a
+haloCS02SigmaAtom	python/haloSim.py	/^def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):$/;"	f
+haloCat	demo/old/haloSimS16a.py	/^        haloCat =   makehaloCat(fdName,parser)$/;"	v
+haloModel-TJ2003-3pt	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{haloModel-TJ2003-3pt,$/;"	a
+haloName	demo/haloSimStamp.py	/^    haloName=   pexConfig.Field(dtype=str,$/;"	v	class:haloSimStampBatchConfig
+haloName	demo/massMapStamp.py	/^    haloName=   pexConfig.Field(dtype=str,$/;"	v	class:massMapStampBatchConfig
+haloSimStampBatchConfig	demo/haloSimStamp.py	/^class haloSimStampBatchConfig(pexConfig.Config):$/;"	c
+haloSimStampBatchTask	demo/haloSimStamp.py	/^class haloSimStampBatchTask(BatchPoolTask):$/;"	c
+haloSimStampRunner	demo/haloSimStamp.py	/^class haloSimStampRunner(TaskRunner):$/;"	c
+haslsst	python/old/sparseBaseOld3.py	/^    haslsst=False$/;"	v
+haslsst	python/old/sparseBaseOld3.py	/^    haslsst=True$/;"	v
+inSrc	demo/old/glInverse.py	/^inSrc       =   os.path.join(simDir,'src.fits')$/;"	v
+ipv	python/old/sparseBaseOld3.py	/^import ipyvolume as ipv$/;"	I
+isim	demo/old/glInverse.py	/^isim        =   5  $/;"	v
+isim	demo/old/ksInverse.py	/^isim        =   '4-smooth08'$/;"	v
+isim	demo/old/myInverse2D.py	/^isim    =   6$/;"	v
+isim	demo/old/myInverse3D.py	/^isim        =   7$/;"	v
+itransform	python/halolet.py	/^    def itransform(self,dataIn):$/;"	m	class:nfwShearlet2D
+itransform	python/halolet.py	/^    def itransform(self,dataIn,inFou=True,outFou=True):$/;"	m	class:nfwlet2D
+itransform	python/halolet.py	/^    def itransform(self,dataIn,inFou=True,outFou=True):$/;"	m	class:starlet2D
+itransform	python/halolet.py	/^    def itransform(self,gMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+itransform	python/old/sparseBaseOld.py	/^    def itransform(self,gMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+itransform	python/old/sparseBaseOld2.py	/^    def itransform(self,gMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+itransform	python/old/sparseBaseOld3.py	/^    def itransform(self,gMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+itransform	python/sparseBase.py	/^    def itransform(self,gMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+itransformDelta	python/halolet.py	/^    def itransformDelta(self,dataIn):$/;"	m	class:nfwShearlet2D
+itranspose	python/halolet.py	/^    def itranspose(self,dataIn):$/;"	m	class:nfwShearlet2D
+itranspose	python/halolet.py	/^    def itranspose(self,dataIn,inFou=True,outFou=True):$/;"	m	class:nfwlet2D
+itranspose	python/halolet.py	/^    def itranspose(self,dataIn,inFou=True,outFou=True):$/;"	m	class:starlet2D
+kB_KS	demo/old/ksInverse.py	/^    kE_KS,kB_KS =   kUtil.smooth_ksInverse(g1Map,g2Map,nMap,smoPix,0.2)$/;"	v
+kE_KS	demo/old/ksInverse.py	/^    kE_KS,kB_KS =   kUtil.smooth_ksInverse(g1Map,g2Map,nMap,smoPix,0.2)$/;"	v
+kUtil	demo/old/ksInverse.py	/^import kmapUtilities as kUtil$/;"	I
+kappaMap	demo/old/ksInverse.py	/^    kappaMap    =   fitsio.read(os.path.join(simDir,'kMap_true%s.fits' %(ngrid)))$/;"	v
+ksDir	demo/old/ksInverse.py	/^ksDir       =   'ksResult%s\/' %(isim)$/;"	v
+ksForward	python/haloSim.py	/^def ksForward(kMap):$/;"	f
+ksInverse	python/haloSim.py	/^def ksInverse(gMap):$/;"	f
+ksInverse	python/old/kmapUtilities.py	/^def ksInverse(g1Map,g2Map,maskMap=None,isFour=False):$/;"	f
+lambdaR	python/old/glInverse2D_s16a.py	/^    lambdaR     =   pexConfig.Field(dtype=float, default=4, doc="regulation term lambda")$/;"	v	class:glInverse2D_s16aBatchConfig
+lambdaR	python/old/glInverse3D_s16a.py	/^    lambdaR     =   pexConfig.Field(dtype=float, default=4, doc="regulation term lambda")$/;"	v	class:glInverse3D_s16aBatchConfig
+lbd	demo/old/glInverse.py	/^lbd         =   5$/;"	v
+lbd	demo/old/makeConfigS16a.py	/^    lbd     =   3.5$/;"	v
+lbd	demo/old/myInverse3D.py	/^lbd     =   5$/;"	v
+lbd	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^lbd = 5.$/;"	k	section:sparse
+lbd	python/old/sparse3D_s16a.py	/^    lbd  =   pexConfig.Field(dtype=float, default=3.5, doc="The lambda of the sparsity algorithm/;"	v	class:sparse3D_s16aBatchConfig
+lensKernel	python/haloSim.py	/^    def lensKernel(self,z_s):$/;"	m	class:nfw_lensTJ03
+lensKernel	python/haloSim.py	/^    def lensKernel(self,z_s):$/;"	m	class:nfw_lensWB00
+lensZ	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[lensZ]$/;"	s
+lensZ	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[lensZ]$/;"	s
+lensing_kernel	python/old/sparseBaseOld.py	/^    def lensing_kernel(self,zlbin,zsbin):$/;"	m	class:massmapSparsityTask
+lensing_kernel	python/old/sparseBaseOld.py	/^    def lensing_kernel(self,zlbin,zsbin):$/;"	m	class:massmap_sparsity_3D
+lensing_kernel	python/old/sparseBaseOld2.py	/^    def lensing_kernel(self,zlbin,zsbin):$/;"	m	class:massmapSparsityTask
+lensing_kernel	python/old/sparseBaseOld3.py	/^    def lensing_kernel(self,zlbin,zsbin):$/;"	m	class:massmapSparsityTask
+lensing_kernel	python/pixel3D.py	/^    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):$/;"	m	class:cartesianGrid3D
+lensing_kernel_infty	python/pixel3D.py	/^    def lensing_kernel_infty(self):$/;"	m	class:cartesianGrid3D
+lkfname	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^lkfname   =  lensing_kernel_nl20.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^lkfname   =  pixelize-equalNum-nl10\/lensing_kernel.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^lkfname   =  pixelize-equalNum-nl20\/lensing_kernel.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^lkfname   =  pixelize-equalNum-nl20\/lensing_kernel.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^lkfname   =  pixelize-equalNum-nl20\/lensing_kernel.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^lkfname   =  lensing_kernel_nl15.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^lkfname   =  lensing_kernel_nl20.fits$/;"	k	section:prepare
+lkfname	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^lkfname   =  pixelize-equalNum-nl20\/lensing_kernel.fits$/;"	k	section:prepare
+local_maxima_3D	python/detect3D.py	/^def local_maxima_3D(data, ordert=2, orderp=1, threshold=1.):$/;"	f
+local_minima_3D	python/detect3D.py	/^def local_minima_3D(data, ordert=2, orderp=1, threshold=1.):$/;"	f
+logging	python/old/sparseBaseOld3.py	/^    import lsst.log as logging$/;"	I
+main	demo/makeHaloCat.py	/^def main():$/;"	f
+main	demo/makeNoiseCat.py	/^def main():$/;"	f
+main	demo/old/prepareMassMapZPDF_s16a.py	/^def main():$/;"	f
+main	demo/old/prepareMassMap_s16a.py	/^def main():$/;"	f
+main	demo/old/testStampOne.py	/^def main():$/;"	f
+main	demo/prepareLensingKernel.py	/^def main():$/;"	f
+main_forward	python/old/sparseBaseOld.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmapSparsityTask
+main_forward	python/old/sparseBaseOld.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmap_sparsity_3D
+main_forward	python/old/sparseBaseOld2.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmapSparsityTask
+main_forward	python/old/sparseBaseOld3.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmapSparsityTask
+main_forward	python/sparseBase.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmapSparsityTask
+main_forward	python/sparseBase.py	/^    def main_forward(self,alphaRIn):$/;"	m	class:massmapSparsityTaskNew
+main_transpose	python/old/sparseBaseOld.py	/^    def main_transpose(self,shearRIn):$/;"	m	class:massmapSparsityTask
+main_transpose	python/old/sparseBaseOld.py	/^    def main_transpose(self,shearRIn):$/;"	m	class:massmap_sparsity_3D
+main_transpose	python/old/sparseBaseOld2.py	/^    def main_transpose(self,shearRIn):$/;"	m	class:massmapSparsityTask
+makeMaskMap	python/old/glInverse2D_s16a.py	/^    def makeMaskMap(self,raCen,decCen,pix_scale,ngrid,catRG):$/;"	m	class:glInverse2D_s16aBatchTask
+makeMaskMap	python/old/glInverse3D_s16a.py	/^    def makeMaskMap(self,raCen,decCen,pix_scale,ngrid,catRG):$/;"	m	class:glInverse3D_s16aBatchTask
+makeShapeCat	demo/old/haloSimS16a.py	/^def makeShapeCat(fdName,haloCat,parser):$/;"	f
+makehaloCat	demo/old/haloSimS16a.py	/^def makehaloCat(fdName,parser):$/;"	f
+map_reconstruct	demo/massMapStamp.py	/^    def map_reconstruct(self,cache,parser,isim):$/;"	m	class:massMapStampBatchTask
+massMap-KS1993	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{massMap-KS1993,$/;"	a
+massMapDES-Chang2018	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{massMapDES-Chang2018,$/;"	a
+massMapStampBatchConfig	demo/massMapStamp.py	/^class massMapStampBatchConfig(pexConfig.Config):$/;"	c
+massMapStampBatchTask	demo/massMapStamp.py	/^class massMapStampBatchTask(BatchPoolTask):$/;"	c
+massMapStampRunner	demo/massMapStamp.py	/^class massMapStampRunner(TaskRunner):$/;"	c
+massMap_KIDS450_prediction2018	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{massMap_KIDS450_prediction2018,$/;"	a
+massmapSparsityTask	python/old/sparseBaseOld.py	/^class massmapSparsityTask():$/;"	c
+massmapSparsityTask	python/old/sparseBaseOld2.py	/^class massmapSparsityTask():$/;"	c
+massmapSparsityTask	python/old/sparseBaseOld3.py	/^class massmapSparsityTask():$/;"	c
+massmapSparsityTask	python/sparseBase.py	/^class massmapSparsityTask():$/;"	c
+massmapSparsityTaskNew	python/sparseBase.py	/^class massmapSparsityTaskNew():$/;"	c
+massmap_ks2D	python/halolet.py	/^class massmap_ks2D():$/;"	c
+massmap_ks2D	python/old/sparseBaseOld.py	/^class massmap_ks2D():$/;"	c
+massmap_ks2D	python/old/sparseBaseOld2.py	/^class massmap_ks2D():$/;"	c
+massmap_ks2D	python/old/sparseBaseOld3.py	/^class massmap_ks2D():$/;"	c
+massmap_ks2D	python/sparseBase.py	/^class massmap_ks2D():$/;"	c
+massmap_sparsity_2D	python/old/sparseBaseOld.py	/^class massmap_sparsity_2D():$/;"	c
+massmap_sparsity_3D	python/old/sparseBaseOld.py	/^class massmap_sparsity_3D():$/;"	c
+meaAlg	python/old/sparse3D.py	/^import lsst.meas.algorithms as meaAlg$/;"	I
+measShear	demo/makeNoiseCat.py	/^def measShear(cdata):$/;"	f
+myDir	demo/old/myInverse2D.py	/^myDir       =   'myResult2D%s\/' %(isim)$/;"	v
+myDir	demo/old/myInverse3D.py	/^myDir       =   'myResult3D%s\/' %(isim)$/;"	v
+my_thresholding	python/old/sparseBaseOld.py	/^def my_thresholding(dum,thresholds):$/;"	f
+my_thresholding	python/old/sparseBaseOld2.py	/^def my_thresholding(dum,thresholds):$/;"	f
+my_thresholding	python/old/sparseBaseOld3.py	/^def my_thresholding(dum,thresholds):$/;"	f
+nMap	demo/old/ksInverse.py	/^    nMap        =   fitsio.read(os.path.join(simDir,'numMap_grid%s.fits'%(ngrid)))$/;"	v
+nMap	demo/old/myInverse2D.py	/^nMap    =   pyfits.getdata('simulation%s\/numMap_grid%s.fits'%(isim,npix))$/;"	v
+nSim	demo/old/binSplit.py	/^    nSim    =   pexConfig.Field(dtype=int, default=100, doc="number of realization")$/;"	v	class:binSplitBatchConfig
+ndi	python/detect3D.py	/^from scipy import ndimage as ndi$/;"	x
+nframe	demo/old/makeConfigS16a.py	/^    nframe  =   3$/;"	v
+nframe	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^nframe = 3$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^nframe = 4$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^nframe = 4$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^nframe = 3$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^nframe = 4$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^nframe = 4$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^nframe = 4$/;"	k	section:sparse
+nframe	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^nframe = 4$/;"	k	section:sparse
+nfwShearlet2D	python/halolet.py	/^class nfwShearlet2D():$/;"	c
+nfw_lensTJ03	python/haloSim.py	/^class nfw_lensTJ03():$/;"	c
+nfw_lensWB00	python/haloSim.py	/^class nfw_lensWB00():$/;"	c
+nfwlet2D	python/halolet.py	/^class nfwlet2D():$/;"	c
+ngList	demo/old/glInverse.py	/^ngList  =   [64]$/;"	v
+ngList	demo/old/ksInverse.py	/^ngList      =   [64,128,256]$/;"	v
+ngroup	demo/old/pixCartesian3DBatchRun.py	/^ngroup  =   100  # groups in the input fits file$/;"	v
+nlp	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^nlp = 20$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^nlp = 8$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^nlp = 15$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^nlp = 20$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^nlp = 15$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^nlp = 15$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^nlp = 20$/;"	k	section:lensZ
+nlp	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^nlp = 15$/;"	k	section:lensZ
+np	demo/haloSimStamp.py	/^import numpy as np$/;"	I
+np	demo/makeHaloCat.py	/^import numpy as np$/;"	I
+np	demo/makeNoiseCat.py	/^import numpy as np$/;"	I
+np	demo/massMapStamp.py	/^import numpy as np$/;"	I
+np	demo/old/binSplit.py	/^import numpy as np$/;"	I
+np	demo/old/glInverse.py	/^import numpy as np$/;"	I
+np	demo/old/haloSimS16a.py	/^import numpy as np$/;"	I
+np	demo/old/ksInverse.py	/^import numpy as np$/;"	I
+np	demo/old/makeConfigS16a.py	/^import numpy as np$/;"	I
+np	demo/old/myInverse2D.py	/^import numpy as np$/;"	I
+np	demo/old/myInverse3D.py	/^import numpy as np$/;"	I
+np	demo/old/pixCartesian3DBatchRun.py	/^import numpy as np$/;"	I
+np	demo/old/prepareMassMapZPDF_s16a.py	/^import numpy as np$/;"	I
+np	demo/old/prepareMassMap_s16a.py	/^import numpy as np$/;"	I
+np	demo/old/testStampOne.py	/^import numpy as np$/;"	I
+np	demo/prepareLensingKernel.py	/^import numpy as np$/;"	I
+np	notebook/nfw_halo.py	/^import numpy as np$/;"	I
+np	python/detect3D.py	/^import numpy as np$/;"	I
+np	python/haloSim.py	/^import numpy as np$/;"	I
+np	python/halolet.py	/^import numpy as np$/;"	I
+np	python/old/glInverse2D_s16a.py	/^import numpy as np$/;"	I
+np	python/old/glInverse3D_s16a.py	/^import numpy as np$/;"	I
+np	python/old/kmapUtilities.py	/^import numpy as np$/;"	I
+np	python/old/sparse3D.py	/^import numpy as np$/;"	I
+np	python/old/sparse3D_s16a.py	/^import numpy as np$/;"	I
+np	python/old/sparseBaseOld.py	/^import numpy as np$/;"	I
+np	python/old/sparseBaseOld2.py	/^import numpy as np$/;"	I
+np	python/old/sparseBaseOld3.py	/^import numpy as np$/;"	I
+np	python/pixel3D.py	/^import numpy as np$/;"	I
+np	python/sparseBase.py	/^import numpy as np$/;"	I
+npix	demo/old/myInverse2D.py	/^npix    =   128$/;"	v
+nproc	demo/old/pixCartesian3DBatchRun.py	/^    nproc=12$/;"	v
+nsim	demo/old/pixCartesian3DBatchRun.py	/^    nsim=81$/;"	v
+nx	demo/old/myInverse2D.py	/^ny,nx   =   nMap.shape$/;"	v
+nx	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^nx = 48$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^nx = 96$/;"	k	section:transPlane
+nx	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^nx = 96$/;"	k	section:transPlane
+ny	demo/old/myInverse2D.py	/^ny,nx   =   nMap.shape$/;"	v
+ny	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^ny = 48$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^ny = 96$/;"	k	section:transPlane
+ny	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^ny = 96$/;"	k	section:transPlane
+nz	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^nz  =   10$/;"	k	section:sourceZ
+nz	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^nz  =   10$/;"	k	section:sourceZ
+obsDir	demo/haloSimStamp.py	/^    obsDir  =   pexConfig.Field(dtype=str, default='HSC-obs\/20200328\/',$/;"	v	class:haloSimStampBatchConfig
+obsDir	python/old/sparse3D_s16a.py	/^    obsDir  =   pexConfig.Field(dtype=str, default='s16a3D\/pix-0.05\/nframe-3\/lambda-3.5\/', d/;"	v	class:sparse3D_s16aBatchConfig
+omega_l	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^omega_l = 0.685$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_l	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^omega_l = 0.7$/;"	k	section:cosmology
+omega_m	demo/makeHaloCat.py	/^omega_m=0.315   # Planck 2018$/;"	v
+omega_m	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^omega_m = 0.315$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+omega_m	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^omega_m = 0.3$/;"	k	section:cosmology
+outDir	demo/haloSimStamp.py	/^    outDir  =   pexConfig.Field(dtype=str,$/;"	v	class:haloSimStampBatchConfig
+outDir	demo/massMapStamp.py	/^    outDir  =   pexConfig.Field(dtype=str,$/;"	v	class:massMapStampBatchConfig
+outDir	demo/old/makeConfigS16a.py	/^    outDir  =   os.path.join(frameDir,'lambda-%.1f'%lbd)$/;"	v
+outDir	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^outDir    =  reconstruct-nl10\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outDir	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^outDir    =  reconstruct-nl20\/$/;"	k	section:file
+outFname	demo/old/glInverse.py	/^    outFname    =   'kappaMap_GL_E_%s.fits' %(int(ngrid\/2))$/;"	v
+outFname	demo/old/glInverse.py	/^    outFname    =   os.path.join(glDir,outFname)$/;"	v
+outFname	demo/old/myInverse2D.py	/^    outFname=   os.path.join(myDir,'kappaMap_2D_%s.fits'%(lbd))$/;"	v
+outFname	demo/old/myInverse3D.py	/^outFname=   os.path.join(myDir,'kappaMap_3D_%s.fits'%(lbd))$/;"	v
+outfname	demo/prepareLensingKernel.py	/^outfname    =   'planck-cosmo\/lensing_kernel-%s-%s.fits' %(zer,ver)$/;"	v
+parser	demo/old/glInverse.py	/^parser = ConfigParser()$/;"	v
+parser	demo/old/haloSimS16a.py	/^        parser =   ConfigParser()$/;"	v
+parser	demo/old/makeConfigS16a.py	/^        parser  =   ConfigParser()$/;"	v
+parser	demo/old/makeConfigS16a.py	/^        parser  =   addInfoSparse(parser,lbd,fieldName)$/;"	v
+parser	demo/old/pixCartesian3DBatchRun.py	/^parser      =   ConfigParser()$/;"	v
+pathwise_coordinate_descent	python/old/sparseBaseOld3.py	/^    def pathwise_coordinate_descent(self,iup,niter,threM='ST'):$/;"	m	class:massmapSparsityTask
+pathwise_coordinate_descent	python/sparseBase.py	/^    def pathwise_coordinate_descent(self,niter):$/;"	m	class:massmapSparsityTask
+pexConfig	demo/haloSimStamp.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	demo/massMapStamp.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	demo/old/binSplit.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	python/old/glInverse2D_s16a.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	python/old/glInverse3D_s16a.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	python/old/sparse3D.py	/^import lsst.pex.config as pexConfig$/;"	I
+pexConfig	python/old/sparse3D_s16a.py	/^import lsst.pex.config as pexConfig$/;"	I
+physical_coords	demo/massMapStamp.py	/^    def physical_coords(self,src,gridInfo,ss):$/;"	m	class:massMapStampBatchTask
+pipeBase	demo/haloSimStamp.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	demo/massMapStamp.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	demo/old/binSplit.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	python/old/glInverse2D_s16a.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	python/old/glInverse3D_s16a.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	python/old/sparse3D.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pipeBase	python/old/sparse3D_s16a.py	/^import lsst.pipe.base as pipeBase$/;"	I
+pixDir	demo/massMapStamp.py	/^    pixDir  =   pexConfig.Field(dtype=str,$/;"	v	class:massMapStampBatchConfig
+pixDir	demo/old/makeConfigS16a.py	/^    pixDir  =   's16a3D\/pix-%s\/' %pixScale$/;"	v
+pixScale	demo/old/makeConfigS16a.py	/^    pixScale=   0.05   $/;"	v
+pix_scale	demo/old/glInverse.py	/^    pix_scale=  size\/ngrid$/;"	v
+pix_scale	python/old/glInverse2D_s16a.py	/^    pix_scale   =   pexConfig.Field(dtype=float, default=1.\/60, doc="pixel scale of the output /;"	v	class:glInverse2D_s16aBatchConfig
+pix_scale	python/old/glInverse3D_s16a.py	/^    pix_scale   =   pexConfig.Field(dtype=float, default=1.\/60, doc="pixel scale of the output /;"	v	class:glInverse3D_s16aBatchConfig
+pixelize	demo/old/binSplit.py	/^    def pixelize(self,simSrc,zname,g1name,g2name,parser):$/;"	m	class:binSplitBatchTask
+pixelize	demo/old/testStampOne.py	/^def pixelize(simSrc,parser):$/;"	f
+pixelize_Sigma	demo/haloSimStamp.py	/^    def pixelize_Sigma(self,ss):$/;"	m	class:haloSimStampBatchTask
+pixelize_data	python/pixel3D.py	/^    def pixelize_data(self,x,y,z,v,ws=None):$/;"	m	class:cartesianGrid3D
+pixelize_shear	demo/old/pixCartesian3DBatchRun.py	/^def pixelize_shear(isim):$/;"	f
+prepare	demo/massMapStamp.py	/^    def prepare(self,cache,isim):$/;"	m	class:massMapStampBatchTask
+prepare	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[prepare]$/;"	s
+prepare	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[prepare]$/;"	s
+prepareFrames	python/halolet.py	/^    def prepareFrames(self):$/;"	m	class:nfwShearlet2D
+prepareFrames	python/halolet.py	/^    def prepareFrames(self):$/;"	m	class:nfwlet2D
+prepareFrames	python/halolet.py	/^    def prepareFrames(self):$/;"	m	class:starlet2D
+prepareHSCField16	demo/old/prepareMassMapZPDF_s16a.py	/^def prepareHSCField16(fTone):$/;"	f
+prepareHSCField16	demo/old/prepareMassMap_s16a.py	/^def prepareHSCField16(fieldname):$/;"	f
+process	demo/haloSimStamp.py	/^    def process(self,cache,isim):$/;"	m	class:haloSimStampBatchTask
+process	demo/massMapStamp.py	/^    def process(self,cache,isim):$/;"	m	class:massMapStampBatchTask
+process	demo/old/binSplit.py	/^    def process(self,cache,isim):$/;"	m	class:binSplitBatchTask
+process	python/old/glInverse2D_s16a.py	/^    def process(self,cache,fieldName):$/;"	m	class:glInverse2D_s16aBatchTask
+process	python/old/glInverse3D_s16a.py	/^    def process(self,cache,fieldName):$/;"	m	class:glInverse3D_s16aBatchTask
+process	python/old/sparse3D.py	/^    def process(self,cache,ifield):$/;"	m	class:sparse3DBatchTask
+process	python/old/sparse3D_s16a.py	/^    def process(self,cache,fieldName):$/;"	m	class:sparse3D_s16aBatchTask
+process	python/old/sparseBaseOld.py	/^    def process(self):$/;"	m	class:massmap_sparsity_2D
+process	python/old/sparseBaseOld.py	/^    def process(self):$/;"	m	class:massmap_sparsity_3D
+process	python/old/sparseBaseOld.py	/^    def process(self,niter=500):$/;"	m	class:massmapSparsityTask
+process	python/old/sparseBaseOld2.py	/^    def process(self,niter=1000):$/;"	m	class:massmapSparsityTask
+process	python/old/sparseBaseOld3.py	/^    def process(self,niter=1000):$/;"	m	class:massmapSparsityTask
+process	python/sparseBase.py	/^    def process(self,niter=1000):$/;"	m	class:massmapSparsityTask
+process	python/sparseBase.py	/^    def process(self,niter=1000):$/;"	m	class:massmapSparsityTaskNew
+prox_sigmaA	python/old/sparseBaseOld.py	/^    def prox_sigmaA(self,niter,sigma):$/;"	m	class:massmapSparsityTask
+prox_sigmaA	python/old/sparseBaseOld.py	/^    def prox_sigmaA(self,niter,sigma):$/;"	m	class:massmap_sparsity_2D
+prox_sigmaA	python/old/sparseBaseOld.py	/^    def prox_sigmaA(self,niter,sigma):$/;"	m	class:massmap_sparsity_3D
+prox_sigmaA	python/old/sparseBaseOld2.py	/^    def prox_sigmaA(self,niter,sigma):$/;"	m	class:massmapSparsityTask
+prox_sigmaA	python/old/sparseBaseOld3.py	/^    def prox_sigmaA(self,niter):$/;"	m	class:massmapSparsityTask
+prox_sigmaA	python/sparseBase.py	/^    def prox_sigmaA(self):$/;"	m	class:massmapSparsityTask
+prox_sigmaA	python/sparseBase.py	/^    def prox_sigmaA(self):$/;"	m	class:massmapSparsityTaskNew
+pvlt	python/old/sparseBaseOld3.py	/^import ipyvolume.pylab as pvlt$/;"	I
+pyascii	demo/haloSimStamp.py	/^import astropy.io.ascii as pyascii$/;"	I
+pyascii	demo/massMapStamp.py	/^import astropy.io.ascii as pyascii$/;"	I
+pyfits	demo/haloSimStamp.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/makeNoiseCat.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/massMapStamp.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/old/binSplit.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/old/myInverse2D.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/old/myInverse3D.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/old/pixCartesian3DBatchRun.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/old/testStampOne.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	demo/prepareLensingKernel.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/haloSim.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/halolet.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/old/sparse3D.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/old/sparse3D_s16a.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/old/sparseBaseOld.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/old/sparseBaseOld2.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/old/sparseBaseOld3.py	/^import astropy.io.fits as pyfits$/;"	I
+pyfits	python/sparseBase.py	/^import astropy.io.fits as pyfits$/;"	I
+quad_gradient	python/sparseBase.py	/^    def quad_gradient(self,alphaR):$/;"	m	class:massmapSparsityTask
+quad_gradient	python/sparseBase.py	/^    def quad_gradient(self,alphaR):$/;"	m	class:massmapSparsityTaskNew
+raname	demo/old/pixCartesian3DBatchRun.py	/^raname  =   'raR'$/;"	v
+read_pixel_result	python/sparseBase.py	/^    def read_pixel_result(self,parser):$/;"	m	class:massmapSparsityTask
+read_pixel_result	python/sparseBase.py	/^    def read_pixel_result(self,parser):$/;"	m	class:massmapSparsityTaskNew
+reconstruct	python/old/sparseBaseOld.py	/^    def reconstruct(self):$/;"	m	class:massmapSparsityTask
+reconstruct	python/old/sparseBaseOld.py	/^    def reconstruct(self):$/;"	m	class:massmap_sparsity_3D
+reconstruct	python/old/sparseBaseOld2.py	/^    def reconstruct(self):$/;"	m	class:massmapSparsityTask
+reconstruct	python/old/sparseBaseOld3.py	/^    def reconstruct(self):$/;"	m	class:massmapSparsityTask
+reconstruct	python/sparseBase.py	/^    def reconstruct(self):$/;"	m	class:massmapSparsityTask
+reconstruct	python/sparseBase.py	/^    def reconstruct(self):$/;"	m	class:massmapSparsityTaskNew
+resolve_lim	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^resolve_lim=2.$/;"	k	section:lensZ
+revKilbinger15	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{revKilbinger15,$/;"	a
+revRachel17	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{revRachel17,$/;"	a
+rotCatalog	demo/makeNoiseCat.py	/^def rotCatalog(e1, e2, phi=None):$/;"	f
+rotCatalog	demo/old/prepareMassMapZPDF_s16a.py	/^def rotCatalog(e1, e2, phi=None):$/;"	f
+rotCatalog	demo/old/prepareMassMap_s16a.py	/^def rotCatalog(e1, e2, phi=None):$/;"	f
+rs_base	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^rs_base=0.2$/;"	k	section:lensZ
+run	python/old/glInverse2D_s16a.py	/^    def run(self,Id):$/;"	m	class:glInverse2D_s16aBatchTask
+run	python/old/glInverse3D_s16a.py	/^    def run(self,Id):$/;"	m	class:glInverse3D_s16aBatchTask
+run	python/old/sparse3D.py	/^    def run(self,Id):$/;"	m	class:sparse3DBatchTask
+run	python/old/sparse3D.py	/^    def run(self,configName,simDir):$/;"	m	class:sparse3DTask
+runDataRef	demo/haloSimStamp.py	/^    def runDataRef(self,Id):$/;"	m	class:haloSimStampBatchTask
+runDataRef	demo/massMapStamp.py	/^    def runDataRef(self,Id):$/;"	m	class:massMapStampBatchTask
+runDataRef	demo/old/binSplit.py	/^    def runDataRef(self,configName):$/;"	m	class:binSplitBatchTask
+runDataRef	python/old/sparse3D_s16a.py	/^    def runDataRef(self,Id):$/;"	m	class:sparse3D_s16aBatchTask
+run_main_iteration	python/old/sparseBaseOld.py	/^    def run_main_iteration(self,iup,niter,threM='FT'):$/;"	m	class:massmapSparsityTask
+run_main_iteration	python/old/sparseBaseOld.py	/^    def run_main_iteration(self,iup,niter,threM='ST'):$/;"	m	class:massmap_sparsity_3D
+run_main_iteration	python/old/sparseBaseOld.py	/^    def run_main_iteration(self,niter):$/;"	m	class:massmap_sparsity_2D
+run_main_iteration	python/old/sparseBaseOld2.py	/^    def run_main_iteration(self,iup,niter,threM='FT'):$/;"	m	class:massmapSparsityTask
+scale	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^scale = 2.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^scale = 1.$/;"	k	section:transPlane
+scale	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^scale = 1.$/;"	k	section:transPlane
+sec:Method	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{sec:Method}$/;"	l
+sec:Sum	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{sec:Sum}$/;"	l
+sec:Test	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{sec:Test}$/;"	l
+setDefaults	demo/haloSimStamp.py	/^    def setDefaults(self):$/;"	m	class:haloSimStampBatchConfig
+setDefaults	demo/massMapStamp.py	/^    def setDefaults(self):$/;"	m	class:massMapStampBatchConfig
+setDefaults	demo/old/binSplit.py	/^    def setDefaults(self):$/;"	m	class:binSplitBatchConfig
+setDefaults	python/old/glInverse2D_s16a.py	/^    def setDefaults(self):$/;"	m	class:glInverse2D_s16aBatchConfig
+setDefaults	python/old/glInverse3D_s16a.py	/^    def setDefaults(self):$/;"	m	class:glInverse3D_s16aBatchConfig
+setDefaults	python/old/sparse3D.py	/^    def setDefaults(self):$/;"	m	class:sparse3DBatchConfig
+setDefaults	python/old/sparse3D.py	/^    def setDefaults(self):$/;"	m	class:sparse3DConfig
+setDefaults	python/old/sparse3D_s16a.py	/^    def setDefaults(self):$/;"	m	class:sparse3D_s16aBatchConfig
+shearMap	demo/old/myInverse2D.py	/^shearMap= g1Map+np.complex128(1j)*g2Map$/;"	v
+sigmaSmooth	demo/old/ksInverse.py	/^sigmaSmooth =   0.8$/;"	v
+sigmafname	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^sigmafname=  pixelize-equalNum-nl10\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+sigmafname	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^sigmafname=  pixelize-equalNum-nl20\/pixStd.fits$/;"	k	section:prepare
+simDir	demo/old/glInverse.py	/^simDir      =   'simulation%s\/'%(isim)$/;"	v
+simDir	demo/old/ksInverse.py	/^simDir      =   'simulation%s\/' %(isim.split('-')[0])$/;"	v
+simDir	demo/old/myInverse3D.py	/^simDir  =   '.\/simulation%s\/' %(isim)$/;"	v
+simDir	python/old/sparse3D.py	/^    simDir  =   pexConfig.Field(dtype=str, default='simulation9',$/;"	v	class:sparse3DBatchConfig
+size	demo/old/glInverse.py	/^    size    =   64$/;"	v
+smoPix	demo/old/ksInverse.py	/^    smoPix      =   sigmaSmooth\/32.*ngrid$/;"	v
+smoothGaus	python/old/kmapUtilities.py	/^def smoothGaus(inMap,sigma):$/;"	f
+smooth_ksInverse	python/old/kmapUtilities.py	/^def smooth_ksInverse(g1Map,g2Map,nMap,smoPix,mskThres=1.e-3):$/;"	f
+smooth_scale	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^smooth_scale = 3.$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+smooth_scale	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^smooth_scale = 1.5$/;"	k	section:transPlane
+soft_thresholding	python/old/sparseBaseOld.py	/^def soft_thresholding(dum,thresholds):$/;"	f
+soft_thresholding	python/old/sparseBaseOld2.py	/^def soft_thresholding(dum,thresholds):$/;"	f
+soft_thresholding	python/old/sparseBaseOld3.py	/^def soft_thresholding(dum,thresholds):$/;"	f
+soft_thresholding	python/sparseBase.py	/^def soft_thresholding(dum,thresholds):$/;"	f
+sourceZ	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[sourceZ]$/;"	s
+sourceZ	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[sourceZ]$/;"	s
+source_detect	demo/massMapStamp.py	/^    def source_detect(self,delta):$/;"	m	class:massMapStampBatchTask
+sources	demo/old/myInverse3D.py	/^sources =   pyfits.getdata(os.path.join(simDir,'src.fits'))$/;"	v
+sparse	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[sparse]$/;"	s
+sparse	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[sparse]$/;"	s
+sparse2D	demo/old/myInverse2D.py	/^    sparse2D=   massmap_sparsity_2D(shearMap,nMap,lbd=lbd)$/;"	v
+sparse3D	demo/old/myInverse3D.py	/^sparse3D=   massmap_sparsity_3D_2(sources,lbd=lbd,doDebug=True)$/;"	v
+sparse3D	python/old/sparse3D.py	/^    sparse3D = pexConfig.ConfigurableField($/;"	v	class:sparse3DBatchConfig
+sparse3DBatchConfig	python/old/sparse3D.py	/^class sparse3DBatchConfig(pexConfig.Config):$/;"	c
+sparse3DBatchTask	python/old/sparse3D.py	/^class sparse3DBatchTask(BatchPoolTask):$/;"	c
+sparse3DConfig	python/old/sparse3D.py	/^class sparse3DConfig(pexConfig.Config):$/;"	c
+sparse3DRunner	python/old/sparse3D.py	/^class sparse3DRunner(TaskRunner):$/;"	c
+sparse3DTask	python/old/sparse3D.py	/^class sparse3DTask(pipeBase.CmdLineTask):$/;"	c
+sparse3D_s16aBatchConfig	python/old/sparse3D_s16a.py	/^class sparse3D_s16aBatchConfig(pexConfig.Config):$/;"	c
+sparse3D_s16aBatchTask	python/old/sparse3D_s16a.py	/^class sparse3D_s16aBatchTask(BatchPoolTask):$/;"	c
+sparse3D_s16aRunner	python/old/sparse3D_s16a.py	/^class sparse3D_s16aRunner(TaskRunner):$/;"	c
+sparseBaysianMassMap-Price2020	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{sparseBaysianMassMap-Price2020,$/;"	a
+spectrum_norm	python/old/sparseBaseOld.py	/^    def spectrum_norm(self):$/;"	m	class:massmap_sparsity_2D
+spectrum_norm	python/old/sparseBaseOld.py	/^    def spectrum_norm(self):$/;"	m	class:massmap_sparsity_3D
+spectrum_norm	python/old/sparseBaseOld.py	/^    def spectrum_norm(self,niter):$/;"	m	class:massmapSparsityTask
+spectrum_norm	python/old/sparseBaseOld2.py	/^    def spectrum_norm(self,niter):$/;"	m	class:massmapSparsityTask
+spectrum_norm	python/old/sparseBaseOld3.py	/^    def spectrum_norm(self):$/;"	m	class:massmapSparsityTask
+spfun	python/haloSim.py	/^import scipy.special as spfun$/;"	I
+starlet2D	python/halolet.py	/^class starlet2D():$/;"	c
+structureAdaLasso-Pramanik2020	doc/paper_ms_method_HSCY1/citation.bib	/^@ARTICLE{structureAdaLasso-Pramanik2020,$/;"	a
+subsec:Sims	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:Sims}$/;"	l
+subsec:method-Systematics	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-Systematics}$/;"	l
+subsec:method-delta2shear	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-delta2shear}$/;"	l
+subsec:method-dictionary	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-dictionary}$/;"	l
+subsec:method-msknoise	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-msknoise}$/;"	l
+subsec:method-photoz	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-photoz}$/;"	l
+subsec:method-pixel	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-pixel}$/;"	l
+subsec:method-reconstruction	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-reconstruction}$/;"	l
+subsec:method-smoothing	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:method-smoothing}$/;"	l
+subsec:test-nfw	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:test-nfw}$/;"	l
+subsec:test-pm	doc/paper_ms_method_HSCY1/ms.tex	/^\\label{subsec:test-pm}$/;"	l
+tau	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^tau = 0.$/;"	k	section:sparse
+tau	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^tau = 0.$/;"	k	section:sparse
+tn	demo/makeNoiseCat.py	/^tn      =   '9347.fits'$/;"	v
+tn	demo/prepareLensingKernel.py	/^tn          =   '9347.fits' #tract directory$/;"	v
+transPlane	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^[transPlane]$/;"	s
+transPlane	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^[transPlane]$/;"	s
+transform	python/halolet.py	/^    def transform(self,dataIn,inFou=True,outFou=True):$/;"	m	class:starlet2D
+transform	python/halolet.py	/^    def transform(self,kMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+transform	python/old/sparseBaseOld.py	/^    def transform(self,kMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+transform	python/old/sparseBaseOld2.py	/^    def transform(self,kMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+transform	python/old/sparseBaseOld3.py	/^    def transform(self,kMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+transform	python/sparseBase.py	/^    def transform(self,kMap,inFou=True,outFou=True):$/;"	m	class:massmap_ks2D
+transpose	python/halolet.py	/^    def transpose(self,dataIn,inFou=True,outFou=True):$/;"	m	class:starlet2D
+unit	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^unit=arcmin$/;"	k	section:transPlane
+unit	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^unit=arcmin$/;"	k	section:transPlane
+unpickle	demo/haloSimStamp.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	demo/massMapStamp.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	demo/old/binSplit.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	python/old/glInverse2D_s16a.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	python/old/glInverse3D_s16a.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	python/old/sparse3D.py	/^def unpickle(factory, args, kwargs):$/;"	f
+unpickle	python/old/sparse3D_s16a.py	/^def unpickle(factory, args, kwargs):$/;"	f
+update_thresholds	python/old/sparseBaseOld.py	/^    def update_thresholds(self):$/;"	m	class:massmap_sparsity_3D
+validate	demo/haloSimStamp.py	/^    def validate(self):$/;"	m	class:haloSimStampBatchConfig
+validate	demo/massMapStamp.py	/^    def validate(self):$/;"	m	class:massMapStampBatchConfig
+validate	python/old/sparse3D.py	/^    def validate(self):$/;"	m	class:sparse3DBatchConfig
+validate	python/old/sparse3D.py	/^    def validate(self):$/;"	m	class:sparse3DConfig
+ver	demo/prepareLensingKernel.py	/^ver         =   'nl20'      #number of lens plane$/;"	v
+write	python/old/sparseBaseOld.py	/^    def write(self):$/;"	m	class:massmapSparsityTask
+write	python/old/sparseBaseOld2.py	/^    def write(self):$/;"	m	class:massmapSparsityTask
+write	python/old/sparseBaseOld3.py	/^    def write(self):$/;"	m	class:massmapSparsityTask
+write	python/sparseBase.py	/^    def write(self):$/;"	m	class:massmapSparsityTask
+write	python/sparseBase.py	/^    def write(self):$/;"	m	class:massmapSparsityTaskNew
+writeConfig	demo/haloSimStamp.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:haloSimStampBatchTask
+writeConfig	demo/massMapStamp.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:massMapStampBatchTask
+writeConfig	demo/old/binSplit.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:binSplitBatchTask
+writeConfig	python/old/glInverse2D_s16a.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse2D_s16aBatchTask
+writeConfig	python/old/glInverse3D_s16a.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse3D_s16aBatchTask
+writeConfig	python/old/sparse3D.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DBatchTask
+writeConfig	python/old/sparse3D.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DTask
+writeConfig	python/old/sparse3D_s16a.py	/^    def writeConfig(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3D_s16aBatchTask
+writeEupsVersions	demo/haloSimStamp.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:haloSimStampBatchTask
+writeEupsVersions	demo/massMapStamp.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:massMapStampBatchTask
+writeEupsVersions	demo/old/binSplit.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:binSplitBatchTask
+writeEupsVersions	python/old/glInverse2D_s16a.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse2D_s16aBatchTask
+writeEupsVersions	python/old/glInverse3D_s16a.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse3D_s16aBatchTask
+writeEupsVersions	python/old/sparse3D.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DBatchTask
+writeEupsVersions	python/old/sparse3D.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DTask
+writeEupsVersions	python/old/sparse3D_s16a.py	/^    def writeEupsVersions(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3D_s16aBatchTask
+writeMetadata	demo/haloSimStamp.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:haloSimStampBatchTask
+writeMetadata	demo/massMapStamp.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:massMapStampBatchTask
+writeMetadata	demo/old/binSplit.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:binSplitBatchTask
+writeMetadata	python/old/glInverse2D_s16a.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:glInverse2D_s16aBatchTask
+writeMetadata	python/old/glInverse3D_s16a.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:glInverse3D_s16aBatchTask
+writeMetadata	python/old/sparse3D.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:sparse3DBatchTask
+writeMetadata	python/old/sparse3D.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:sparse3DTask
+writeMetadata	python/old/sparse3D_s16a.py	/^    def writeMetadata(self, dataRef):$/;"	m	class:sparse3D_s16aBatchTask
+writeSchemas	demo/haloSimStamp.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:haloSimStampBatchTask
+writeSchemas	demo/massMapStamp.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:massMapStampBatchTask
+writeSchemas	demo/old/binSplit.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:binSplitBatchTask
+writeSchemas	python/old/glInverse2D_s16a.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse2D_s16aBatchTask
+writeSchemas	python/old/glInverse3D_s16a.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:glInverse3D_s16aBatchTask
+writeSchemas	python/old/sparse3D.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DBatchTask
+writeSchemas	python/old/sparse3D.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3DTask
+writeSchemas	python/old/sparse3D_s16a.py	/^    def writeSchemas(self, butler, clobber=False, doBackup=False):$/;"	m	class:sparse3D_s16aBatchTask
+xmin	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^xmin = -48.$/;"	k	section:transPlane
+xmin	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^xmin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^ymin = -48.$/;"	k	section:transPlane
+ymin	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^ymin = -48.$/;"	k	section:transPlane
+zMeanBin	python/halolet.py	/^def zMeanBin(zMin,dz,nz):$/;"	f
+zMeanBin	python/old/sparseBaseOld.py	/^def zMeanBin(zMin,dz,nz):$/;"	f
+zMeanBin	python/old/sparseBaseOld2.py	/^def zMeanBin(zMin,dz,nz):$/;"	f
+zMeanBin	python/old/sparseBaseOld3.py	/^def zMeanBin(zMin,dz,nz):$/;"	f
+zMeanBin	python/sparseBase.py	/^def zMeanBin(zMin,dz,nz):$/;"	f
+zbound	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zbound	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^zbound=[0.05,0.36,0.47,0.56,0.69,0.80,0.91,1.03,1.22,1.50,2.50]$/;"	k	section:sourceZ
+zer	demo/prepareLensingKernel.py	/^zer         =   'pz'        #pz: photo-z\/zt: spect-z$/;"	v
+zeroPad	python/old/kmapUtilities.py	/^def zeroPad(oMap,nxy):$/;"	f
+zeroPad_Inverse	python/old/kmapUtilities.py	/^def zeroPad_Inverse(oMap,nxx,nyy):$/;"	f
+zlmin	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^zlmin = 0.01$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^zlmin = 0.05$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^zlmin = 0.05$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^zlmin = 0.01$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^zlmin = 0.05$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^zlmin = 0.05$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^zlmin = 0.01$/;"	k	section:lensZ
+zlmin	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^zlmin = 0.05$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/planck-cosmo/config-pix96-nl20.ini	/^zlscale = 0.042$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/pre-run/config-pix10-nl10.ini	/^zlscale = 0.1$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/pre-run/config-pix10-nl20.ini	/^zlscale = 0.05$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/pre-run/config-pix20-nl20.ini	/^zlscale = 0.05$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/pre-run/sims/config-pix96-nl20.ini	/^zlscale = 0.05$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl15.ini	/^zlscale = 0.05$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/toy-cosmo/config-pix96-nl20.ini	/^zlscale = 0.042$/;"	k	section:lensZ
+zlscale	notebook/wrkDir/sim/toy-cosmo/pix96-ns10/config-pix96-nl15.ini	/^zlscale = 0.05$/;"	k	section:lensZ
+zname	demo/old/pixCartesian3DBatchRun.py	/^zname   =   'zbest'$/;"	v
