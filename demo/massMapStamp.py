@@ -69,8 +69,8 @@ class massMapStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        #idRange=range(64)
-        idRange=[640000]
+        idRange=range(64)
+        #idRange=[640000]
         return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
@@ -83,7 +83,7 @@ class massMapStampBatchTask(BatchPoolTask):
     _DefaultName = "massMapStampBatch"
     def __reduce__(self):
         """Pickler"""
-        return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
+        return unpickle, (self.__class__,[],dict(config=self.config, name=self._name,
                 parentTask=self._parentTask, log=self.log))
     def __init__(self,**kwargs):
         BatchPoolTask.__init__(self, **kwargs)
@@ -109,7 +109,7 @@ class massMapStampBatchTask(BatchPoolTask):
             # Noise field
             ss  =   None
             iz  =   int(Id//800)
-            im  =   int(Id%800)
+            im  =   800
             nsim=   1000
         pool.storeSet(ss=ss)
         outDirH =   os.path.join(self.config.outDir,'halo%d%d'%(iz,im))
