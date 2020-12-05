@@ -226,16 +226,16 @@ without relying on any greedy coordinate descent approaches. The stability of
 this convex optimization has been well studied.
 
 This paper is organized as follows.
-In Section \ref{sec:Method}, we propose the new method for $3$-D density map
+In Section \ref{sec_Method}, we propose the new method for $3$-D density map
 reconstruction.
-In Section \ref{sec:Test}, we test the novel algorithm on HSC-like simulations.
-In Section \ref{sec:Sum}, we summarize and discuss the future development of
+In Section \ref{sec_Test}, we test the novel algorithm on HSC-like simulations.
+In Section \ref{sec_Sum}, we summarize and discuss the future development of
 the method.
 
 \section{Methodology}
-\label{sec:Method}
+\label{sec_Method}
 
-\begin{figure}[!t]
+\begin{figure}
  \centering
  \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
  \caption{The source galaxies are binned into $10$ redshift bins according to
@@ -246,26 +246,26 @@ the method.
         } \label{fig_bestpz}
 \end{figure}
 
-We first review the lensing process in section \ref{subsec:method-delta2shear}.
+We first review the lensing process in Section \ref{subsec_method_delta2shear}.
 Then, we introduce the dictionary used to model the foreground density maps in
-section \ref{subsec:method-dictionary}.
+Section \ref{subsec_method_dictionary}.
 
-Subsequently, in section \ref{subsec:method-Systematics}, we discuss several
+Subsequently, in Section \ref{subsec_method_Systematics}, we discuss several
 systematic effects from observations which include photo-$z$ uncertainty
-(section \ref{subsec:method-photoz}), smoothing (section
-\ref{subsec:method-smoothing}), masking(section \ref{subsec:method-msknoise}),
-and pixelization (section \ref{subsec:method-pixel}).
+(Section \ref{subsec_method_photoz}), smoothing (Section
+\ref{subsec_method_smoothing}), masking(Section \ref{subsec_method_msknoise}),
+and pixelization (Section \ref{subsec_method_pixel}).
 
-Finally, we solve the mass reconstruction problem in section
-\ref{subsec:method-reconstruction} using the adaptive lasso algorithm
+Finally, we solve the mass reconstruction problem in Section
+\ref{subsec_method_reconstruction} using the adaptive lasso algorithm
 \citep{AdaLASSO-Zou2006} optimized with the FISTA algorithm
 \citep{FISTA-Beck2009}.
 
 
 \subsection{Lensing}
-\label{subsec:method-delta2shear}
+\label{subsec_method_delta2shear}
 
-\begin{figure}[!t]
+\begin{figure}
  \centering
  \includegraphics[width=0.5\textwidth]{mlz-poz.pdf}
  \caption{The average PDF of MLZ photo-$z$ error for $10$ source redshift bins.
@@ -326,7 +326,7 @@ D(\vec{\theta})=-\frac{1}{\pi}(\theta_1-i\theta_2)^{-2}.
 Here we denote the physical shear distortion field as $\gamma_L$ and we note
 that the final observed shear measurements are influenced by systematic errors
 from observations. The systematic errors will be discussed in Section
-\ref{subsec:method-Systematics}.
+\ref{subsec_method_Systematics}.
 
 Combining equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}),
 the expectation of lensing shear signal is
@@ -344,22 +344,7 @@ and eq. (\ref{eq-delta2gammat}) is simplified to
 \end{equation}
 
 \subsection{Dictionary}
-\label{subsec:method-dictionary}
-
-\begin{figure*}[!t]
-\centering
-\subfigure[lasso]{\includezraphics{delta-3-7-pz-nn-lasso.pdf}}
-\subfigure[adaptive lasso]{\includezraphics{delta-3-7-pz-nn-alasso.pdf}}
-\caption{The density map reconstructions with the lasso (left) and the adaptive
-        lasso (right) algorithms. The input density map is from a NFW halo with
-        mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$. The lasso
-        reconstruction smears the density field along the line of sight
-        direction (vertical direction in the plots).  The vertical direction is
-        the line of sight direction, and the lower boundaries and upper
-        boundaries of the boxes are $z=0.01$ and $z=0.85$, respectively. Noises
-        on galaxy shape measurements are neglected in this simulation.
-        } \label{fig_lassoVsadaLasso}
-\end{figure*}
+\label{subsec_method_dictionary}
 
 The density contrast field is modeled as a summation of basis atoms in the
 dictionary:
@@ -434,18 +419,33 @@ The $2$-D profiles of the point mass atom and the multi-scale NFW atoms on the
 transverse plane are shown in Figure \ref{fig_atoms2D}. The $1$-D slices of the
 profiles are demonstrated in Figure \ref{fig_atoms1D}. Note that these profiles
 are smoothed with a Gaussian kernel and pixelized into evenly spaced grids. The
-smoothing operation is discussed in Section \ref{subsec:method-smoothing}, and
-the pixelization operation is discussed in Section \ref{subsec:method-pixel}.
+smoothing operation is discussed in Section \ref{subsec_method_smoothing}, and
+the pixelization operation is discussed in Section \ref{subsec_method_pixel}.
 
 \subsection{Systematics}
-\label{subsec:method-Systematics}
+\label{subsec_method_Systematics}
 
 The observed shear measurements are deviated from the physical shear prediction
 due to the systematic errors from observations. The influence of systematics is
-carefully studied and incorporated into the forward modeling in this section.
+carefully studied and incorporated into the forward modeling in this Section.
 
 \subsubsection{Photo-$z$ Uncertainty}
-\label{subsec:method-photoz}
+\label{subsec_method_photoz}
+
+\begin{figure*}
+\centering
+\subfigure[lasso]{\includezraphics{delta-3-7-pz-nn-lasso.pdf}}
+\subfigure[adaptive lasso]{\includezraphics{delta-3-7-pz-nn-alasso.pdf}}
+\caption{The density map reconstructions with the lasso (left) and the adaptive
+        lasso (right) algorithms. The input density map is from a NFW halo with
+        mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$. The lasso
+        reconstruction smears the density field along the line of sight
+        direction (vertical direction in the plots).  The vertical direction is
+        the line of sight direction, and the lower boundaries and upper
+        boundaries of the boxes are $z=0.01$ and $z=0.85$, respectively. Noises
+        on galaxy shape measurements are neglected in this simulation.
+        } \label{fig_lassoVsadaLasso}
+\end{figure*}
 
 The photometric redshifts of source galaxies in the current large-scale survey
 are estimated with a limited number of board photometric bands (e.g., $9$ bands
@@ -506,20 +506,7 @@ uncertainties further increase the correlations between lensing kernels at
 different lens plane.
 
 \subsubsection{Smoothing}
-\label{subsec:method-smoothing}
-
-\begin{figure}[!t]
- \centering
- \includegraphics[width=0.5\textwidth]{shapeMeasurementError-HSCY1.pdf}
- \caption{The histograms of the HSC-like shape measurement error (including
-         both from shape noise and from photon noise) on the first component of
-         shear ($g_1$) for galaxies (blue lines) and smoothed pixels (orange
-         lines). The solid steps are the sampled histograms, and the dashed
-         lines are the normalized Gaussian distributions that have the same
-         standard deviations as the corresponding histograms.
-        }
- \label{fig_noiseHistogram}
-\end{figure}
+\label{subsec_method_smoothing}
 
 The observed galaxies have random irregular (unequally-spaced) spatial
 distribution. To boost the computational speed, we smooth the shear
@@ -583,43 +570,14 @@ and the smoothing procedure influence the shear signal through
 \gamma_L \rightarrow \mathbf{W} \gamma_L.
 \end{equation}
 
-As we will discuss in Section \ref{subsec:method-pixel}, the smoothed shear
+As we will discuss in Section \ref{subsec_method_pixel}, the smoothed shear
 field is pixelized into equally spaced grids. We note that another widely used
 scheme is to average the shear measurements in each pixel.  Such a scenario is
 equivalent to resampling the shear field smoothed with a $3$-D top-hat kernel
 with the same scale as the pixels.
 
-\begin{figure}[!t]
- \centering
- \includegraphics[width=0.5\textwidth]{noise_std_map_pix.pdf}
- \caption{The standard deviation pixel map of the HSC-like shape measurement error for the fifth source galaxy bin
-        ($0.69 \leq z < 0.80 $).
-        } \label{fig_noistdmap}
-\end{figure}
-
 \subsubsection{Masking}
-\label{subsec:method-msknoise}
-
-\begin{figure*}[!t]
- \centering
- \includegraphics[width=1.0\textwidth]{peak_scatters_f3-1.pdf}
- \caption{The left panel shows the stacked $2$-D distribution of the deviations
-     of detected peak positions from the centers of the corresponding input
-     halos. The $x$-axis is for the deviated distance in the transverse plane,
-     and the $y$-axis is for the deviation of the redshift. For each
-     simulation, the positive peak inside the dashed black box with the
-     minimal offset (in the pixel unit) from the input halo's position is
-     taken as a true detection. The right panel focuses on the deviation of
-     detected peaks in the line of sight direction. The $x$-axis is the input
-     halo redshifts, and the $y$-axis is the redshift of the detected peak. The
-     `$\cross$' denotes the average redshift of detected peaks for each halo
-     over different noise realizations, and the error-bars are the
-     uncertainties of the average redshifts. The deep gray area is for the
-     relative redshift bias less than $0.05$, and the light gray area is for
-     the relative redshift bias less than $0.5$. These results in this figure
-     are based on the NFW dictionary with $\lambda=3.5$.
-     } \label{fig_detoffsets}
-\end{figure*}
+\label{subsec_method_msknoise}
 
 In real observations, shear measurements are available in a finite region of
 the sky, and the boundary of the region is always irregular. Moreover, many
@@ -660,18 +618,7 @@ eq. (\ref{eq-x2gamma-final}) is written as
 \end{equation}
 
 \subsubsection{Pixelization}
-\label{subsec:method-pixel}
-
-\begin{figure*}[!t]
- \centering
- \includegraphics[width=1.0\textwidth]{detfalseRate_f3-1.pdf}
- \includegraphics[width=1.0\textwidth]{detfalseRate_f3-3.pdf}
- \caption{The upper panels show the halo detection rate and the number of false
-     peaks per square degree for mass map reconstructed with the NFW atoms. The
-     penalization parameter is set to $\lambda=3.5$ for the upper panels.  The
-     low panels show the results for $\lambda=5.0$.
-        } \label{fig_detFalsRateNFW}
-\end{figure*}
+\label{subsec_method_pixel}
 
 We pixelize the smoothed shear field into an $N_\theta \times N_\theta \times
 N_s$ grid, where $N_\theta$ is the number of pixels for the two orthogonal axes
@@ -708,7 +655,7 @@ x'_{\beta}&=x_{\beta}\mathcal{N}_{\beta}^{\frac{1}{2}}.\\
 \end{equation}
 
 \subsection{Density map reconstruction}
-\label{subsec:method-reconstruction}
+\label{subsec_method_reconstruction}
 
 \subsubsection{Adaptive lasso}
 
@@ -778,17 +725,6 @@ i}x'_{i}) (\gamma_{\beta}-A'_{\beta j}x'_{j}).
 
 
 \subsubsection{FISTA}
-
-\begin{figure}[!t]
- \centering
- \includegraphics[width=0.5\textwidth]{peak_histograms.pdf}
- \caption{The histograms of detected peak values from all of the simulations.
-     The solid lines with different colors are the results of reconstructions
-     with the NFW dictionary penalized with different regularization
-     parameters: $\lambda=3.5,4.0,5.0$. The dashed lines are the corresponding
-     results of reconstructions from pure noise fields.
-    }\label{fig_peakHist}
-\end{figure}
 
 \citet{FISTA-Beck2009} propose the Fast Iterative Soft Thresholding Algorithm
 (FISTA) to solve the lasso problem.  Since the lasso's loss function and the
@@ -888,9 +824,31 @@ which is the final solution.
 
 
 \section{Tests}
-\label{sec:Test}
+\label{sec_Test}
 
-\begin{figure*}[!t]
+This Section simulates weak-lensing shear fields induced by a group of NFW
+halos with various halo masses and redshifts. The shear fields are used to
+distort the HSC mock shape catalogs with different realizations of the HSC-like
+shape measurement errors and photo-$z$ uncertainties (Section \ref{subsec_Sims}).
+
+Then, we test our algorithm using the simulations with different setups of the
+regularization parameter. We also compare the results of our algorithm, which
+uses the NFW dictionary (Section \ref{subsec_test-nfw}), with the point mass
+dictionary (Section \ref{subsec_test-pm}).
+
+\subsection{Simulations}
+\label{subsec_Sims}
+\input{massmap_sim.tex}
+
+\subsection{NFW atoms}
+\label{subsec_test-nfw}
+\input{sparse_NFW_results.tex}
+
+\subsection{Point mass atoms}
+\label{subsec_test-pm}
+\input{sparse_PointMass_results.tex}
+
+\begin{figure*}
 \centering
 \subfigure[NFW: $\lambda=3.5$]{
         \includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
@@ -913,176 +871,9 @@ which is the final solution.
         } \label{fig_NFWvsPM}
 \end{figure*}
 
-This section simulates weak-lensing shear fields induced by a group of halos
-with various halo masses and redshifts. The shear fields are used to distort
-the HSC mock shape catalogs with different realizations of the HSC-like shape
-measurement error and photo-$z$ uncertainty (Section \ref{subsec:Sims}).
-
-Then, we test our algorithm using the simulations with different setups of the
-regularization parameter. We also compare the results of our algorithm, which
-uses the NFW dictionary (Section \ref{subsec:test-nfw}), with the point mass
-dictionary (Section \ref{subsec:test-pm}).
-
-The $\Lambda$CDM cosmology used for the simulations is from the best fitting
-result of the final full-mission Planck observation of the cosmic microwave
-background (CMB) with $H_0=67.4 ~\rm{km~s^{-1} Mpc^{-1}}$ $\Omega_M=0.315$,
-$\Omega_\Lambda=0.685$ \citep{cmb-Planck2018-Cosmology}.
-
-\subsection{Simulations}
-\label{subsec:Sims}
-
-We sample halos in a two-dimensional redshift-mass plane. The redshift-mass
-plane is evenly divided into eight redshift bins and eight mass bins. We
-randomly shift the input halo redshifts and halo masses from the bins' centers
-by a small amount. The concentration of the NFW halo is set as a function of
-the halo's mass ($M_{200}$) and redshift ($z_{h}$) according to
-\citet{c-M_Magneticum-Ragagnin2019}
-\begin{equation}
-c_{h}=6.02\times(\frac{M_{200}}{10^{13} M_{\odot}})^{-0.12}(\frac{1.47}{1.+z_h})^{0.16}.
-\end{equation}
-The weak-lensing shear fields of these NFW halos are simulated according to
-\citet{haloModel-TJ2003-3pt}. The shear distortions are applied to one hundred
-realizations of galaxy catalogs with the HSC-like shape measurement error and
-photo-$z$ uncertainty.
-
-The galaxy catalogs are simulated using the HSC S16A shape catalog
-\citep{HSC1-catalog}.  We use galaxies in a one square degree region at the
-center of tract 9347 \citep{HSC1-data}.  The galaxies' positions are randomized
-to have a homogeneous distribution statistically in the one-square
-degree stamp. We randomly assign its redshift for each galaxy following the
-MLZ photo-$z$ probability distribution function from By randomly rotating the
-galaxies in the shape catalog, we simulate the HSC-like shape estimation error
-with different realizations.  The histogram of the first component of the
-HSC-like shape estimation error on galaxy level is shown in Figure
-\ref{fig_noiseHistogram}.  The corresponding histogram of the shape error on
-the pixel level after smoothing and pixelization is also shown in
-\ref{fig_noiseHistogram}, and the standard deviation map of the noise is
-demonstrated in Figure \ref{fig_noistdmap}.  \citep{HSC1-photoz}.
-
-\subsection{NFW atoms}
-\label{subsec:test-nfw}
-
-\begin{figure*}[!ht]
- \centering
- \includegraphics[width=1.0\textwidth]{detfalseRate_f1-1.pdf}
- \includegraphics[width=1.0\textwidth]{detfalseRate_f1-3.pdf}
- \caption{The upper panels show the halo detection rate and the number of false
-     peak per square degree for mass map reconstructed with the point mass
-     dictionary. The penalization paramter is set to $\lambda=3.5$ for the
-     upper panels.  The lower panels show the results for $\lambda=5.0$.
-        }\label{fig_detFalsRatePM}
-\end{figure*}
-
-In this subsection, we test the performance of our algorithm with the default
-setup that models the matter density field with multi-scale NFW atoms. The
-dictionary is constructed with three frames of different NFW comoving scale
-radius: $0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$ Mpc.  The
-truncation radius (concentration) is set to four times the scale radius for the
-atoms in the dictionary.
-
-We test the algorithm with different regularization parameters for the
-preliminary lasso estimation which range from $3.5$ to $5.0$. The
-regularization parameter for the adaptive lasso is set to
-$\lambda_{\rm{als}}=\lambda_{\rm{ls}}^{\tau+1}$.
-Here, we note that both the preliminary lasso estimation and the final adaptive
-estimation select the modes with signal to noise ratios (SNRs) greater than
-$\lambda_{\rm{ls}}$ in each iteration. While the final adaptive lasso
-estimation further enhances the growth of the modes with preliminary
-estimations greater than $\lambda_{\rm{ls}}$.
-
-This paper does not go beyond the resolution limit defined by the Gaussian
-smoothing kernel with the scale: $1.\arcmin 5$ and the pixel scale
-that equals $1\arcmin$. We smooth the reconstructed density with the same
-Gaussian kernel in each lens redshift plane.
-
-We detect the peaks on the density map after the reconstruction. The stacked
-$2$-D histogram, from all of the simulations, for the offsets of the detected
-peak positions from the input halos' positions is shown in the left panel of
-Figure \ref{fig_detoffsets}.
-
-For each simulation, we find the positive peak closest to the input position
-(in the pixel unit), and if the closest peak lay inside the region denoted with
-the dashed box in the left panel of Figure \ref{fig_detoffsets}, we take it as
-a true peak detection of the input halo. Other detected peaks, which include both
-positive and negative peaks, are taken as false peaks. The right
-panel of Figure \ref{fig_detoffsets} shows the average redshift of true
-detections for each halo. The estimated redshifts are lower than the true
-redshifts by about $0.03$ for halos in the low-redshift range ($z\leq 0.4$).
-For halos at $0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$.
-
-Figure \ref{fig_detFalsRateNFW} shows the detection rate (left panels) and the
-number of false peaks per square degree (right panel) for each simulated halo.
-The figure include results of different penalization parameters: $\lambda=3.5$
-(upper panel) and $\lambda=5.0$ (lower panel).  We find that with the increase
-of the penalization parameter, the detection rate decreases. On the other hand,
-the number of false peaks also decreases.
-
-Figure \ref{fig_peakHist} shows the histograms, which are normalized by the
-number of simulations, for all detected peaks with different penalization
-parameters. We also plot the corresponding histograms for peaks detected from
-pure noise fields for comparison. From the left panels of Figure
-\ref{fig_NFWvsPM}, which show the $3$-D density maps reconstructed with
-different penalization parameters for a halo with $M_{200}=10^{15.02}
-~h^{-1}M_{\odot}$ at redshift $0.164$ , we also find that the number of false
-peaks significantly decreases as the penalization parameter increases.
-
-\subsection{Point mass atoms}
-\label{subsec:test-pm}
-
-\begin{figure*}
- \includegraphics[width=1.0\textwidth]{detfalse_threshold.pdf}
- \caption{The left panel and the middle panel show the halo detection rates
-     with different input masses and redshifts. The detections are performed on
-     the mass maps reconstructed with $\lambda=5.0$, and the detection
-     thresholds are set to $1.5\sigma$ and $3.0\sigma$ of the peak's standard
-     deviation of the noise field, respectively. The right panel shows the
-     numbers of false peaks per square degree as a function of selection
-     thresholds. The corresponding false peaks per square degree for thresholds
-     of $1.5\sigma$ and $3.0\sigma$ are about $0.022~\rm{deg}^{-2}$ and
-     $0.004~\rm{deg}^{-2}$.
-    }\label{fig_detfalse_threshold}
-\end{figure*}
-
-In this subsection, we show the results for the setup, which substitutes the
-default NFW dictionary with the point mass dictionary, to compare with the
-default setup.  The regularization parameter for the preliminary lasso is set
-to $3.5$ and $5.0$.  Inspired by \citet{structureAdaLasso-Pramanik2020}, which
-propose to incorporate external group information into different adaptive lasso
-penalization weights by setting the penalization weights for projection
-coefficients in the same group to the average of the adaptive weights in this
-group, we smooth the preliminary lasso estimation in each lens redshift bin
-with a top-hat filter of comoving scale $0.25~h^{-1}$ Mpc. The smoothed
-preliminary lasso estimation is denoted as $\hat{x}^{\rm{ls}}_{\rm{sm}}$, and
-the penalization weights are set to $1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\tau$.
-The regularization parameter for the adaptive lasso is set to
-$\lambda_{\rm{als}}=\lambda_{\rm{ls}}$.
-
-As we have done on the NFW dictionary's reconstruction, we smooth the
-reconstructed density maps with the Gaussian kernel (scale radius equals
-$1.\arcmin 5$) in each lens redshift plane.
-
-Figure \ref{fig_detFalsRatePM} shows the detection rate (left panels) and the
-number of false peaks per square degree (right panel) for each setup of halo
-mass and redshift.
-This figure includes results of different penalization parameters:
-$\lambda=3.5$ (upper panel) and $\lambda=5.0$ (lower panel). The right panels
-of Figure \ref{fig_NFWvsPM} show the $3$-D density maps reconstructed with
-different penalization parameters for a halo with $M_{200}=10^{15.02}
-~h^{-1}M_{\odot}$ at redshift $0.164$.
-Comparing with the results of the NFW dictionary, we find that the number of
-false peaks in the mass map reconstructed with the point mass dictionary is
-much larger than the NFW dictionary.
-
-As demonstrated in the right panels of Figure \ref{fig_NFWvsPM}, the mass
-reconstructions with the point mass dictionary tend to assign masses to
-several different redshift bins in the neighboring region of the halo center.
-While the NFW dictionary produces consistent mass reconstructions.
-Since the NFW atoms' profiles are more consistent with the mass profiles of the
-input halos than the profile of a point mass, there are less false structures
-reconstructed with the NFW dictionary.
 
 \section{Summary}
-\label{sec:Sum}
+\label{sec_Sum}
 
 We develop a novel method to reconstruct $3$-D density contrast maps from
 weak-lensing shear measurements and photometric redshift estimations.  Our
