@@ -1,34 +1,39 @@
 \begin{figure*}
- \centering
- \includegraphics[width=1.0\textwidth]{peak_histograms_NFW.pdf}
- \caption{The histograms of detected peak values (normalized) from all of the
-     simulations.  The solid red steps are the results from reconstructions
-     with the NFW dictionary penalized with different regularization
-     parameters: $\lambda=3.5,4.0,5.0$. The dashed blue steps are the
-     corresponding results of the reconstructions from $1000$ realizations of
-     pure noise fields. The gray lines are the best-fit Gaussian distributions
-     to the noises' peak histograms.
-    }\label{fig_peakHist}
+\centering
+\subfigure[NFW: $\lambda=3.5$]{
+        \includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
+    }
+\subfigure[NFW: $\lambda=5.0$]{\includezraphics{
+        delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}
+    }
+\caption{The density maps reconstructed from the mock galaxy shape catalog with
+    the NFW dictionary. The penalization parameters are $\lambda=3.5$ (left)
+    and $\lambda=5.0$ (right).  The input halo mass is $M_{200}=10^{15.02}
+    ~h^{-1}M_{\odot}$, and its redshift is $z=0.164$.  The vertical direction
+    is the line of sight direction. The boxes' lower boundaries and upper
+    boundaries of correspond to $z=0.01$ and $z=0.85$, respectively.
+    } \label{fig_NFW3D}
 \end{figure*}
 
 In this subsection, we test the performance of our algorithm with the default
 setup that models the matter density field with multi-scale NFW atoms. The
-dictionary is constructed with three frames of different NFW comoving scale
-radius: $0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$ Mpc.  The
-truncation radii (concentration) are set to four times the comoving scale radii
-for the atoms in the dictionary. We note that each frame of our dictionary
-fixes the scale radius in the comoving space; therefore, the NFW atoms have
-different angular radii in different lens redshift bins.
+dictionary is constructed with three frames of different NFW scale radii in the
+comoving coordinate: $0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$
+Mpc.  The truncation radii are set to four times the comoving scale radii for
+the atoms in the dictionary (concentration equals four) . We note that each
+frame of our dictionary fixes the scale radius in the comoving space;
+therefore, the NFW atoms have different angular radii in different lens
+redshift bins.
 
-We test the algorithm with different regularization parameters for the
-preliminary lasso estimation, which are $3.5$, $4.0$, and $5.0$. The
-corresponding regularization parameters for the adaptive lasso are set to
-$\lambda_{\rm{als}}=\lambda_{\rm{ls}}^{\tau+1}$.  Here, we note that both the
+We test the algorithm with different regularization parameters ($\lambda$) for
+the preliminary lasso estimation, which are $3.5$, $4.0$, and $5.0$. The
+corresponding regularization parameters for the final adaptive lasso estimations
+are set to $\lambda_{\rm{ada}}=\lambda^{\tau+1}$.  Here, we note that both the
 preliminary lasso estimation and the final adaptive lasso estimation select the
-pixels with the signal-to-noise ratios (SNRs) greater than $\lambda_{\rm{ls}}$
-in each gradient descent iteration. While the final adaptive lasso estimation
-further enhances the growth of the pixels with preliminary estimations greater
-than $\lambda_{\rm{ls}}$.
+pixels with the signal-to-noise ratios (SNRs) greater than $\lambda$ in each
+gradient descent iteration. While the final adaptive lasso estimation further
+enhances the growth of the pixels with preliminary estimations greater than
+$\lambda$.
 
 This paper does not go beyond the resolution limit defined by the Gaussian
 smoothing kernel with a standard deviation of $1.\arcmin 5$ and the $1\arcmin$
@@ -37,20 +42,61 @@ pixel scale as discussed in Section \ref{subsec_method_smoothing} and Section
 reconstructed density with the same Gaussian kernel in each lens redshift
 plane.
 
-The left panels of Figure \ref{fig_NFWvsPM} demonstrates the $3$-D density maps
-reconstructed with different penalization parameters for a halo with
-$M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$.  As we can see from
-the reconstructed maps, the adaptive lasso algorithm sets most of the
-reconstructed pixels to zero and only keeps the pixels with large amplitudes.
-Therefore, it is straightforward to identify the peaks on the reconstructed
-sparse density map.  Figure \ref{fig_peakHist} shows the histograms for the
-detected peaks with different penalization parameters.
+Figure \ref{fig_NFW3D} shows the $3$-D density maps reconstructed with
+different penalization parameters for a halo with $M_{200}=10^{15.02}
+~h^{-1}M_{\odot}$ at redshift $0.164$.  As we can see from the reconstructed
+density maps, the adaptive lasso algorithm sets most of the reconstructed
+pixels to zero and only keeps the pixels with large amplitudes.  We identify
+the peaks on the reconstructed sparse density map.
 
-We simulate $1000$ realizations of pure noise fields and perform the
-same reconstructions on these noise fields to study the noise properties. Figure
-\ref{fig_peakHist} shows the histograms of peaks detected from the
-pure noise fields. , we also find that the number of false
-peaks significantly decreases as the penalization parameter increases.
+\begin{figure*}
+ \centering
+ \includegraphics[width=1.0\textwidth]{peak_histograms_NFW.pdf}
+ \caption{The number per square degree histograms of detected peak values from
+     all of the simulations.  The solid red steps result from reconstructions
+     with the NFW dictionary penalized with different regularization
+     parameters: $\lambda=3.5,4.0,5.0$. The dashed blue steps are the
+     corresponding results of the reconstructions from $1000$ realizations of
+     pure noise fields. The gray lines are the best-fit Gaussian distributions
+     to the noises' peak histograms.
+    }\label{fig_peakHist}
+\end{figure*}
+
+Following \citet{WL-massMap-Glimpse2D-Lanusse2016}, we normalize detected peaks
+in the $l$-th lens redshift plane to account for the peak amplitude difference
+due to the difference in the norm of the lensing kernels for different redshift
+bins:
+\begin{equation}
+\delta^{\rm{n}}_{\rm{peak}}(\vec{\theta},z_l)=\delta_{\rm{peak}}(\vec{\theta},z_l)/\mathcal{R}_{l}^{\frac{1}{2}},
+\end{equation}
+where the normalization matrix is defined as
+\begin{equation}
+\mathcal{R}_{l}=\sum_s K^2(z_l,z_s).
+\end{equation}
+The solid steps in Figure \ref{fig_peakHist} show the histograms for the
+normalized peaks with different penalization parameters. Also, we simulate
+$1000$ realizations of pure noise fields and perform the reconstructions on
+these noise fields to study the noise properties. The dashed steps in Figure
+\ref{fig_peakHist} show the histograms of normalized peaks detected from the
+pure noise fields. The solid lines in Figure \ref{fig_peakHist} show the
+best-fit Gaussian distributions to the noise peaks' histograms.
+
+Figure \ref{fig_peakHist} tells that the densities of peaks (including both
+true and false peaks) are suppressed as the penalization parameter $\lambda$
+increases. Moreover, we find the standard deviation of noise peaks slightly
+decreases as $\lambda$ increases. As a result, for a higher detection threshold
+($\lambda=5.0$), we find a clearer peak number excess for mass maps
+reconstructed from mock catalogs comparing with the noise peak histogram .
+
+The $2$-D histogram, stacked from all of the simulations, for the offsets of
+the detected peak positions from the input halos' positions is shown in the
+left panel of Figure \ref{fig_detoffsets}. We see a clustering of peaks close
+to the input halo's position on the stacked position histogram.  For each stamp
+simulation, we find the positive peak closest to the input position (in the
+pixel unit). If the closest peak lay inside the region denoted with the dashed
+box in the left panel of Figure \ref{fig_detoffsets}, we take it as a true peak
+detection of the input halo. Other identified peaks, which include both positive
+and negative peaks, are taken as false detections.
 
 \begin{figure*}
  \centering
@@ -73,36 +119,46 @@ peaks significantly decreases as the penalization parameter increases.
      } \label{fig_detoffsets}
 \end{figure*}
 
-The stacked $2$-D histogram, from all of the simulations, for the offsets of
-the detected peak positions from the input halos' positions is shown in the
-left panel of Figure \ref{fig_detoffsets}.
+The right panel of Figure \ref{fig_detoffsets} shows the average redshift of
+true detections for each halo. The estimated redshifts are lower than the true
+redshifts by about $0.03$ for halos in the low-redshift range ($z\leq
+0.4$).  For halos at $0.4<z\leq 0.85$, the relative redshift bias is below
+$0.5\%$.
 
-For each simulation, we find the positive peak closest to the input position
-(in the pixel unit). If the closest peak lay inside the region denoted with
-the dashed box in the left panel of Figure \ref{fig_detoffsets}, we take it as
-a true peak detection of the input halo. Other detected peaks, which include both
-positive and negative peaks, are taken as false peaks. The right
-panel of Figure \ref{fig_detoffsets} shows the average redshift of true
-detections for each halo. The estimated redshifts are lower than the true
-redshifts by about $0.03$ for halos in the low-redshift range ($z\leq 0.4$).
-For halos at $0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$.
+We select peaks with values greater than an ad-hoc threshold as candidates of
+galaxy clusters following \citet{HSC1-massMap-cluster}.  The threshold is set
+to a few times the standard deviation of the noise peaks. We use different
+detection thresholds ($1.5\sigma$ and $3.0\sigma$) to detect galaxy clusters
+from the mass maps reconstructed with $\lambda=3.5,4.0,5.0$. The left and
+middle columns of Figure \ref{fig_detFalsRateNFW} show the detection rates for
+halos in the (mass, redshift) planes with detection thresholds set to
+$1.5\sigma$ and $3.0\sigma$ of the noise field, respectively. The right column
+of Figure \ref{fig_detFalsRateNFW} shows the corresponding numbers of false
+detections per square degree as functions of detection thresholds. The first,
+second, and third rows of Figure \ref{fig_detFalsRateNFW} correspond to the
+$lambda=3.5,4.0,5.0$, respectively.
+
+Figure \ref{fig_detFalsRateNFW} tells that the false peak density is suppressed
+as the detection threshold increases. Also, the detection rate of halo
+significantly decreases. We decide to set the detection threshold to
+$1.5\sigma$ and set the penalization parameter $\lambda$ to $5.0$ since such a
+setup suppresses the false detection to $0.022$ while keeping a good halo
+detection rate. In summary, The algorithm is able to detect halo with minimal
+mass limits of $10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0}
+M_{\odot}/h$ for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high
+($0.6\leq z< 0.85$) redshifts, respectively.
 
 \begin{figure*}
  \centering
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd35.pdf}
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd40.pdf}
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd50.pdf}
- \caption{The upper panels show the halo detection rate and the number of false
-     peaks per square degree for mass map reconstructed with the NFW atoms. The
-     penalization parameter is set to $\lambda=3.5$ for the upper panels.  The
-     low panels show the results for $\lambda=5.0$.
-        } \label{fig_detFalsRateNFW}
+ \caption{The detection rate and false peak density for different $\lambda$ and
+     detection thresholds. The first, second, and third rows correspond to the
+     results with $lambda=3.5,4.0,5.0$, respectively. The left and middle columns
+     are the halo detection rates for detection thresholds equal $1.5\sigma$ and
+     $3.0\sigma$, respectively. The right column is the density of false peaks as
+     a function of detection threshold.
+    } \label{fig_detFalsRateNFW}
 \end{figure*}
-
-Figure \ref{fig_detFalsRateNFW} shows the detection rate (left panels) and the
-number of false peaks per square degree (right panel) for each simulated halo.
-The figure include results of different penalization parameters: $\lambda=3.5$
-(upper panel) and $\lambda=5.0$ (lower panel).  We find that with the increase
-of the penalization parameter, the detection rate decreases. On the other hand,
-the number of false peaks also decreases.
 

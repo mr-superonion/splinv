@@ -2,25 +2,25 @@
 \emergencystretch=1.em
 
 \usepackage{amsmath,amsthm,amsfonts,amssymb,bm}
-% for big dot
+\usepackage{physics,commath}
+
+\usepackage{listings}
+\hypersetup{breaklinks}
+\usepackage{color}
+\usepackage{graphicx,subfigure}
+\usepackage{multirow}
+
+\usepackage{textcomp}
+\usepackage{epstopdf}
+\usepackage{natbib}
+\usepackage{algorithm,algcompatible}
+\usepackage[-]{callouts}
+
 \makeatletter
 \newcommand*\bigcdot{\mathpalette\bigcdot@{.5}}
 \newcommand*\bigcdot@[2]{\mathbin{\vcenter{\hbox{\scalebox{#2}{$\m@th#1\bullet$}}}}}
 \newcommand{\argmax}{\mathop{\rm arg~max}\limits}
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
-
-\usepackage{listings}
-\usepackage{physics}
-\usepackage{multirow}
-\usepackage{color}
-\usepackage{graphicx,subfigure}
-\renewcommand\thesubfigure{(\roman{subfigure})}
-
-\usepackage{textcomp}
-\usepackage{epstopdf}
-\usepackage{natbib}
-\usepackage{commath}
-\hypersetup{breaklinks}
 
 \DeclareMathOperator{\arccosh}{arccosh}
 \newcommand \redColor{\color{red}}
@@ -28,42 +28,39 @@
 \renewcommand\labelenumi{(\roman{enumi})}
 \renewcommand\theenumi\labelenumi
 
-\usepackage{algorithm,algcompatible}
-\usepackage[-]{callouts}
-
-%\DeclareMathOperator*{\argmax}{\arg\!\max}
 \algnewcommand\INPUT{\item[\textbf{Input:}]}
 \algnewcommand\OUTPUT{\item[\textbf{Output:}]}
 
+\renewcommand\thesubfigure{(\roman{subfigure})}
 \newcommand{\includezraphics}[1]{
-\begin{annotate}{
-\includegraphics[width=0.43\textwidth]{#1}}{0.45}
-\arrow { -6., -4}{ -6., 4}
-\note {-6.,4.5}{$\huge{z}$}
-\end{annotate}
+    \begin{annotate}{
+    \includegraphics[width=0.43\textwidth]{#1}}{0.45}
+    \arrow { -6., -4}{ -6., 4}
+    \note {-6.,4.5}{$\mathbf{z}$}
+    \end{annotate}
 }
 
 \makeatother
-%\newcommand{\jcap}{JCAP}
 
 \begin{document}
-\title{Sparsity Weak Lensing $3$-D Density Map Reconstruction:
+\title{$3$-D Weak Lensing Mass Map Reconstruction:
 Reducing the line of sight smearing}
-%\author{Xiangchong Li}
-%\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
-%\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
-%University of Tokyo, Kashiwa 277-8583, Japan}
-%\author{Masamune Oguri}
-%\affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
-%\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
-%University of Tokyo, Kashiwa 277-8583, Japan}
-%\affiliation{Research Center for the Early Universe, University of Tokyo, Tokyo 113-0033, Japan}
-%\author{Wentao Luo}
-%\affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
-%University of Tokyo, Kashiwa 277-8583, Japan}
-%\author{HSC Collaboration}
-%\noaffiliation
-%\email{xiangchong.li@ipmu.jp}
+% \author{Xiangchong Li}
+% \affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
+% \affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
+% University of Tokyo, Kashiwa 277-8583, Japan}
+% \author{Masamune Oguri}
+% \affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
+% \affiliation{Kavli Institute for the Physics and Mathematics of the Universe
+% (WPI),\\
+% University of Tokyo, Kashiwa 277-8583, Japan}
+% \affiliation{Research Center for the Early Universe, University of Tokyo, Tokyo
+% 113-0033, Japan}
+% \author{Wentao Luo}
+% \affiliation{Kavli Institute for the Physics and Mathematics of the Universe
+% (WPI),\\
+% University of Tokyo, Kashiwa 277-8583, Japan}
+% \email{xiangchong.li@ipmu.jp}
 
 \begin{abstract}
 A new method is developed to reconstruct $3$-D density contrast maps from
@@ -94,16 +91,15 @@ below $0.5\%$ for halos at $0.4<z\leq 0.85$.
         atoms in Fourier space, and the lower row shows the basis atoms in Real
         space.  The leftmost column is the point mass atom, and the other
         columns are the multi-scale NFW atoms.  The smoothing kernel is
-        Gaussian with a standard dev
-        iation of $1.5$ pixels.
-        } \label{fig_atoms2D}
+        Gaussian with a standard dev iation of $1.5$ pixels.
+    } \label{fig_atoms2D}
 \end{figure*}
 
 \begin{figure}
- \includegraphics[width=0.5\textwidth]{nfwlet-atom-1D.pdf}
+ \includegraphics[width=0.45\textwidth]{nfwlet-atom-1D.pdf}
     \caption{The $1$-D slices for smoothed pixelized basis atoms at $x=0$. The
         corresponding $2$-D profiles are shown in Figure \ref{fig_atoms2D}.
-        }
+    }
  \label{fig_atoms1D}
 \end{figure}
 
@@ -237,7 +233,7 @@ the method.
 
 \begin{figure}
  \centering
- \includegraphics[width=0.5\textwidth]{photo-z_binning.pdf}
+ \includegraphics[width=0.45\textwidth]{photo-z_binning.pdf}
  \caption{The source galaxies are binned into $10$ redshift bins according to
      their Machine Learning and photo-Z (MLZ) best photo-$z$ estimation. The
      blue histogram is the normalized number distribution of the best photo-$z$
@@ -267,7 +263,7 @@ Finally, we solve the mass reconstruction problem in Section
 
 \begin{figure}
  \centering
- \includegraphics[width=0.5\textwidth]{mlz-poz.pdf}
+ \includegraphics[width=0.45\textwidth]{mlz-poz.pdf}
  \caption{The average PDF of MLZ photo-$z$ error for $10$ source redshift bins.
         }\label{fig_pdfpz}
 \end{figure}
@@ -437,14 +433,13 @@ carefully studied and incorporated into the forward modeling in this Section.
 \subfigure[lasso]{\includezraphics{delta-3-7-pz-nn-lasso.pdf}}
 \subfigure[adaptive lasso]{\includezraphics{delta-3-7-pz-nn-alasso.pdf}}
 \caption{The density map reconstructions with the lasso (left) and the adaptive
-        lasso (right) algorithms. The input density map is from a NFW halo with
-        mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift $0.35$. The lasso
-        reconstruction smears the density field along the line of sight
-        direction (vertical direction in the plots).  The vertical direction is
-        the line of sight direction, and the lower boundaries and upper
-        boundaries of the boxes are $z=0.01$ and $z=0.85$, respectively. Noises
-        on galaxy shape measurements are neglected in this simulation.
-        } \label{fig_lassoVsadaLasso}
+    lasso (right) algorithms. The vertical direction is the line of sight
+    direction, and the lower boundaries and upper boundaries of the boxes are
+    $z=0.01$ and $z=0.85$, respectively. Noises on galaxy shape measurements
+    are neglected in the simulation.  The input halo mass is $M_{200}=10^{15}
+    ~h^{-1}M_{\odot}$, and its redshift is $z=0.35$. The lasso reconstruction
+    smears the density field along the line of sight direction.
+    } \label{fig_lassoVsadaLasso}
 \end{figure*}
 
 The photometric redshifts of source galaxies in the current large-scale survey
@@ -508,11 +503,11 @@ different lens plane.
 \subsubsection{Smoothing}
 \label{subsec_method_smoothing}
 
-The observed galaxies have random irregular (unequally-spaced) spatial
-distribution. To boost the computational speed, we smooth the shear
-measurements from galaxy shapes and pixelize the smoothed measurements onto
-regular grids.  After the pixelization, the fast Fourier transform (FFT) can be
-directly conducted on the transverse plane in each source redshift bin.
+The observed galaxies have random yet unequally-spaced spatial distribution. To
+boost the computational speed, we smooth the shear measurements from galaxy
+shapes and pixelize the smoothed measurements onto regular grids.  After the
+pixelization, the fast Fourier transform (FFT) can be directly conducted on the
+transverse plane in each source redshift bin.
 
 The smoothing is conducted by convolving the shear measurements with a
 smoothing kernel:
@@ -523,7 +518,7 @@ W(\vec{\theta}-\vec{{\theta}}_i,z-z_i) },
 \end{equation}
 where $W(\vec{\theta},z)$ is a $3$-D smoothing kernel. $\gamma_i$, $z_i$ and
 $\theta_i$ are the shear, photometric reshift, and transverse position of the
-`$i$-th' galaxy in the catalog.
+$i$-th galaxy in the catalog.
 
 $W(\vec{\theta},z)$ can be decomposed into a transverse component
 $W_T(\vec{\theta})$ and a line of sight component
@@ -662,10 +657,12 @@ x'_{\beta}&=x_{\beta}\mathcal{N}_{\beta}^{\frac{1}{2}}.\\
 The lasso algorithm uses $l^1$ norm of the projection coefficient field to
 regularize the modeling, and the estimator is defined as
 \begin{equation}
-\hat{x'}^{\rm{lasso}}=\argmin_{x} \left\{ \frac{1}{2}\norm{\Sigma^{-\frac{1}{2}}(\gamma- \mathbf{A'} x')}_2^2+ \lambda_{\rm{ls}} \norm{x'}^1_1\right\},
+\hat{x'}^{\rm{lasso}}=\argmin_{x} \left\{
+\frac{1}{2}\norm{\Sigma^{-\frac{1}{2}}(\gamma- \mathbf{A'} x')}_2^2+
+\lambda \norm{x'}^1_1\right\},
 \end{equation}
 where $\norm{\bigcdot}_1$ and $\norm{\bigcdot}_2$ refer to the $l^1$ norm and
-$l^2$ norm, respectively.  $\lambda_{ls}$ denotes the penalization parameter
+$l^2$ norm, respectively.  $\lambda$ denotes the penalization parameter
 for the lasso estimation.
 
 The lasso algorithm selects the parameters relevant to the measurements and
@@ -701,19 +698,19 @@ where we set the hyper-parameter $\tau$ to $2$.  The adaptive lasso estimator is
 expressed as
 \begin{equation}\label{eq-lossFun}
 \hat{x'}=\argmin_{x'} \left\{ \frac{1}{2} \norm{\Sigma^{-\frac{1}{2}}(\gamma-\mathbf{A'}x')}^2_2 +
-\hat{w}\lambda_{\rm{als}} \norm{x'}^1_1\right\}.
+\hat{w}\lambda_{\rm{ada}} \norm{x'}^1_1\right\}.
 \end{equation}
-Here, $\lambda_{\rm{als}}$ is the penalization parameter for the adaptive
-lasso.  We note that $\lambda_{\rm{als}}$ does not need to be the same as the
+Here, $\lambda_{\rm{ada}}$ is the penalization parameter for the adaptive
+lasso.  We note that $\lambda_{\rm{ada}}$ does not need to be the same as the
 penalization parameter for the preliminary lasso estimation
-($\lambda_{\rm{ls}}$).
+($\lambda$).
 
 We rewrite the loss function with the Einstein notation:
 \begin{equation}
 \begin{split}
 L(x')&=\frac{1}{2}(\Sigma^{-1})_{\alpha\beta}(\gamma^{*}_{\alpha}-A'^{*}_{\alpha i}x'_{i})
 (\gamma_{\beta}-A'_{\beta j}x'_{j})\\
-&+ \lambda_{\rm{als}} \hat{w_\beta} \abs{x'_\beta}.
+&+ \lambda_{\rm{ada}} \hat{w_\beta} \abs{x'_\beta}.
 \end{split}
 \end{equation}
 To simplify the notification in future, we define the quadruple term in the
@@ -801,7 +798,7 @@ which is the final solution.
 \STATE Estimate step size $\mu$ and $\mathbf{\Sigma}$
 \STATE \textbf{Initialization:}
 \STATE $x'^{(1)} = 0$
-\STATE $\hat{w}=1$, $\lambda=\lambda_{\rm{ls}}$
+\STATE $\hat{w}=1$
 \STATE $t^{(1)}=1$,$i=1$, $j=1$
 \WHILE{$j \leq 2$}
     \WHILE{$i \leq N_{\rm{iter}}$}
@@ -813,7 +810,8 @@ which is the final solution.
         \STATE $i=i+1$
     \ENDWHILE
 \STATE \textbf{Reinitialization:}
-\STATE $\hat{w}=\abs{\hat{x'}^{\rm{lasso}}}^{-2}$, $\lambda=\lambda_{\rm{als}}$
+\STATE $\hat{w}=\abs{\hat{x'}^{\rm{lasso}}}^{-2}$, $\lambda \leftarrow
+\lambda_{\rm{ada}}$
 \STATE $\hat{x'}^{(1)} = x'^{(N_{\rm{iter}})}$
 \STATE $t^{(1)}=1$, $i=1$
 \STATE $j=j+1$
@@ -848,28 +846,6 @@ dictionary (Section \ref{subsec_test-pm}).
 \label{subsec_test-pm}
 \input{sparse_PointMass_results.tex}
 
-\begin{figure*}
-\centering
-\subfigure[NFW: $\lambda=3.5$]{
-        \includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
-        }
-\subfigure[Point Mass: $\lambda=3.5$]{
-        \includezraphics{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}
-        }
-\subfigure[NFW: $\lambda=5.0$]{\includezraphics{
-        delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}
-        }
-\subfigure[Point Mass: $\lambda=5.0$]{
-        \includezraphics{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}
-        }
-\caption{The results of density maps reconstruction with the point mass
-    dictionary (left) and the NFW dictionary (right) with $\lambda=3.5$ (upper)
-    and $\lambda=5.0$ (lower). The input density map is from a NFW halo with
-    mass $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$ at redshift $0.164$. The
-    vertical direction is the line of sight direction, and the lower boundaries
-    and upper boundaries of the boxes are $z=0.01$ and $z=0.85$, respectively.
-        } \label{fig_NFWvsPM}
-\end{figure*}
 
 
 \section{Summary}
@@ -878,47 +854,36 @@ dictionary (Section \ref{subsec_test-pm}).
 We develop a novel method to reconstruct $3$-D density contrast maps from
 weak-lensing shear measurements and photometric redshift estimations.  Our
 method models $3$-D density contrast maps as summations of NFW atoms with
-difference comoving radius.  With the prior assumption that the clumpy mass
-sparsely distributes in the $3$-D space, the density field is reconstructed
+different comoving radii.  With the prior assumption that the clumpy masses
+sparsely distribute in the $3$-D space, the density map is reconstructed
 using the adaptive lasso algorithm \citep{AdaLASSO-Zou2006}. The method is
-tested with realistic simulations using HSC-like shape estimation error and
-HSC-like photo-$z$ uncertainty.
+tested with realistic simulations using HSC-like shape estimation errors and
+photo-$z$ uncertainties.
+
+The findings of this paper are summarized as follows:
+
+(i) The lasso algorithm's solution suffers from a smear of structure in the
+line of sight direction even in the absence of shape noise, and the adaptive
+lasso algorithm significantly removes the line of sight smear of structure.
+
+(ii) The algorithm is able to detect halo with minimal mass limits of
+$10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for
+the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$)
+redshifts, respectively, with a false detection of 0.022/deg$^2$.
+
+(iii)The estimated redshifts of the halos detected from the reconstructed mass
+maps are lower than the true redshift by about $0.03$ for halos at low
+redshifts ($z\leq 0.4$).  The relative redshift bias is below $0.5\%$ for halos
+at $0.4<z\leq 0.85$.
 
 We will apply the method to the shear measurements of the HSC survey
 \citep{HSC1-catalog,FPFSHSC1-Li2020} to perform galaxy cluster detection in our
-future work.  Here, we note that, when detecting galaxy clusters from the weak
-lensing mass maps in real observations \citep{HSC1-massMap-cluster}, peaks
-higher than an ad-hoc threshold is chosen as galaxy cluster candidates to
-suppress the number of false detections. The threshold is set to a few times
-the peak's standard deviation of the noise field (shear estimation error
-field). We use different detection thresholds to detect peaks from the mass
-maps reconstructed with $\lambda=5.0$. The left and middle panels of Figure
-\ref{fig_detfalse_threshold} show the detection rates for halos with different
-mass and redshift with detection thresholds set to $1.5\sigma$ and $3.0\sigma$
-of the noise field, respectively. The right panel of Figure
-\ref{fig_detfalse_threshold} shows the numbers of false detections as a
-function of detection thresholds.
-
-The findings of this paper are summarized as follows:
-\begin{enumerate}
- \item The lasso algorithm's solution suffers from a smear of structure in
-     the line of sight direction even in the absence of shape noise, and the
-     adaptive lasso algorithm significantly removes the line of sight smear of
-     structure.
- \item The algorithm is able to detect halo with minimal mass limits of
-     $10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$
-     for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z<
-     0.85$) redshifts, respectively, with a false detection of 0.022/deg$^2$.
- \item The estimated redshifts of the halos detected from the reconstructed mass
-     maps are lower than the true redshift by about $0.03$ for halos at low
-     redshifts ($z\leq 0.4$).  The relative redshift bias is below $0.5\%$ for
-     halos at $0.4<z\leq 0.85$.
-\end{enumerate}
+future work.
 
 \section*{Acknowledgements}
-We thank Yin Li and Jiaxin Han for useful discussions.
+XL thank Yin Li and Jiaxin Han for useful discussions.
 
-This work was supported by Global Science Graduate Course (GSGC) program of
+XL was supported by Global Science Graduate Course (GSGC) program of
 University of Tokyo and JSPS KAKENHI (JP19J22222).
 \bibliographystyle{aasjournal}
 \bibliography{citation}

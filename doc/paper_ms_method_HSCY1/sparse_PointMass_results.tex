@@ -1,38 +1,47 @@
 
-In this subsection, we show the results for the setup, which substitutes the
-default NFW dictionary with the point mass dictionary, to compare with the
-default setup.  The regularization parameter for the preliminary lasso is set
-to $3.5$ and $5.0$.  Inspired by \citet{structureAdaLasso-Pramanik2020}, which
+We substitute the default NFW dictionary with the point mass dictionary and
+reconstruct the mass map from the mock galaxy shape catalog, to compare with
+the default setup.
+
+The regularization parameter ($\lambda$) for the preliminary lasso is set to
+$3.5$ and $5.0$.  Inspired by \citet{structureAdaLasso-Pramanik2020}, which
 propose to incorporate external group information into different adaptive lasso
 penalization weights by setting the penalization weights for projection
 coefficients in the same group to the average of the adaptive weights in this
 group, we smooth the preliminary lasso estimation in each lens redshift bin
 with a top-hat filter of comoving scale $0.25~h^{-1}$ Mpc. The smoothed
 preliminary lasso estimation is denoted as $\hat{x}^{\rm{ls}}_{\rm{sm}}$, and
-the penalization weights are set to $1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\tau$.
+the penalization weights are set to
+$\hat{w}=1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\tau$.
 The regularization parameter for the adaptive lasso is set to
-$\lambda_{\rm{als}}=\lambda_{\rm{ls}}$.
-
+$\lambda_{\rm{ada}}=\lambda$.
 As we have done on the NFW dictionary's reconstruction, we smooth the
 reconstructed density maps with the Gaussian kernel (scale radius equals
 $1.\arcmin 5$) in each lens redshift plane.
 
-Figure \ref{fig_detFalsRatePM} shows the detection rate (left panels) and the
-number of false peaks per square degree (right panel) for each setup of halo
-mass and redshift.
-This figure includes results of different penalization parameters:
-$\lambda=3.5$ (upper panel) and $\lambda=5.0$ (lower panel). The right panels
-of Figure \ref{fig_NFWvsPM} show the $3$-D density maps reconstructed with
-different penalization parameters for a halo with $M_{200}=10^{15.02}
-~h^{-1}M_{\odot}$ at redshift $0.164$.
-Comparing with the results of the NFW dictionary, we find that the number of
-false peaks in the mass map reconstructed with the point mass dictionary is
-much larger than the NFW dictionary.
+As demonstrated in Figure \ref{fig_PM3D}, the mass reconstructions with the
+point mass dictionary tend to assign masses to several different redshift bins
+in the neighboring region of the halo's center.  In contrast, as demonstrated in
+Figure \ref{fig_NFW3D}, the NFW dictionary manages to perform consistent mass
+reconstructions.  We think the problem of the point mass dictionary originates
+from the fact that the profile of the point mass atom in the transverse plane
+is much more compact than the profile of the input halos, especially at low
+redshift.
 
-As demonstrated in the right panels of Figure \ref{fig_NFWvsPM}, the mass
-reconstructions with the point mass dictionary tend to assign masses to
-several different redshift bins in the neighboring region of the halo center.
-While the NFW dictionary produces consistent mass reconstructions.
-Since the NFW atoms' profiles are more consistent with the mass profiles of the
-input halos than the profile of a point mass, there are less false structures
-reconstructed with the NFW dictionary.
+\begin{figure*}
+\centering
+\subfigure[Point Mass: $\lambda=3.5$]{
+        \includezraphics{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}
+        }
+\subfigure[Point Mass: $\lambda=5.0$]{
+        \includezraphics{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}
+        }
+\caption{The density maps reconstructed from the mock galaxy shape catalog with
+    the point mass dictionary. The penalization parameters are $\lambda=3.5$
+    (left) and $\lambda=5.0$ (right).  The input halo mass is
+    $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$, and its redshift is $z=0.164$.  The
+    vertical direction is the line of sight direction. The boxes' lower
+    boundaries and upper boundaries of correspond to $z=0.01$ and $z=0.85$,
+    respectively.
+    } \label{fig_PM3D}
+\end{figure*}
