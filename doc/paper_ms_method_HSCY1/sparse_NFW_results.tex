@@ -57,15 +57,15 @@ the peaks on the reconstructed sparse density map.
      with the NFW dictionary penalized with different regularization
      parameters: $\lambda=3.5,4.0,5.0$. The dashed blue steps are the
      corresponding results of the reconstructions from $1000$ realizations of
-     pure noise fields. The gray lines are the best-fit Gaussian distributions
+     pure noise catalogs. The gray lines are the best-fit Gaussian distributions
      to the noises' peak histograms.
     }\label{fig_peakHist}
 \end{figure*}
 
-Following \citet{WL-massMap-Glimpse2D-Lanusse2016}, we normalize detected peaks
-in the $l$-th lens redshift plane to account for the peak amplitude difference
-due to the difference in the norm of the lensing kernels for different redshift
-bins:
+Following \citet{WL-massMap-Glimpse2D-Lanusse2016}, we normalize the detected
+peaks in the $l$-th ($l=1...20$) lens redshift plane to account for the peak
+amplitude difference due to the difference in the norm of the lensing kernels
+for different redshift bins:
 \begin{equation}
 \delta^{\rm{n}}_{\rm{peak}}(\vec{\theta},z_l)=\delta_{\rm{peak}}(\vec{\theta},z_l)/\mathcal{R}_{l}^{\frac{1}{2}},
 \end{equation}
@@ -73,12 +73,12 @@ where the normalization matrix is defined as
 \begin{equation}
 \mathcal{R}_{l}=\sum_s K^2(z_l,z_s).
 \end{equation}
-The solid steps in Figure \ref{fig_peakHist} show the histograms for the
+The solid steps in Figure \ref{fig_peakHist} show the histograms of the
 normalized peaks with different penalization parameters. Also, we simulate
-$1000$ realizations of pure noise fields and perform the reconstructions on
-these noise fields to study the noise properties. The dashed steps in Figure
+$1000$ realizations of pure noise catalogs and perform the reconstructions on
+these noise catalogs to study the noise properties. The dashed steps in Figure
 \ref{fig_peakHist} show the histograms of normalized peaks detected from the
-pure noise fields. The solid lines in Figure \ref{fig_peakHist} show the
+pure noise catalogs. The solid lines in Figure \ref{fig_peakHist} show the
 best-fit Gaussian distributions to the noise peaks' histograms.
 
 Figure \ref{fig_peakHist} tells that the densities of peaks (including both
@@ -132,11 +132,11 @@ detection thresholds ($1.5\sigma$ and $3.0\sigma$) to detect galaxy clusters
 from the mass maps reconstructed with $\lambda=3.5,4.0,5.0$. The left and
 middle columns of Figure \ref{fig_detFalsRateNFW} show the detection rates for
 halos in the (mass, redshift) planes with detection thresholds set to
-$1.5\sigma$ and $3.0\sigma$ of the noise field, respectively. The right column
-of Figure \ref{fig_detFalsRateNFW} shows the corresponding numbers of false
-detections per square degree as functions of detection thresholds. The first,
-second, and third rows of Figure \ref{fig_detFalsRateNFW} correspond to the
-$lambda=3.5,4.0,5.0$, respectively.
+$1.5\sigma$ and $3.0\sigma$ of the noise peaks' distributions, respectively.
+The right column of Figure \ref{fig_detFalsRateNFW} shows the corresponding
+numbers of false detections per square degree as functions of detection
+thresholds. The first, second, and third rows of Figure
+\ref{fig_detFalsRateNFW} correspond to the $lambda=3.5,4.0,5.0$, respectively.
 
 Figure \ref{fig_detFalsRateNFW} tells that the false peak density is suppressed
 as the detection threshold increases. Also, the detection rate of halo
@@ -153,12 +153,13 @@ M_{\odot}/h$ for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd35.pdf}
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd40.pdf}
  \includegraphics[width=1.0\textwidth]{detfalse_threshold_NFW_lbd50.pdf}
- \caption{The detection rate and false peak density for different $\lambda$ and
-     detection thresholds. The first, second, and third rows correspond to the
-     results with $lambda=3.5,4.0,5.0$, respectively. The left and middle columns
-     are the halo detection rates for detection thresholds equal $1.5\sigma$ and
-     $3.0\sigma$, respectively. The right column is the density of false peaks as
-     a function of detection threshold.
+ \caption{The detection rates and false peak densities for different
+     penalization parameters and detection thresholds. The first, second, and
+     third rows correspond to the results with $\lambda=3.5,4.0,5.0$,
+     respectively. The left and middle columns are the halo detection rates for
+     detection thresholds equal $1.5\sigma$ and $3.0\sigma$, respectively. The
+     right column shows the density of false peaks as a function of detection
+     threshold.
     } \label{fig_detFalsRateNFW}
 \end{figure*}
 
