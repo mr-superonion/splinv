@@ -1,17 +1,25 @@
-\begin{figure*}
-\centering
-\subfigure[NFW: $\lambda=3.5$]{
-        \includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
-    }
-\subfigure[NFW: $\lambda=5.0$]{\includezraphics{
-        delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}
-    }
-\caption{The density maps reconstructed from the mock galaxy shape catalog with
-    the NFW dictionary. The penalization parameters are $\lambda=3.5$ (left)
-    and $\lambda=5.0$ (right).  The input halo mass is $M_{200}=10^{15.02}
-    ~h^{-1}M_{\odot}$, and its redshift is $z=0.164$.  The vertical direction
-    is the line of sight direction. The boxes' lower boundaries and upper
-    boundaries of correspond to $z=0.01$ and $z=0.85$, respectively.
+\begin{figure*}[!t]
+\begin{minipage}[c]{1.0\columnwidth}
+\includegraphics[width=0.95\textwidth]{pixel_histograms_halo17_NFW_lbd35.pdf}
+    \includezraphics{delta-1-7-pz-wn-NFW-falsepeakproblem.pdf}
+    \centering
+    \small NFW: $\lambda=3.5$
+\end{minipage}
+\begin{minipage}[c]{1.0\columnwidth}
+\includegraphics[width=0.95\textwidth]{pixel_histograms_halo17_NFW_lbd50.pdf}
+    \includezraphics{delta-1-7-pz-wn-NFW_3-falsepeakproblem.pdf}
+    \centering
+    \small
+    NFW: $\lambda=5.0$
+\end{minipage}
+\caption{The lower panels show the density maps reconstructed from the mock
+    galaxy shape catalog with the NFW dictionary. The upper panels show the
+    pixels' number histograms.  The penalization parameters are $\lambda=3.5$
+    (left) and $\lambda=5.0$ (right).  The input halo mass is
+    $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$, and its redshift is $z=0.164$.  The
+    vertical direction is the line of sight direction. The boxes' lower
+    boundaries and upper boundaries of correspond to $z=0.01$ and $z=0.85$,
+    respectively.
     } \label{fig_NFW3D}
 \end{figure*}
 
@@ -21,19 +29,19 @@ dictionary is constructed with three frames of different NFW scale radii in the
 comoving coordinate: $0.12~h^{-1}$ Mpc, $0.24~h^{-1}$ Mpc, and $0.36~h^{-1}$
 Mpc.  The truncation radii are set to four times the comoving scale radii for
 the atoms in the dictionary (concentration equals four) . We note that each
-frame of our dictionary fixes the scale radius in the comoving space;
+frame of our dictionary fixes the scale radius in the comoving coordinates;
 therefore, the NFW atoms have different angular radii in different lens
 redshift bins.
 
 We test the algorithm with different regularization parameters ($\lambda$) for
 the preliminary lasso estimation, which are $3.5$, $4.0$, and $5.0$. The
-corresponding regularization parameters for the final adaptive lasso estimations
-are set to $\lambda_{\rm{ada}}=\lambda^{\tau+1}$.  Here, we note that both the
-preliminary lasso estimation and the final adaptive lasso estimation select the
-pixels with the signal-to-noise ratios (SNRs) greater than $\lambda$ in each
-gradient descent iteration. While the final adaptive lasso estimation further
-enhances the growth of the pixels with preliminary estimations greater than
-$\lambda$.
+corresponding regularization parameters for the final adaptive lasso
+estimations are set to $\lambda_{\rm{ada}}=\lambda^{\tau+1}$.  Here, we note
+that both the preliminary lasso estimation and the final adaptive lasso
+estimation select the pixels with the signal-to-noise ratios (SNRs) greater
+than $\lambda$ in each gradient descent iteration and estimate the density in
+the selected pixels. While the final adaptive lasso estimation further enhances
+the growth of the pixels with preliminary estimations greater than $\lambda$.
 
 This paper does not go beyond the resolution limit defined by the Gaussian
 smoothing kernel with a standard deviation of $1.\arcmin 5$ and the $1\arcmin$
@@ -44,10 +52,12 @@ plane.
 
 Figure \ref{fig_NFW3D} shows the $3$-D density maps reconstructed with
 different penalization parameters for a halo with $M_{200}=10^{15.02}
-~h^{-1}M_{\odot}$ at redshift $0.164$.  As we can see from the reconstructed
-density maps, the adaptive lasso algorithm sets most of the reconstructed
-pixels to zero and only keeps the pixels with large amplitudes.  We identify
-the peaks on the reconstructed sparse density map.
+~h^{-1}M_{\odot}$ at redshift $0.164$. Also, the pixels' histograms are shown
+in Figure \ref{fig_NFW3D}. From these plots, we conclude that the adaptive
+lasso algorithm sets most of the reconstructed pixels to zero and only keeps
+the modes strongly related to the data. Moreover, the reconstructed density maps
+do not suffer from the line of sight smearing. After the reconstruction for
+each simulation, we identify the peaks on the sparse density map.
 
 \begin{figure*}
  \centering
