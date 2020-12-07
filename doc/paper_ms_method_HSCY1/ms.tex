@@ -36,7 +36,7 @@
     \begin{annotate}{
     \includegraphics[width=0.43\textwidth]{#1}}{0.45}
     \arrow { -6., -4}{ -6., 4}
-    \note {-6.,4.5}{$\mathbf{z}$}
+    \note {-6.,4.5}{$\mathbf{z_l}$}
     \end{annotate}
 }
 
@@ -69,19 +69,19 @@ are modeled as a summation of the NFW basis atoms, which have $2$-D multi-scale
 NFW surface density profiles on the transverse plane and $1$-D Dirac delta
 functions in the line of sight direction. With the prior assumption that the
 density fields have a sparse spatial distribution, the density fields are
-reconstructed using an oracle algorithm: adaptive lasso. Our method is tested
+reconstructed using an oracle algorithm: adaptive lasso. The method is tested
 with realistic simulations using the HSC-like shape estimation error and
 photo-$z$ uncertainty.  Our findings are summarized as follows: 1) The lasso
 solution suffers from a smear of structure in the line of sight direction even
-in the absence of shape noise. The adaptive lasso algorithm significantly
-removes the line of sight smear of structure.  2) The algorithm is able to
-detect halo with minimal mass limits of $10^{14.0} M_{\odot}/h$, $10^{14.7}
-M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low ($z<0.3$), median ($0.3\leq
-z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts, respectively, with a false
-detection of 0.022/deg$^2$.  3) The estimated redshift of the halos detected
-from the reconstructed mass maps are lower than the true redshift by about
-$0.03$ for halos at low redshifts ($z\leq 0.4$). The relative redshift bias is
-below $0.5\%$ for halos at $0.4<z\leq 0.85$.
+in the absence of shape noise. In contrast, the adaptive lasso algorithm
+efficiently removes the line of sight smear of structure.  2) The algorithm is
+able to detect halo with minimal mass limits of $10^{14.0} M_{\odot}/h$,
+$10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low ($z<0.3$), median
+($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts, respectively, with a
+false detection of 0.022/deg$^2$.  3) The estimated redshift of the halos
+detected from the reconstructed mass maps are lower than the true redshift by
+about $0.03$ for halos at low redshifts ($z\leq 0.4$). The relative redshift
+bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
 \end{abstract}
 
 \section{Introduction}
@@ -116,7 +116,7 @@ The expected shear measurements ($\gamma$) on distant galaxies are related to
 the foreground density contrast field ($\delta$) through a linear
 transformation: \begin{equation} \label{eq-intro-delta2shear} \gamma=\mathbf{T}
 \delta, \end{equation} where $\mathbf{T}$ is used to denote the linear
-transformation operator, which includes not only physical lensing effect but
+transformation operator, which includes not only the physical lensing effect but
 also systematic effects from observations (e.g., pixelization and smoothing of
 the shear field in the transverse plane, photo-$z$ uncertainty).
 
@@ -126,20 +126,20 @@ precision level (e.g., HSC \citep{HSC1-data}, KIDS \citep{KIDS13}, DES
 \citep{WFIRST15}).
 
 The primary goal of most weak-lensing surveys is to constrain the cosmology
-model through $2$-point correlations. The studies include galaxy$-$galaxy
+model through the $2$-point correlations. The studies include galaxy$-$galaxy
 lensing, which cross-correlating the shear field ($\gamma$) with the positions
 of foreground galaxies
 \citep{gglens-GAMA-Han2014,gglens-BossCFHTMore2015,gglens-DES1}, and cosmic
 shear which auto-correlates the shear measurements
 \citep{cosmicShearRealKids450,cosmicShear-DES1,cosmicShear_HSC1_Chiaki2019,cosmicShear_HSC1_Hamana2019}.
 Since the shear is directly related to the foreground matter distribution as
-shown in eq.  (\ref{eq-intro-delta2shear}), Galaxy$-$galaxy lensing probes into
+shown in eq. (\ref{eq-intro-delta2shear}), Galaxy$-$galaxy lensing probes into
 the correlation between the matter field and galaxy field. On the other hand,
 cosmic shear probes into the auto-correlation of matter field.
 
 The reconstruction of density map from shear measurements also receive
-considerable interest as it reaches the nonlinear scales.  $2$-D density map
-reconstruction which recover an integration of projected mass along the line of
+considerable interest as it reaches the nonlinear scales. The $2$-D density map
+reconstruction which recovers an integration of projected mass along the line of
 sight has been well studied within the community
 \citep{massMap-KS1993,WL-massMap-Glimpse2D-Lanusse2016,sparseBaysianMassMap-Price2020}
 and applied to large-scale surveys
@@ -153,11 +153,12 @@ modeled as a summation of basis atoms in a model dictionary:
  \delta= \mathbf{\Phi} x,
 \end{equation}
 where $\mathbf{\Phi}$ is the transformation operator from the projection
-coefficient field to the density contrast, and $x$ denotes the parameters.
-\citet{LSS-massMap-Wiener-Simon2009} reconstruct the density field in Fourier
-space, which is equivalent to model the mass field with sinusoidal functions.
-On the other hand, \citet{LSS-massMap-Glimpse3D-Leonard2014} models the mass
-field with Starlets \citep{Starlet-Starck2015}.
+coefficient field to the density contrast, and $x$ denotes the projection
+coefficients. \citet{LSS-massMap-Wiener-Simon2009} reconstruct the density
+field in Fourier space, which is equivalent to modeling the mass field with
+sinusoidal functions.  On the other hand,
+\citet{LSS-massMap-Glimpse3D-Leonard2014} model the mass field with Starlets
+\citep{Starlet-Starck2015}.
 
 The projection coefficients are estimated by optimizing a regularized loss
 function. The estimator is generally defined as
@@ -168,16 +169,16 @@ function. The estimator is generally defined as
 where $\norm{\Sigma^{-\frac{1}{2}}(\gamma - \mathbf{T\Phi} x)}_2^2$ is the
 $l^2$ chi-square term\footnote{weighted by the inverse of the diagonal
 covariance matrix of the error on the shear measurements ($\Sigma$).} measuring
-the residuals between the prediction and the data, while $C(x)$ is the
-regularization term measuring the deviation of the estimation of the parameter
-($x$) from the prior assumptions. The $l^p$ norm is defined as
+the difference between the prediction and the data, while $C(x)$ is the
+regularization term measuring the deviation of the coefficient estimation
+($x$) from the prior assumption. The $l^p$ norm is defined as
 \begin{equation}
 \norm{x}_p=(\sum_{i} |x|^p_i)^{\frac{1}{p}}.
 \end{equation}
-Such estimation prefers the parameters that are able to describe the
-observations and align with the prior assumptions.  The regularization
-parameter $\lambda$ adjusts the relative weight between the observations and
-prior assumptions in the optimization process.
+Such penalized estimation prefers the parameters that are able to describe the
+observations and align with the prior assumption. The regularization
+parameter $\lambda$ adjusts the relative weight between the data and
+prior assumption in the optimization process.
 
 \citet{LSS-massMap-Wiener-Simon2009} propose to use the Wiener filter, which is
 also known as $l^2$ ridge regulation ($C=\norm{x}^2_2$), to find a regularized
@@ -187,17 +188,19 @@ Suprime-Cam Survey \citep{HSC1-data}.  However, the density maps reconstructed
 by this method suffer from smearing along the line of sight direction with a
 standard deviation of $\sigma_z=0.2 \sim 0.3$.
 
-\citet{LSS-massMap-Glimpse3D-Leonard2014} propose to use a derivative version
-of $l^1$ lasso regulation ($C=\norm{x}^1_1$) to find a sparse solution in the
-Starlets dictionary space \citep{Starlet-Starck2015}.
+\citet{LSS-massMap-Glimpse3D-Leonard2014} propose the Glimpse algorithm, which
+uses a derivative version of $l^1$ lasso regulation ($C=\norm{x}^1_1$) to find
+a sparse solution in the Starlet dictionary space \citep{Starlet-Starck2015}.
 \citet{LSS-massMap-Glimpse3D-Leonard2014} apply a greedy coordinate descent
 algorithm, which selects the steepest coordinate in each iteration, to find the
 minimum of a non-convex loss function penalized with the firm thresholding
-function. \citet{LSS-massMap-Glimpse3D-Leonard2014} significantly reduce the
-smearing along the line of sight. However, the stability of the non-convex
+function. The Glimpse algorithm reduces the smearing along the line of sight
+since the coordinate descent algorithm forces the structure to grow only on the
+most related lens redshift plane.  However, the stability of the non-convex
 optimization and greedy coordinate descent algorithm has not been fully
-justified. Moreover, the Starlets functions are not designed to model the
-profile of clumpy mass in the universe.
+justified. Moreover, the Starlet dictionary are not designed to model the
+profile of clumpy mass in the universe, and the Starlet dictionary does not
+account for the angular scale difference at different lens redshifts.
 
 $N$-body simulations have shown that the dark matter is distributed in halos
 connected by filaments, and the density profile of a single halo follows the
@@ -212,14 +215,14 @@ we assume that the halos are sparsely distributed in the universe.  With the
 sparsity prior, the adaptive lasso regularization \citep{AdaLASSO-Zou2006} is
 used to reconstruct the density field.  We find that, in contrast to the lasso
 estimator that smears the structure along the line of sight, the adaptive lasso
-can significantly reduce the smearing effect.
+can efficiently reduce the smearing effect.
 
 Compared with \citet{LSS-massMap-Glimpse3D-Leonard2014}, our dictionary is
 built up to describe the clumpy mass in the universe with a clear physical
 motivation. Furthermore, the adaptive lasso algorithm is strictly convex and
 can be directly optimized with the FISTA algorithm \citep{FISTA-Beck2009}
 without relying on any greedy coordinate descent approaches. The stability of
-this convex optimization has been well studied.
+this convex optimization has been justified.
 
 This paper is organized as follows.
 In Section \ref{sec_Method}, we propose the new method for $3$-D density map
@@ -399,7 +402,7 @@ and compress the dictionary transform operator to a row vector:
 \int d^3r\phi_0(\vec{r}) ~\int d^3r \phi_1(\vec{r})~ ...~\int d^3r \phi_{N}(\vec{r})
 \end{pmatrix}.
 \end{equation}
-We substitute eq. (\ref{eq-x2delta}) into eq.(\ref{eq-delta2gammat}) and get
+We substitute eq. (\ref{eq-x2delta}) into eq. (\ref{eq-delta2gammat}) and get
 \begin{equation}\label{eq-x2gammat}
 \gamma_L=\mathbf{Q}\mathbf{\Phi} x.
 \end{equation}
@@ -461,7 +464,7 @@ With the definition of photo-$z$ smearing operator:
 \end{equation}
 the photo-$z$ uncertainty changes the shear as
 \begin{equation}
-\gamma_L \rightarrow \mathbf{Q} \gamma_L,
+\gamma_L \rightarrow \mathbf{P} \gamma_L,
 \end{equation}
 where we use $\rightarrow$ to denote the changes of shear by the systematic
 operator.
@@ -827,7 +830,7 @@ which is the final solution.
 This Section simulates weak-lensing shear fields induced by a group of NFW
 halos with various halo masses and redshifts. The shear fields are used to
 distort the HSC mock shape catalogs with different realizations of the HSC-like
-shape measurement errors and photo-$z$ uncertainties (Section \ref{subsec_Sims}).
+shape measurement error and photo-$z$ uncertainty (Section \ref{subsec_Sims}).
 
 Then, we test our algorithm using the simulations with different setups of the
 regularization parameter. We also compare the results of our algorithm, which
@@ -857,14 +860,14 @@ method models $3$-D density contrast maps as summations of NFW atoms with
 different comoving radii.  With the prior assumption that the clumpy masses
 sparsely distribute in the $3$-D space, the density map is reconstructed
 using the adaptive lasso algorithm \citep{AdaLASSO-Zou2006}. The method is
-tested with realistic simulations using HSC-like shape estimation errors and
-photo-$z$ uncertainties.
+tested with realistic simulations using HSC-like shape estimation error and
+photo-$z$ uncertainty.
 
 The findings of this paper are summarized as follows:
 
 (i) The lasso algorithm's solution suffers from a smear of structure in the
 line of sight direction even in the absence of shape noise, and the adaptive
-lasso algorithm significantly removes the line of sight smear of structure.
+lasso algorithm efficiently removes the line of sight smear of structure.
 
 (ii) The algorithm is able to detect halo with minimal mass limits of
 $10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for
