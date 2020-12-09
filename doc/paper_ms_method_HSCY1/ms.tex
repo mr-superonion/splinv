@@ -63,25 +63,26 @@ Reducing the line of sight smearing}
 % \email{xiangchong.li@ipmu.jp}
 
 \begin{abstract}
-A new method is developed to reconstruct $3$-D density contrast maps from
-photometric weak-lensing shear measurements. The $3$-D density contrast maps
-are modeled as a summation of the NFW basis atoms, which have $2$-D multi-scale
-NFW surface density profiles on the transverse plane and $1$-D Dirac delta
-functions in the line of sight direction. With the prior assumption that the
-density fields have a sparse spatial distribution, the density fields are
-reconstructed using an oracle algorithm: adaptive lasso. The method is tested
-with realistic simulations using the HSC-like shape estimation error and
-photo-$z$ uncertainty.  Our findings are summarized as follows: 1) The lasso
-solution suffers from a smear of structure in the line of sight direction even
-in the absence of shape noise. In contrast, the adaptive lasso algorithm
-efficiently removes the line of sight smear of structure.  2) The algorithm is
-able to detect halo with minimal mass limits of $10^{14.0} M_{\odot}/h$,
-$10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low ($z<0.3$), median
-($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts, respectively, with a
-false detection of 0.022/deg$^2$.  3) The estimated redshift of the halos
-detected from the reconstructed mass maps are lower than the true redshift by
-about $0.03$ for halos at low redshifts ($z\leq 0.4$). The relative redshift
-bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$.
+A new method is developed to reconstruct three-dimensional density contrast
+maps from photometric weak-lensing shear measurements. The three-dimensional
+density contrast maps are modeled as a summation of the NFW basis atoms, which
+have two-dimensional multi-scale NFW surface density profiles on the transverse
+plane and one-dimensional Dirac delta functions in the line of sight direction.
+With the prior assumption that the density fields have a sparse spatial
+distribution, the density fields are reconstructed using an oracle algorithm:
+adaptive lasso. The method is tested with realistic simulations using the
+HSC-like shape estimation error and photometric redshift uncertainty.  Our
+findings are summarized as follows: 1) The lasso solution suffers from a smear
+of structure in the line of sight direction even in the absence of shape noise.
+In contrast, the adaptive lasso algorithm efficiently removes the line of sight
+smear of structure.  2) The algorithm is able to detect halo with minimal mass
+limits of $10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0}
+M_{\odot}/h$ for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high
+($0.6\leq z< 0.85$) redshifts, respectively, with a false detection of
+0.022/deg$^2$.  3) The estimated redshift of the halos detected from the
+reconstructed mass maps are lower than the true redshift by about $0.03$ for
+halos at low redshifts ($z\leq 0.4$). The relative redshift bias is below
+$0.5\%$ for halos at $0.4<z\leq 0.85$.
 \end{abstract}
 
 \section{Introduction}
@@ -116,9 +117,10 @@ The expected shear measurements ($\gamma$) on distant galaxies are related to
 the foreground density contrast field ($\delta$) through a linear
 transformation: \begin{equation} \label{eq-intro-delta2shear} \gamma=\mathbf{T}
 \delta, \end{equation} where $\mathbf{T}$ is used to denote the linear
-transformation operator, which includes not only the physical lensing effect but
-also systematic effects from observations (e.g., pixelization and smoothing of
-the shear field in the transverse plane, photo-$z$ uncertainty).
+transformation operator, which includes not only the physical lensing effect
+but also systematic effects from observations (e.g., pixelization and smoothing
+of the shear field in the transverse plane, photometric redshift
+uncertainty).
 
 Several large-scale surveys target to study the weak-lensing effect at a high
 precision level (e.g., HSC \citep{HSC1-data}, KIDS \citep{KIDS13}, DES
@@ -138,13 +140,14 @@ the correlation between the matter field and galaxy field. On the other hand,
 cosmic shear probes into the auto-correlation of matter field.
 
 The reconstruction of density map from shear measurements also receive
-considerable interest as it reaches the nonlinear scales. The $2$-D density map
-reconstruction which recovers an integration of projected mass along the line of
-sight has been well studied within the community
+considerable interest as it reaches the nonlinear scales. The two-dimensional
+($2$-D) density map reconstruction which recovers an integration of projected
+mass along the line of sight has been well studied within the community
 \citep{massMap-KS1993,WL-massMap-Glimpse2D-Lanusse2016,sparseBaysianMassMap-Price2020}
 and applied to large-scale surveys
 \citep{HSC1-massMaps,massMapDES-Chang2018,DES-SV-massMap-sparsity}. However,
-the reconstruction of $3$-D mass map is still a challenging task.
+the reconstruction of three-dimensional ($3$-D) mass map is still a challenging
+task.
 
 To fully reconstruct the $3$-D mass density distribution ($\delta$) from the
 photometric shear observations ($\gamma$), the density contrast field is
@@ -250,10 +253,11 @@ Then, we introduce the dictionary used to model the foreground density maps in
 Section \ref{subsec_method_dictionary}.
 
 Subsequently, in Section \ref{subsec_method_Systematics}, we discuss several
-systematic effects from observations which include photo-$z$ uncertainty
-(Section \ref{subsec_method_photoz}), smoothing (Section
-\ref{subsec_method_smoothing}), masking(Section \ref{subsec_method_msknoise}),
-and pixelization (Section \ref{subsec_method_pixel}).
+systematic effects from observations which include photometric redshift
+(photo-$z$) uncertainty (Section \ref{subsec_method_photoz}), smoothing
+(Section \ref{subsec_method_smoothing}), masking(Section
+\ref{subsec_method_msknoise}), and pixelization (Section
+\ref{subsec_method_pixel}).
 
 Finally, we solve the mass reconstruction problem in Section
 \ref{subsec_method_reconstruction} using the adaptive lasso algorithm
@@ -327,7 +331,7 @@ that it is not the final shear measurement since the final shear
 measurement is influenced by systematic errors from observations. The
 systematic errors will be discussed in Section \ref{subsec_method_Systematics}.
 
-Combining equation (\ref{eq-delta2kappa}) with equation (\ref{eq-kappa2gamma}),
+Combining eq. (\ref{eq-delta2kappa}) with eq. (\ref{eq-kappa2gamma}),
 the expectation of lensing shear signal is
 \begin{equation}\label{eq-delta2gammat}
 \gamma_L(\vec{\theta},z_s) = \int_0^{z_s} dz_l K(z_l,z_s) \int d^2 \theta' \vec{D}(\vec{\theta}-\vec{\theta'}) \delta(\vec{\theta'},z_l).
@@ -360,10 +364,10 @@ We propose to use the multi-scale NFW atoms, denoted as
 $\{\phi_1,...,\phi_N\}$, as the basis atoms of our dictionary.  On the
 transverse plane, the NFW atoms follow surface density profiles of the NFW
 halos \citep{haloModel-TJ2003-3pt} with comoving scale radii $r_s$ and
-truncation radius $c r_s$, where $c$ is the concentration of the NFW
-halos.  As the scales of halos are much smaller than the reachable redshift
-resolution, we neglect the depth of halo on the line of sight direction and set
-the NFW atoms' profiles in the line of sight direction to $1$-D Dirac delta
+truncation radius $c r_s$, where $c$ is the concentration of the NFW halos.  As
+the scales of halos are much smaller than the reachable redshift resolution, we
+neglect the depth of halo on the line of sight direction and set the NFW atoms'
+profiles in the line of sight direction to one-dimensional ($1$-D) Dirac delta
 functions as suggested by \citep{LSS-massMap-Glimpse3D-Leonard2014}. The
 multi-scale NFW atoms are defined as
 \begin{equation}
@@ -455,9 +459,9 @@ carefully studied and incorporated into the forward modeling in this subsection.
     lasso (right) algorithms. The vertical direction is the line of sight
     direction, and the lower boundaries and upper boundaries of the boxes are
     $z=0.01$ and $z=0.85$, respectively. Noises on galaxy shape measurements
-    are neglected in the simulation.  The input halo mass is $M_{200}=10^{15}
-    ~h^{-1}M_{\odot}$, and its redshift is $z=0.35$. The lasso reconstruction
-    smears the density field along the line of sight direction.
+    are neglected in the simulation.  The input halo's virial mass is
+    $M_{200}=10^{15} ~h^{-1}M_{\odot}$, and its redshift is $z=0.35$. The lasso
+    reconstruction smears the density field along the line of sight direction.
     } \label{fig_lassoVsadaLasso}
 \end{figure*}
 
@@ -706,7 +710,7 @@ of sight direction even in the absence of noise on shear measurements and
 photo-$z$ uncertainty .
 
 Figure \ref{fig_lassoVsadaLasso} shows the reconstructions of a single halo's
-mass map with halo mass equals $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift
+mass map with virial mass equals $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift
 $0.35$. The shear measurement error and photo-$z$ uncertainty are not included
 in the simulation.  The left panel of Figure \ref{fig_lassoVsadaLasso} is the
 reconstruction with the lasso algorithm, which shows a significant smear along
