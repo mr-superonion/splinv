@@ -37,7 +37,7 @@ from lsst.pipe.base import TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
-class haloSimStampBatchConfig(pexConfig.Config):
+class pixShearSimBatchConfig(pexConfig.Config):
     obsDir  =   pexConfig.Field(dtype=str, default='HSC-obs/20200328/',
                 doc = 'obs directory name')
     haloName=   pexConfig.Field(dtype=str,
@@ -66,7 +66,7 @@ class haloSimStampBatchConfig(pexConfig.Config):
         assert os.path.isfile(self.configName),\
             'Cannot find configure file: %s' %self.configName
 
-class haloSimStampRunner(TaskRunner):
+class pixShearSimRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
@@ -78,10 +78,10 @@ def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
 
-class haloSimStampBatchTask(BatchPoolTask):
-    ConfigClass = haloSimStampBatchConfig
-    RunnerClass = haloSimStampRunner
-    _DefaultName = "haloSimStampBatch"
+class pixShearSimBatchTask(BatchPoolTask):
+    ConfigClass = pixShearSimBatchConfig
+    RunnerClass = pixShearSimRunner
+    _DefaultName = "pixShearSimBatch"
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
@@ -95,7 +95,7 @@ class haloSimStampBatchTask(BatchPoolTask):
         @param id    group id
         """
         #Prepare the pool
-        pool=   Pool("haloSimStamp")
+        pool=   Pool("pixShearSim")
         pool.cacheClear()
         pool.storeSet(obsDir=self.config.obsDir)
         pool.storeSet(haloName=self.config.haloName)
