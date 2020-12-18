@@ -10,9 +10,11 @@ KG_PER_SUN=1.98892e30       # kg/M_solar
 M_PER_PARSEC=3.08568025e16  # m/pc
 
 def four_pi_G_over_c_squared():
-    # = 1.5*H0^2/roh_0/c^2
-    # We want it return 4piG/c^2 in unit of Mpc/M_solar
-    # in unit of m/kg
+    """
+    = 1.5*H0^2/roh_0/c^2
+    We want it return 4piG/c^2 in unit of Mpc/M_solar
+    in unit of m/kg
+    """
     fourpiGoverc2 = 4.0*np.pi*GNEWTON/(C_LIGHT**2)
     # in unit of pc/M_solar
     fourpiGoverc2 *= KG_PER_SUN/M_PER_PARSEC
@@ -23,7 +25,14 @@ def four_pi_G_over_c_squared():
 class cartesianGrid3D():
     # pixel3D.cartesianGrid3D
     def __init__(self,parser):
+        """
+        Parameters:
+        -------------
+        parser: parser
+        """
         # Transverse celestial plane
+        # the unit in the configuration
+        # the input data is in unit of degree
         unit=parser.get('transPlane','unit')
         if unit=='degree':
             ratio=1.
@@ -105,11 +114,18 @@ class cartesianGrid3D():
 
     def pixelize_data(self,x,y,z,v,ws=None):
         """pixelize catalog into the cartesian grid
-        @param x      ra of sources.
-        @param y      dec of sources.
-        @param z      redshifts of sources.
-        @param v      measurements.
-        @param ws     weights.
+        Parameters:
+        -------------
+        x:  array
+            ra of sources.
+        y:  array
+            dec of sources.
+        z:  array
+            redshifts of sources.
+        v:  array
+            measurements.
+        ws: array [defalut: None]
+            weights.
         """
         if ws is None:
             ws=np.ones(len(x))/0.25**2.

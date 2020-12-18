@@ -8,7 +8,8 @@ __pycache__
 *.dvi
 *.aux
 *.synctex.gz
-*.ipynb_checkpoints*
+*-checkpoint.ipynb
+*checkpoints
 *.tex.bak
 work*
 wrkDir*
