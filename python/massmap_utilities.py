@@ -22,3 +22,4 @@ field_names = {'XMM'    : 'W02',
               'VVDS'    : 'W05',
               'HECTOMAP': 'W06'}
 
+

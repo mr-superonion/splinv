@@ -152,6 +152,20 @@ class cartesianGrid3D():
     def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
         """Mapping from an average delta in a lens redshfit bin
         to an average kappa in a source redshift
+
+        Parameters:
+        -------------
+        poz_grids:  array
+            poz's bin; if None, do not include any photoz uncertainty
+
+        poz_best:   array,len(galaxy)
+            galaxy's best photoz measurements, used for galaxy binning
+
+        poz_data:   array,(len(galaxy),len(poz_grids))
+            galaxy's POZ measurements, used for deriving lensing kernel
+
+        poz_ave:    array
+            average POZ in source bins
         """
         assert (poz_data is not None)==(poz_best is not None), \
             'Please provide both photo-z bins and photo-z data'
@@ -160,7 +174,7 @@ class cartesianGrid3D():
         if self.nzl<=1:
             return np.ones((self.nz,self.nzl))
         lensKernel =   np.zeros((self.nz,self.nzl))
-        if poz_grids is None and poz_ave is None:
+        if poz_grids is None:
             # Do not use poz
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
@@ -187,8 +201,9 @@ class cartesianGrid3D():
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 lensK[:,i]=kl*rhoM_ave*DaBin
 
-            # Prepare the poz average
             if poz_ave is None:
+                # Prepare the poz average
+                # if it is not an input
                 assert len(poz_data)==len(poz_best)
                 assert len(poz_data[0])==len(poz_grids)
 
@@ -198,7 +213,6 @@ class cartesianGrid3D():
                     tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
                     poz_ave[iz,:]=np.average(poz_data[tmp_msk],axis=0)
             self.poz_ave=poz_ave
-
             lensKernel=poz_ave.dot(lensK)
             self.lensKernel=lensKernel
         return lensKernel
