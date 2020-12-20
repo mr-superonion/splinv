@@ -48,7 +48,7 @@ class massmap_ks2D():
 class nfwShearlet2D():
     """
     A Class for 2D nfwlet transform
-    Consding the typical scale of the redshift plane
+    with different angular scale in different redshift plane
     --------
 
     Construction Keywords

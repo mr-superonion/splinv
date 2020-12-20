@@ -112,7 +112,7 @@ class cartesianGrid3D():
         self.pozPdfAve=None
         return
 
-    def pixelize_data(self,x,y,z,v,ws=None):
+    def pixelize_data(self,x,y,z,v,ws=None,method='FFT'):
         """pixelize catalog into the cartesian grid
         Parameters:
         -------------
@@ -126,9 +126,33 @@ class cartesianGrid3D():
             measurements.
         ws: array [defalut: None]
             weights.
+        method: string [default: FFT]
+            method used to convolve with smoothing kernel
         """
+
         if ws is None:
             ws=np.ones(len(x))/0.25**2.
+        if self.sigma>0. and method=='sample':
+            return self._pixelize_data_sample(x,y,z,v,ws)
+        else:
+            return self._pixelize_data_FFT(x,y,z,v,ws)
+
+    def _pixelize_data_FFT(self,x,y,z,v,ws=None):
+        dataOut=numpy.histogramdd((x,y,z),bins=(self.xbound,self.ybound,self.zbound), weights=v*ws)[0]
+        weightOut=numpy.histogramdd((x,y,z),bins=(self.xbound,self.ybound,self.zbound), weights=ws)[0]
+        dataOut=dataOut/weightOut
+        assert dataOut.shape==self.shape
+        varOut=np.zeros(self.shape,dtype=float)
+        # truncate the smoothing kernel
+        # to 3 times of sigma
+        if self.sigma>0:
+            rsig=int(self.sigma/self.delta*3+1)
+        else:
+            pass
+
+        return
+
+    def _pixelize_data_sample(self,x,y,z,v,ws=None):
         xbin=np.int_((x-self.xbound[0])/self.delta)
         ybin=np.int_((y-self.ybound[0])/self.delta)
         if z is None:
@@ -140,6 +164,7 @@ class cartesianGrid3D():
         if self.sigma>0:
             rsig=int(self.sigma/self.delta*3+1)
         else:
+            raise ValueError("smoothing scale should be larger than zero")
             return
         for iz in range(self.shape[0]):
             if z is not None:

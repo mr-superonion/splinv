@@ -581,29 +581,39 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
     else:
         return np.real(np.fft.ifft2(atomFou))
 
-def GausAtom(sigma,ngrid,fou=True):
-    """ Normalized Gaussian in a postage stamp
-    @param ngrid      number of pixel in x and y directions.
-    @param sigma      scale factortor of the Gaussian function
+def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2):
     """
-    if sigma>0.1:
-        x,y =   np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
+    Normalized Gaussian in a postage stamp
+    normalized by l2 norm
+    Parameters:
+    --------------
+    ny:     int
+    number of pixel y directions.
+    nx:     int [default=None]
+    number of pixel x directions.
+    sigma:  float
+    scale factortor of the Gaussian function
+    """
+    if nx is None:
+        nx=ny
+    if sigma>0.:
+        x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         if fou:
             x  *=   (2*np.pi);y*=(2*np.pi)
             rT  =   np.sqrt(x**2+y**2)
             fun =   np.exp(-(rT*sigma)**2./2.)
-            norm=   np.sqrt(np.sum(fun**2.))/ngrid
+            norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
         else:
-            x  *=   (ngrid);y*=(ngrid)
+            x  *=   (nx);y*=(ny)
             rT  =   np.sqrt(x**2+y**2)
             fun =   1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
-            norm=   np.sqrt(np.sum(fun**2.))
+            norm=   (np.sum(fun**lnorm))**(1./lnorm)
         return  fun/norm
     else:
         if fou:
-            return np.ones((ngrid,ngrid))
+            return np.ones((ny,nx))
         else:
-            out =   np.zeros((ngrid,ngrid))
+            out =   np.zeros((ny,nx))
             out[0,0]=1
             return out
 
