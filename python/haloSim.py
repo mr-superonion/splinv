@@ -546,20 +546,28 @@ class nfw_lensTJ03():
 """
 The following functions are used for halolet construction
 """
-def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
+def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
     """Make haloTJ03 atom from Fourier space as CS02.
     https://arxiv.org/pdf/astro-ph/0206508.pdf
     Eq.(81) Eq.(82)
-    @param r_s        scale radius [unit of pixel].
-    @param ngrid      number of pixel in x and y directions.
-    @param c          truncation ratio (concentration)
-    @param fou        in Fourier space
+    Parameters:
+    -----------
+    r_s     [float]
+            scale radius (in unit of pixel).
+    ny,nx   [int]
+            number of pixel in y and x directions.
+    c       [float]
+            truncation ratio (concentration)
+    fou     [bool]
+            in Fourier space
     """
-    x,y=np.meshgrid(np.fft.fftfreq(ngrid),np.fft.fftfreq(ngrid))
+    if nx is None:
+        nx=ny
+    x,y=np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
     x*=(2*np.pi);y*=(2*np.pi)
     rT=np.sqrt(x**2+y**2)
     if r_s<=0.1:
-        atomFou=np.ones((ngrid,ngrid))
+        atomFou=np.ones((ny,nx))
     else:
         A= 1./(np.log(1+c)-c/(1.+c))
         r=rT*r_s
@@ -573,7 +581,7 @@ def haloCS02SigmaAtom(r_s,ngrid,c=9.,smooth_scale=-1,fou=True):
         atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
     if smooth_scale>.1:
         atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
-    norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)))/ngrid
+    norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)/nx/ny))
     # Normalize
     atomFou=atomFou/norm
     if fou:
