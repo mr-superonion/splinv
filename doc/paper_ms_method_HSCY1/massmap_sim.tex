@@ -19,10 +19,11 @@ We sample halos in a two-dimensional redshift-mass plane. The redshift-mass
 plane is evenly divided into eight redshift bins and eight mass bins. We
 randomly shift the input halo redshifts and halo masses from the bins' centers
 by a small amount. The concentration of the NFW halo is set as a function of
-the halo's mass ($M_{200}$) and redshift ($z_{h}$) according to
+the halo's virial mass ($M_{200}$) and redshift ($z_{h}$) according to
 \citet{c-M_Magneticum-Ragagnin2019}
 \begin{equation}
-c_{h}=6.02\times(\frac{M_{200}}{10^{13} M_{\odot}})^{-0.12}(\frac{1.47}{1.+z_h})^{0.16}.
+c_{h}=6.02\times\left(\frac{M_{200}}{10^{13} M_{\odot}}\right)^{-0.12}
+\left(\frac{1.47}{1.+z_h}\right)^{0.16}.
 \end{equation}
 The weak-lensing shear fields of these NFW halos are simulated according to
 \citet{haloModel-TJ2003-3pt}. The shear distortions are applied to one hundred

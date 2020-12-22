@@ -9,15 +9,10 @@ propose to incorporate external group information into different adaptive lasso
 penalization weights by setting the penalization weights for projection
 coefficients in the same group to the average of the adaptive weights in this
 group, we smooth the preliminary lasso estimation in each lens redshift bin
-with a top-hat filter of comoving scale $0.25~h^{-1}$ Mpc. The smoothed
+with a top-hat filter of comoving diameter: $0.25~h^{-1}$ Mpc. The smoothed
 preliminary lasso estimation is denoted as $\hat{x}^{\rm{ls}}_{\rm{sm}}$, and
 the penalization weights are set to
 $\hat{w}=1/\abs{\hat{x}^{\rm{ls}}_{\rm{sm}}}^\tau$.
-The regularization parameter for the adaptive lasso is set to
-$\lambda_{\rm{ada}}=\lambda$.
-As we have done on the NFW dictionary's reconstruction, we smooth the
-reconstructed density maps with the Gaussian kernel (scale radius equals
-$1.\arcmin 5$) in each lens redshift plane.
 
 As demonstrated in Figure \ref{fig_PM3D}, the mass reconstructions with the
 point mass dictionary tend to assign masses to several different redshift bins
@@ -30,12 +25,16 @@ redshift.
 
 \begin{figure*}
 \centering
-\subfigure[Point Mass: $\lambda=3.5$]{
-        \includezraphics{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}
-        }
-\subfigure[Point Mass: $\lambda=5.0$]{
-        \includezraphics{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}
-        }
+\begin{minipage}[c]{1.0\columnwidth}
+    \includezraphics{delta-1-7-pz-wn-PM-falsepeakproblem.pdf}
+    \centering
+    \small Point Mass: $\lambda=3.5$
+\end{minipage}
+\begin{minipage}[c]{1.0\columnwidth}
+    \includezraphics{delta-1-7-pz-wn-PM_3-falsepeakproblem.pdf}
+    \centering
+    \small Point Mass: $\lambda=5.0$
+\end{minipage}
 \caption{The density maps reconstructed from the mock galaxy shape catalog with
     the point mass dictionary. The penalization parameters are $\lambda=3.5$
     (left) and $\lambda=5.0$ (right).  The input halo mass is

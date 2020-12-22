@@ -1,0 +1,17 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Methodology}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Lensing}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Dictionary}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Systematics}{section.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Photo-z Uncertainty}{subsection.2.3}% 6
+\BOOKMARK [3][-]{subsubsection.2.3.2}{Smoothing}{subsection.2.3}% 7
+\BOOKMARK [3][-]{subsubsection.2.3.3}{Masking}{subsection.2.3}% 8
+\BOOKMARK [3][-]{subsubsection.2.3.4}{Pixelization}{subsection.2.3}% 9
+\BOOKMARK [2][-]{subsection.2.4}{Density map reconstruction}{section.2}% 10
+\BOOKMARK [3][-]{subsubsection.2.4.1}{Adaptive lasso}{subsection.2.4}% 11
+\BOOKMARK [3][-]{subsubsection.2.4.2}{FISTA}{subsection.2.4}% 12
+\BOOKMARK [1][-]{section.3}{Tests}{}% 13
+\BOOKMARK [2][-]{subsection.3.1}{Simulations}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.2}{NFW atoms}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.3}{Point mass atoms}{section.3}% 16
+\BOOKMARK [1][-]{section.4}{Summary}{}% 17
