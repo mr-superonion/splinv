@@ -1,0 +1,79 @@
+\documentclass[9pt]{beamer}
+% Created By Gouthaman KG
+
+% Use roboto Font (recommended)
+\usepackage{physics,commath}
+\usepackage{amsmath,amsthm,amsfonts,amssymb,bm}
+\usepackage{graphicx,subfigure}
+
+\usepackage[sfdefault]{roboto}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+
+% Define where theme files are located. ('/styles')
+\usepackage{styles/fluxmacros}
+\usefolder{styles}
+% Use Flux theme v0.1 beta
+% Available style: asphalt, blue, red, green, gray
+\usetheme[style=asphalt]{flux}
+
+
+% Extra packages for the demo:
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{ragged2e}
+\usepackage{schemabloc}
+\usepackage{hyperref}
+\usebackgroundtemplate{
+\includegraphics[width=\paperwidth,height=\paperheight]{assets/background.jpg}}
+%change this to your preferred background for the presentation.
+
+% Informations
+\title{3-D mass map reconstruction}
+\subtitle{Method and Plane in S19A}
+
+\author{Xiangchong Li\\
+Colaborators:\\
+Naoki Yoshida, Masamune Oguri\\
+Shiro Ikeda, Wentao Luo
+}
+%\institute{The University of Tokyo}
+\titlegraphic{assets/gkg.png}
+%change this to your preferred logo or image(the image is located
+%on the top right corner).
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\begin{document}
+
+% Generate title page
+\titlepage
+
+
+\section{3-D Mass Map Construction}
+\input{massmap.tex}
+
+
+\begin{frame}{Preliminary run on $1$ deg$^2$ region of XMM}
+\begin{itemize}
+    \item S19A data
+    \item corrected for additive bias
+    \item set multiplicative bias to zero
+\end{itemize}
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{snapshot.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Plans}
+\begin{itemize}
+    \item Use Planck CMB mass map to improve performance on high-z?
+    \item Cluster detection on S19A?
+    \item X-ray clusters?
+    \item Welcome to join the project!
+\end{itemize}
+\end{frame}
+
+\end{document}
+
