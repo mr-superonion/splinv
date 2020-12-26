@@ -23,3 +23,10 @@ field_names = {'XMM'    : 'W02',
               'HECTOMAP': 'W06'}
 
 
+def rotCatalog(e1, e2, phi=None):
+    cs      =   np.cos(phi)
+    ss      =   np.sin(phi)
+    e1_rot  =   e1 * cs + e2 * ss
+    e2_rot  =   (-1.0) * e1 * ss + e2 * cs
+    return e1_rot, e2_rot
+

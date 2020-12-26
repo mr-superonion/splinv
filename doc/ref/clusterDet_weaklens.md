@@ -8,7 +8,23 @@ fraction to total cluster mass measurements
 **Truly Dark Clusters:**
 
 Dark viralized mass concentrations. We are not interested
-non-viralized dark matter projections.
+non-viralized dark matter or projections.
+
+If confirmed: Challenge galaxy formation paradigm, feedback supressing the
+galaxy formation process?
+
+
+**Selection Functions:**
+
+observables:
+- richness
+- velocity dispersion
+- flux
+- Temperature
+- SZ decrement
+
+Mass
+
 
 + [Schneider (1996)](https://ui.adsabs.harvard.edu/abs/1996MNRAS.283..837S/abstract)
 + [Bhuvnesh (2000)](https://ui.adsabs.harvard.edu/abs/2000ApJ...530L...1J/abstract)
@@ -18,10 +34,19 @@ non-viralized dark matter projections.
 + [Hennawi (2005)](https://ui.adsabs.harvard.edu/abs/2005ApJ...624...59H/abstract)
 
 Study the accuracy and precision of clusters' redshifts measured from
-photometric redshift surveys.
+photometric redshift surveys using particle-mesh (PM) $N$-body simulations.
 
-Tomography Matched Filtering (TMF) is intoduced to optimally weight the source
-galaxies. TMF enhances the detection by $76\%$ for $S/N \gt 4.5$.
+Tomography Matched Filtering (TMF) is introduced to optimally weight the source
+galaxies. TMF enhances the detection by $76\%$ for $S/N \gt 4.5$.  TMF combines
+tomographic and matched filtering (similar to matched filtering algorithms
+used to find clusters in optical surveys)
+
+Lasso is a extension of matched filter technique. The first iteration of lasso
+is the matched filter detection.
+
+In Hennawi (2005), the filter profile in the transverse plane is
+$$\gamma(\vec{\theta};\vec{\theta}_0)=-\mathcal{R}[K(\frac{\vec{|\theta}-\vec{\theta}_0|}{\theta_s})
+e^{-2i\phi}]$$,
 
 ## Bias and Scatter
 

@@ -547,9 +547,10 @@ class nfw_lensTJ03():
 The following functions are used for halolet construction
 """
 def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
-    """Make haloTJ03 atom from Fourier space as CS02.
-    https://arxiv.org/pdf/astro-ph/0206508.pdf
-    Eq.(81) Eq.(82)
+    """
+    Make haloTJ03 atom (l2 normalized) from Fourier space as CS02.
+    https://arxiv.org/pdf/astro-ph/0206508.pdf Eq.(81) Eq.(82)
+
     Parameters:
     -----------
     r_s     [float]

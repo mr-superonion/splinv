@@ -64,8 +64,6 @@ class nfwShearlet2D():
 
     itranspose: transpose of itransform operator
 
-    Examples
-    --------
     """
     def __init__(self,parser):
         ##transverse plane
@@ -126,13 +124,13 @@ class nfwShearlet2D():
                     self.rs_frame[izl,ifr]=rs
                     iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
-                    self.fouaframesDelta[izl,ifr]=iAtomF             # Fourier Space
-                    iAtomF=   self.ks2D.transform(iAtomF,outFou=True)
-                    self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
+                    self.fouaframesDelta[izl,ifr]=iAtomF            # Fourier Space
+                    iAtomF=   self.ks2D.transform(iAtomF,outFou=True)# KS transform
+                    self.fouaframes[izl,ifr]=iAtomF                 # Fourier Space
+                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Real Space
         return
 
-    def itransformDelta(self,dataIn):
+    def itransformSigma(self,dataIn):
         """
         transform from nfw dictionary space to delta space
         redshift plane by redshift plane
