@@ -1,4 +1,7 @@
-Dir=$(realpath ./)
+# Change the Dir variable to the current directory
+
+Dir="$homeSys/code/massMap_Private/"
+
 export PYTHONPATH="$Dir/python/":$PYTHONPATH
 
 export PATH="$Dir/demo/sim/":$PATH
