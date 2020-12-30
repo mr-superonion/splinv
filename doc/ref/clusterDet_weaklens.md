@@ -1,5 +1,7 @@
 # Theoretical work
 
+High peaks (SNR $\leq 3$)
+
 **"Fair Sample" Hypotheses:**
 
 Determine matter density parameter $\Omega_M$ by comparing cluster baryon
@@ -62,9 +64,6 @@ e^{-2i\phi}]$$,
 + [Chen (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...891..139C/abstract)
 
 
-## Peak counts
-
-+ [Lin (2016)](https://ui.adsabs.harvard.edu/abs/2016A%26A...593A..88L/abstract)
 
 # Observational work:
 
