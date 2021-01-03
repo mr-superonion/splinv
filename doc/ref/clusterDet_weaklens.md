@@ -1,36 +1,43 @@
+In the cluster detection region, we focus on high peaks (SNR $\geq 4$).
+
 # Theoretical work
 
-High peaks (SNR $\leq 3$)
+## Science Goal
 
-**"Fair Sample" Hypotheses:**
+### "Fair Sample" Hypotheses:
 
 Determine matter density parameter $\Omega_M$ by comparing cluster baryon
 fraction to total cluster mass measurements
 
-**Truly Dark Clusters:**
+### Truly Dark Clusters:
 
-Dark viralized mass concentrations. We are not interested
-non-viralized dark matter or projections.
+Dark viralized mass concentrations. We are not interested non-viralized dark
+matter or projections.
 
 If confirmed: Challenge galaxy formation paradigm, feedback supressing the
 galaxy formation process?
 
-
-**Selection Functions:**
+### Mass-Observables:
 
 observables:
+
 - richness
 - velocity dispersion
 - flux
 - Temperature
 - SZ decrement
 
-Mass
-
-
+## 2D Projected maps
 + [Schneider (1996)](https://ui.adsabs.harvard.edu/abs/1996MNRAS.283..837S/abstract)
-+ [Bhuvnesh (2000)](https://ui.adsabs.harvard.edu/abs/2000ApJ...530L...1J/abstract)
+
+Use aperture mass to optimize detection of structures with isothermal profile,
+with a detection limit of velocity dispersion $\sim 600kms~h^{-1}$
+
 + [Hamana (2004)](https://ui.adsabs.harvard.edu/abs/2004MNRAS.350..893H/abstract)
+
+Predict the high peak counts (SNR>4) using NFW halo profile and P-S halo mass function.
+
+Study the detection rate and false detections.
 
 ## Tomography
 + [Hennawi (2005)](https://ui.adsabs.harvard.edu/abs/2005ApJ...624...59H/abstract)
@@ -62,7 +69,6 @@ e^{-2i\phi}]$$,
 **Mass Bias:**
 
 + [Chen (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...891..139C/abstract)
-
 
 
 # Observational work:
