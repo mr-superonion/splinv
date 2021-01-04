@@ -48,7 +48,7 @@ class massMapStampBatchConfig(pexConfig.Config):
                 default='planck-cosmo/config-pix96-nl20.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/sparse-f1-3-2/',
+                default='planck-cosmo/sparse-f1-1-2/',
                 doc = 'output directory')
     pixDir  =   pexConfig.Field(dtype=str,
                 default='planck-cosmo/pix96-ns10/',
@@ -69,8 +69,12 @@ class massMapStampRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        idRange=range(64)
-        #idRange=[640000]
+        if False:
+            # for halo plus noise fields
+            idRange=range(64)
+        else:
+            # for pure noise fields
+            idRange=[640000]
         return [(ref, kwargs) for ref in idRange]
 
 def unpickle(factory, args, kwargs):
@@ -174,8 +178,11 @@ class massMapStampBatchTask(BatchPoolTask):
             delta1  =   sparse3D.deltaR
             pyfits.writeto(outfname1,delta1)
             pyfits.writeto(outfname3,sparse3D.alphaR)
-
-            w   =   sparse3D.adaptive_lasso_weight(gamma=2.,sm_scale=0.)
+            if sparse3D.nframe>1:
+                sm_scale=0.
+            elif sparse3D.nframe==1:
+                sm_scale=0.25
+            w   =   sparse3D.adaptive_lasso_weight(gamma=2.,sm_scale=sm_scale)
             sparse3D.fista_gradient_descent(800,w=w)
             sparse3D.reconstruct()
             delta2  =   sparse3D.deltaR
@@ -250,7 +257,7 @@ class massMapStampBatchTask(BatchPoolTask):
         parser.set('lensZ','rs_base','%s' %rs_base)    #Mpc/h
 
         # Reconstruction Init
-        lbd =   5.0
+        lbd =   3.5
         tau =   0.
         parser.set('sparse','lbd','%s' %lbd )
         parser.set('sparse','aprox_method','fista' )
