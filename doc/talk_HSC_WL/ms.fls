@@ -595,6 +595,8 @@ INPUT assets/gkg.png
 INPUT ./assets/gkg.png
 INPUT assets/background.jpg
 INPUT ./assets/background.jpg
+INPUT /usr/share/texmf-dist/fonts/vf/google/roboto/Roboto-Regular-lf-t1.vf
+INPUT /usr/share/texmf-dist/fonts/tfm/google/roboto/Roboto-Regular-lf-t1--base.tfm
 OUTPUT ms.nav
 OUTPUT ms.toc
 OUTPUT ms.snm
