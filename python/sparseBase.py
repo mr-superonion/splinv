@@ -395,7 +395,8 @@ class massmapSparsityTaskNew():
         for irun in range(niter):
             dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
-            Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            #Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            Xp1 =   soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
             self.alphaR=Xp1+(ratio*(Xp1-Xp0))
