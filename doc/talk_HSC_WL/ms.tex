@@ -31,7 +31,7 @@
 
 % Informations
 \title{3-D mass map reconstruction}
-\subtitle{Method and Plane in S19A}
+\subtitle{Method and Plans for S19A}
 
 \author{Xiangchong Li\\
 Colaborators:\\
@@ -54,7 +54,7 @@ Shiro Ikeda, Wentao Luo
 \input{massmap.tex}
 
 
-\begin{frame}{Preliminary run on $1$ deg$^2$ region of XMM}
+\begin{frame}{Preliminary run on $9$ deg$^2$ region of XMM}
 \begin{itemize}
     \item S19A data
     \item corrected for additive bias
@@ -62,8 +62,32 @@ Shiro Ikeda, Wentao Luo
 \end{itemize}
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth]{snapshot.png}
+\includegraphics[width=0.7\textwidth]{3D-1cut.png}
 \end{figure}
+Note: the values in the plot are normalized
+\end{frame}
+
+\begin{frame}{Match positive peaks to cluster catalogs}
+    \begin{itemize}
+        \item cluster catalogs: CAMIRA,WHL15
+        \item match distance: $4$ arcmin on the transverse plane
+    \end{itemize}
+\begin{columns}[t]
+    \begin{column}{0.5\textwidth}
+    \alert{$2$-D offsets histogram:}
+    \begin{figure}
+    \centering
+    \includegraphics[width=1.\textwidth]{dzdr.png}
+    \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+    \alert{$z$ from the mass map:}
+    \begin{figure}
+    \centering
+    \includegraphics[width=1.\textwidth]{redshift_bias.png}
+    \end{figure}
+    \end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Plans}

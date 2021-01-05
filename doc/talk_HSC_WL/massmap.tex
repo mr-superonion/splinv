@@ -37,8 +37,11 @@ Systematics}
 \end{itemize}
 \end{column}
 \end{columns}
-\alert{The Goal is to inverse the matrix $\mathbf{T}$ and estimate
-$3$-D density contrast field: $\delta(\vec{\theta},z_l)$.}
+\alert{Goal: Inverse the matrix $\mathbf{T}$ and estimate $\delta(\vec{\theta},z_l)$.}
+\begin{equation} \notag
+\hat{\delta}=\argmin_{x} \left\{ \frac{1}{2}\norm{\Sigma^{-\frac{1}{2}}(\gamma-
+\mathbf{T} \delta)}_2^2\right\}.
+\end{equation}
 \end{frame}
 
 \begin{frame}{Prior Information}
@@ -72,7 +75,7 @@ e.g.,
 \begin{enumerate}
     \item $p=2$, \alert{Ridge regression} (Wiener Filter);
     \item $p=1$, \alert{Lasso} (Sparse);
-    \item $p=0$, \alert{Best subset} (sparsest but unsolvable).
+    \item $p=0$, \alert{Best subset} (sparsest but NP hard).
 \end{enumerate}
 \end{alertblock}
 \end{column}
@@ -104,12 +107,14 @@ Masamune Oguri, 2018 (HSC), Wiener Filter
 \includegraphics[width=1.0\textwidth]{\figPathM nfwlet-atom-1D.pdf}
 \end{figure}
 \begin{itemize}
-    \item pixel size:  $1$ arcmin
-    \item Gaussian Smoothing: $1.5$ arcmin
+    \item pixel size:  $1$ arcmin;
+    \item Gaussian Smoothing: $1.5$ arcmin;
+    \item Three NFW scales: $0.12$, $0.24$, and $0.36~h^{-1}$  Mpc.
 \end{itemize}
 \end{column}
 \begin{column}{0.6\textwidth}
 \begin{alertblock}{NFW Atoms}
+On the transverse Plane
 \begin{eqnarray}\notag
 \phi_\alpha(\vec{r}) =&\frac{f }{2 \pi \theta_\alpha^2 }
 F(|\vec{\theta}|/\theta_\alpha) \delta_D(z),\\
@@ -157,6 +162,7 @@ hyper-parameter: $\tau=2$.
 
 \begin{frame}{Results for Noiseless Simulation}
 \begin{itemize}
+    \item One halo in $1\deg^2$
     \item HSC (s16) number densitty;
     \item HSC (s16) redshifts(best estimation);
     \item No noise; no photo-$z$ uncertainty.
@@ -180,8 +186,9 @@ located.}
 \end{frame}
 
 
-\begin{frame}{Results for HSC mock catalogs}
+\begin{frame}{Results on simulations}
 \begin{itemize}
+    \item One halo in $1\deg^2$
     \item HSC (s16) number densitty;
     \item HSC (s16) redshifts(best estimation);
     \item HSC (s16) shape noise; HSC photo-$z$ uncertainty.
@@ -192,6 +199,32 @@ located.}
 \end{figure}
 \end{frame}
 
+\begin{frame}{Peak Histogram}
+Pure Noise field:
+\begin{itemize}
+    \item $1000$ pure noise realizations with HSC shape noise and photoz
+    uncertainty.
+\end{itemize}
+Halos:
+\begin{itemize}
+    \item $81$ halos with different mass and redshift;
+    \item Each halo has $100$ noise realizations.
+\end{itemize}
+\begin{figure}
+\centering
+\includegraphics[width=1.0\textwidth]{\figPathM peak_histograms_NFW.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Detections for difference thresholds}
+    \begin{itemize}
+        \item $\lambda=5.0$
+    \end{itemize}
+\begin{figure}
+\centering
+\includegraphics[width=1.0\textwidth]{\figPathM detfalse_threshold_NFW_lbd50.pdf}
+\end{figure}
+\end{frame}
 \begin{frame}{Redshift estimation}
     We simulation halos with different mass at different redshift; each halo with $100$ noise realizations. The following figures show the \alert{offsets} of detected peaks from the input positions.
 \begin{figure}
@@ -199,15 +232,5 @@ located.}
 \includegraphics[width=1.0\textwidth]{\figPathM peak_scatters_NFW_lbd35.pdf}
 \end{figure}
 \end{frame}
-
-\begin{frame}{Peak Histogram}
-$1000$ pure noise realizations with HSC shape noise and photoz
-uncertainty.
-\begin{figure}
-\centering
-\includegraphics[width=1.0\textwidth]{\figPathM peak_histograms_NFW.pdf}
-\end{figure}
-\end{frame}
-
 
 
