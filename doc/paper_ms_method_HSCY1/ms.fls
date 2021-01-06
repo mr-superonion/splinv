@@ -337,6 +337,8 @@ INPUT nfwlet-atom-1D.pdf
 INPUT ./nfwlet-atom-1D.pdf
 INPUT ./nfwlet-atom-1D.pdf
 INPUT /var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map
+INPUT massmap_method.tex
+INPUT massmap_method.tex
 INPUT /usr/share/texmf-dist/fonts/tfm/public/cm/cmcsc10.tfm
 INPUT photo-z_binning.pdf
 INPUT ./photo-z_binning.pdf
