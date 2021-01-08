@@ -394,6 +394,9 @@ INPUT ./detfalse_threshold_NFW_lbd40.pdf
 INPUT detfalse_threshold_NFW_lbd50.pdf
 INPUT ./detfalse_threshold_NFW_lbd50.pdf
 INPUT ./detfalse_threshold_NFW_lbd50.pdf
+INPUT detNum_zm.pdf
+INPUT ./detNum_zm.pdf
+INPUT ./detNum_zm.pdf
 INPUT sparse_PointMass_results.tex
 INPUT sparse_PointMass_results.tex
 INPUT delta-1-7-pz-wn-PM-falsepeakproblem.pdf
