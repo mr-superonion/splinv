@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex ms"] 1610073102 "ms.aux" "ms.bbl" "ms" 1610073113
+["bibtex ms"] 1610088354 "ms.aux" "ms.bbl" "ms" 1610088506
   "./aasjournal.bst" 1603151474 37514 eb8cd7d6002e174d031081537b4ccfa9 ""
-  "citation.bib" 1609949541 56947 f0d40ddf62aea64ea8b509ae3687e63f ""
-  "ms.aux" 1610073103 18642 e6f3f970bfcb17a56e779c6f7f5b9928 "pdflatex"
+  "citation.bib" 1610087502 58458 ac08e3d1a33c9e74f942e8b1d04b4080 ""
+  "ms.aux" 1610088506 18973 b8a3ea212dfb3566b6bf99761eb19d67 "pdflatex"
   (generated)
   "ms.blg"
   "ms.bbl"
-["pdflatex"] 1610073113 "ms.tex" "ms.pdf" "ms" 1610073113
+["pdflatex"] 1610088505 "ms.tex" "ms.pdf" "ms" 1610088506
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1591545468 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texmf-dist/fonts/tfm/adobe/helvetic/phvr.tfm" 1591545468 2504 ba6584b616b92101c768b6c4ffb32dd0 ""
   "/usr/share/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1591545468 1120 1e8878807317373affa7f7bba4cf2f6a ""
@@ -251,10 +251,10 @@
   "massmap_method.tex" 1609949541 33425 9c3186bdd74fd0eb42b114034d560fe9 ""
   "massmap_sim.tex" 1607513974 3071 1d0f6a16065d7ecc9ab7c1a2f15b304f ""
   "mlz-poz.pdf" 1603791539 185100 9afd248da1ebe17dc12387271daaaa1b ""
-  "ms.aux" 1610073103 18642 e6f3f970bfcb17a56e779c6f7f5b9928 "pdflatex"
-  "ms.bbl" 1610073102 15282 36d05371dfa8d051d8cd00bc4497019a "bibtex ms"
-  "ms.out" 1610073103 1064 310cc7d91d939b550ac1e4460799891c "pdflatex"
-  "ms.tex" 1610070963 11842 803bd8951ac3cf4b8c10159fc3e199dc ""
+  "ms.aux" 1610088506 18973 b8a3ea212dfb3566b6bf99761eb19d67 "pdflatex"
+  "ms.bbl" 1610088354 15750 2f0d9bf89c1439f840d86c0032a5dc76 "bibtex ms"
+  "ms.out" 1610088506 1064 310cc7d91d939b550ac1e4460799891c "pdflatex"
+  "ms.tex" 1610087506 11842 803bd8951ac3cf4b8c10159fc3e199dc ""
   "nfwlet-atom-1D.pdf" 1603151474 162100 c4f4fe1514ff60cc52f1855bf65b440c ""
   "nfwlet-atom-2D.pdf" 1603151474 157509 f0475576c36fed11ff627e9f862a190f ""
   "noise_std_map_pix.pdf" 1603151474 112922 771528891a82e0d5ff139eb282ea5020 ""
@@ -264,10 +264,10 @@
   "pixel_histograms_halo17_NFW_lbd35.pdf" 1607341110 187640 e3242e8502a667e4b326743812041b59 ""
   "pixel_histograms_halo17_NFW_lbd50.pdf" 1607341138 187502 a516f29a002da58251f2cd9a9fa98798 ""
   "shapeMeasurementError-HSCY1.pdf" 1603801712 286191 6318aebe00c5e5103dc3584df07eb1a5 ""
-  "sparse_NFW_results.tex" 1610073112 10490 5a341a62d839e01a09acb12f36b39dbc ""
+  "sparse_NFW_results.tex" 1610088506 10981 c4dac9ca92f2b26e39757ca94db00fef ""
   "sparse_PointMass_results.tex" 1607354252 2296 03029968feaf2a460689d306ad91fbac ""
   (generated)
+  "ms.log"
+  "ms.out"
   "ms.pdf"
   "ms.aux"
-  "ms.out"
-  "ms.log"
