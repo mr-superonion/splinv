@@ -69,13 +69,14 @@ multi-scale NFW surface density profiles on the transverse plane and
 one-dimensional Dirac delta functions in the line of sight direction.  The
 adaptive lasso algorithm is applied to find a sparse reconstruction of the mass
 maps.
-We study the performance of cluster detection from the reconstruction mass map
-with simulations that applies shear field from isolated halo to HSC-like galaxy
-shapes and photometric redshifts.
+We study the performance of three-dimensional cluster detection from the
+reconstructed mass map with simulations that applies shear distortions from
+isolated halo to HSC-like galaxy shapes with realistic photometric redshift
+uncertainties .
 Our findings are summarized as follows:
-1) The lasso solution suffers from a smear of structure in the line of sight
-direction even in the absence of shape noise, and in contrast, the adaptive
-lasso algorithm efficiently removes the line of sight smear.
+1) The lasso reconstructed suffers from a smear of structure in the line of
+sight direction even in the absence of shape noise, and in contrast, the
+adaptive lasso algorithm efficiently removes the line of sight smear.
 2) The algorithm is able to detect halo with minimal mass limits of $10^{14.0}
 M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low
 ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts,
@@ -146,31 +147,36 @@ within the community
 \citep{massMap-KS1993,WL-massMap-Glimpse2D-Lanusse2016,sparseBaysianMassMap-Price2020}
 and applied to large-scale surveys
 \citep{HSC1-massMaps,massMapDES-Chang2018,DES-SV-massMap-sparsity}.
-Galaxy clusters are detected from the $2$-D mass map
+Cluster detection from $2$-D mass maps has been widely studied and applied to
+these large-scale weak-lensing surveys
 \citep{WL-massMap-clusDet-CFHT-Shan2012,WL-massMap-clusDet-HSC-Miyazaki2018,WL-massMap-clusDet-HSC-Hamana2020};
 however, cross matching with some (e.g., optically selected) cluster
 catalog is needed to assign the redshift and extract its physical parameter
 (such as mass) for each cluster selected from $2$-D mass map.
 
-On the other hand, \citet{WL-clusDet-Hennawi2005} propose to detect clusters
-from smoothed shear measurements after convolving tomographic shear
-measurements with $3$-D filters that match the tangential shears induced by
-multi-scale NFW halos.
-Alternatively, we can directly reconstruct $3$-D mass maps taking advantage of
-photometric redshift (photo-$z$) information
+On the other hand, we can directly reconstruct $3$-D mass maps taking advantage
+of photometric redshift (photo-$z$) information
 \citep{LSS-massMap-Wiener-Simon2009,WL-massMap-VanderPlas2011}; however, these
 methods either do not have enough spatial resolution to identify clusters, or
 they suffer from smears along the line of sight direction, which need to be
-overcome for practical searches of clusters in 3D mass maps.
+overcome for practical searches of clusters in 3D mass maps.  Alternatively,
+\citet{WL-clusDet-Hennawi2005} propose to perform a maximum-likelihood
+detection of clusters, by convolving tomographic shear measurements with $3$-D
+filters that match the tangential shears induced by multi-scale NFW halos,
+without fully reconstruct the $3$-D mass maps.
 
 In this paper, we develop a novel method for high-resolution $3$-D mass map
-reconstruction that are free from line of sight smears and study the
-performance of cluster detection from the reconstructed mass maps.  The $3$-D
+reconstruction that are free from line of sight smears.  The $3$-D
 mass map is modeled as a summation of the NFW \citep{halo-NFW1997ApJ} basis
 atoms, which have $2$-D multi-scale NFW surface density profiles on the
 transverse plane and one-dimensional Dirac delta functions in the line of sight
 direction. The adaptive lasso algorithm \citep{AdaLASSO-Zou2006} is applied to
 find a sparse reconstruction of the mass maps.
+
+We study the performance of cluster detection from the reconstructed mass maps
+using simulations applying shear distortions from isolated halos to HSC-like
+galaxy shapes with realistic photo-$z$ uncertainties.
+
 
 This paper is organized as follows.
 In Section \ref{sec_Method}, we propose the new method for $3$-D density map

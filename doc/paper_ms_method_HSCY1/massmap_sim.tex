@@ -19,13 +19,16 @@ $\Omega_\Lambda=0.685$, $\sigma_8=0.811$, $n_s=0.965$
 We sample halos in a two-dimensional redshift-mass plane. The redshift-mass
 plane is evenly divided into eight redshift bins and eight mass bins. We
 randomly shift the input halo redshifts and halo masses from the bins' centers
-by a small amount. The concentration of the NFW halo is set as a function of
-the halo's virial mass ($M_{200}$) and redshift ($z_{h}$) according to
+by a small amount. In the simulation, we set the non-linear over-density
+($\Delta_{\rm{vir}}$) to $200$, and $M_{200}$ refers to the virial mass. The
+concentration of the NFW halo is set to as a function of the halo's virial mass
+($M_{200}$) and redshift ($z_{h}$) according to
 \citet{c-M_Magneticum-Ragagnin2019}
 \begin{equation}
 c_{h}=6.02\times\left(\frac{M_{200}}{10^{13} M_{\odot}}\right)^{-0.12}
 \left(\frac{1.47}{1.+z_h}\right)^{0.16}.
 \end{equation}
+The halos are truncated at the virial radius.
 The weak-lensing shear fields of these NFW halos are simulated according to
 \citet{haloModel-TJ2003-3pt}. The shear distortions are applied to one hundred
 realizations of galaxy catalogs with the HSC-like shape measurement error and

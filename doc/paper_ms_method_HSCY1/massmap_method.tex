@@ -213,11 +213,15 @@ We propose to use the multi-scale NFW atoms, denoted as
 $\{\phi_1,...,\phi_N\}$, as the basis atoms of our dictionary.  On the
 transverse plane, the NFW atoms follow surface density profiles of the NFW
 halos \citep{haloModel-TJ2003-3pt} with comoving scale radii $r_s$ and
-truncation radius $c r_s$, where $c$ is the concentration of the NFW halos.  As
-the scales of halos are much smaller than the reachable redshift resolution, we
-neglect the depth of halo on the line of sight direction and set the NFW atoms'
-profiles in the line of sight direction to one-dimensional ($1$-D) Dirac delta
-functions as suggested by \citep{LSS-massMap-Glimpse3D-Leonard2014}. The
+concentration $c$. In this paper, we apply a hard truncation on the NFW
+profiles at the virial radius: $c r_s$, the influence of different truncation
+forms \citep{haloTrunc-Oguri2011} on the mass map reconstruction is left to our
+future work.
+
+As the scales of halos are much smaller than the reachable redshift resolution,
+we neglect the depth of halo on the line of sight direction and set the NFW
+atoms' profiles in the line of sight direction to one-dimensional ($1$-D) Dirac
+delta functions as suggested by \citep{LSS-massMap-Glimpse3D-Leonard2014}. The
 multi-scale NFW atoms are defined as
 \begin{equation}
 \begin{split}
@@ -347,18 +351,17 @@ redshift bin.
 
 The left panel of Figure \ref{fig_corlensKer} shows the lensing kernels for
 lenses at five different redshifts as functions of source galaxy redshifts.
-The dashed lines are the lensing kernels for spectroscopic redshifts with
-neglectable redshift uncertainties. The solid lines are the lensing kernels for
-photometric redshifts with redshift uncertainties shown in Figure
-\ref{fig_pdfpz}. As shown by the dashed lines in the left panel of Figure
-\ref{fig_corlensKer}, the lensing kernels converge to zero for source redshifts
-lower than the lens redshift if the uncertainty on the source galaxy
-redshift estimation are neglectable. However, as demonstrated by the solid
-lines in the same panel, for the source redshifts with large photo-$z$
-uncertainties, the lensing kernels do not converge to zero at redshifts lower
-than the lens redshift. This is because the galaxies with photo-$z$ estimations
-lower than the lens redshifts may be actually located at higher redshifts due
-to the photo-$z$ uncertainties.
+The results include both the lensing kernels for spectroscopic redshifts with
+neglectable redshift uncertainties and photometric redshifts with redshift
+uncertainties shown in Figure \ref{fig_pdfpz}. As shown by the dashed lines in
+the left panel of Figure \ref{fig_corlensKer}, the lensing kernels converge to
+zero for source redshifts lower than the lens redshift if the uncertainty on
+the source galaxy redshift estimation are neglectable. However, as demonstrated
+by the solid lines in the same panel, for the source redshifts with large
+photo-$z$ uncertainties, the lensing kernels do not converge to zero at
+redshifts lower than the lens redshift. This is because the galaxies with
+photo-$z$ estimations lower than the lens redshifts may be actually located at
+higher redshifts due to the photo-$z$ uncertainties.
 
 The middle and right panels show the correlations between lensing kernels for
 lenses at different redshifts. The middle panel is for spect-$z$, and the right
