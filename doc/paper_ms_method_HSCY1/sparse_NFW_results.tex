@@ -133,9 +133,10 @@ and negative peaks, are taken as false detections.
 
 The right panel of Figure \ref{fig_detoffsets} shows the average redshift of
 true detections for each halo. The estimated redshifts are lower than the true
-redshifts by about $0.03$ for halos in the low-redshift range ($z\leq
-0.4$).  For halos at $0.4<z\leq 0.85$, the relative redshift bias is below
-$0.5\%$.
+redshifts by about $0.03$ for halos in the low-redshift range ($z\leq 0.4$).
+For halos at $0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$. The
+standard deviation of the redshift estimation is $0.092$.
+
 
 With the intent to suppress false detections, we select peaks with values
 greater than an ad-hoc threshold as candidates of galaxy clusters following
@@ -156,10 +157,11 @@ as the detection threshold increases. Also, the detection rate of halo
 significantly decreases. We decide to set the detection threshold to
 $1.5\sigma$ and set the penalization parameter $\lambda$ to $5.0$ since such a
 setup suppresses the false detection to $0.022$ while keeping a good halo
-detection rate. In summary, The algorithm is able to detect halo with minimal
-mass limits of $10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0}
-M_{\odot}/h$ for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high
-($0.6\leq z< 0.85$) redshifts, respectively.
+detection rate.
+In summary, The algorithm is able to detect halo with minimal mass limits of
+$10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for
+the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$)
+redshifts, respectively.
 
 \begin{figure*}
  \centering
