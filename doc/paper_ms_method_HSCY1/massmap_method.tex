@@ -30,13 +30,14 @@ function. The estimator is generally defined as
 \mathbf{T\Phi} x)}_2^2+ \lambda C(x) \right\},
 \end{equation}
 where $\norm{\Sigma^{-\frac{1}{2}}(\gamma - \mathbf{T\Phi} x)}_2^2$ is the
-$l^2$ chi-square term\footnote{weighted by the inverse of the diagonal
-covariance matrix of the error on the shear measurements ($\Sigma$).} measuring
-the difference between the prediction and the data, while $C(x)$ is the
-regularization term measuring the deviation of the coefficient estimation ($x$)
-from the prior assumption. The $l^p$ norm is defined as
+$l^2$ chi-square term\footnote{The term chi-square is weighted by the inverse
+of the diagonal covariance matrix of the error on the shear measurements
+($\Sigma$).} measuring the difference between the prediction and the data,
+while $C(x)$ is the regularization term measuring the deviation of the
+coefficient estimation ($x$) from the prior assumption. The $l^p$ norm is
+defined as
 \begin{equation}
-\norm{x}_p=(\sum_{i} |x|^p_i)^{\frac{1}{p}}.
+\norm{x}_p=\left(sum_{i} |x|^p_i\right)^{\frac{1}{p}}.
 \end{equation}
 Such penalized estimation prefers the parameters that are able to describe the
 observations and align with the prior assumption. The regularization
@@ -72,13 +73,13 @@ multi-scale NFW atoms.  The atoms follow multi-scale surface density profiles
 of the NFW functions \citep{haloModel-TJ2003-3pt} on the transverse plane.
 Following \citet{LSS-massMap-Glimpse3D-Leonard2014}, we neglect the depth of
 halos since the resolution scale of the reconstruction in the line of sight
-direction is much larger than the halo scale. Therefore, we set the NFW atoms'
-profile in the line of sight direction as the Dirac delta function.  Moreover,
-we assume that the halos are sparsely distributed in the universe.  With the
-sparsity prior, the adaptive lasso regularization \citep{AdaLASSO-Zou2006} is
-used to reconstruct the density field.  We find that, in contrast to the lasso
-estimator that smears the structure along the line of sight, the adaptive lasso
-can efficiently reduce the smearing effect.
+direction is much larger than the halo scale. Therefore, we set the profile of
+the NFW atoms in the line of sight direction as the Dirac delta function.
+Moreover, we assume that the halos are sparsely distributed in the universe.
+With the sparsity prior, the adaptive lasso regularization
+\citep{AdaLASSO-Zou2006} is used to reconstruct the density field.  We find
+that, in contrast to the lasso estimator that smears the structure along the
+line of sight, the adaptive lasso can efficiently reduce the smearing effect.
 
 Compared with \citet{LSS-massMap-Glimpse3D-Leonard2014}, our dictionary is
 built up to describe the clumpy mass in the universe with a clear physical
@@ -99,7 +100,7 @@ this convex optimization has been justified.
 \end{figure}
 
 We first review the lensing effect in Section \ref{subsec_method_delta2shear}.
-Then, we introduce the dictionary used to model the foreground density maps in
+We then introduce the dictionary used to model the foreground density maps in
 Section \ref{subsec_method_dictionary}.
 
 Subsequently, in Section \ref{subsec_method_Systematics}, we discuss several
@@ -120,7 +121,8 @@ Finally, we solve the mass reconstruction problem in Section
 \begin{figure}
  \centering
  \includegraphics[width=0.45\textwidth]{mlz-poz.pdf}
- \caption{The average PDF of MLZ photo-$z$ error for $10$ source redshift bins.
+ \caption{The average PDF of MLZ photo-$z$ PDFs for $10$ source redshift bins defined
+         in Figure \ref{fig_bestpz}.
         }\label{fig_pdfpz}
 \end{figure}
 
@@ -132,9 +134,10 @@ foreground inhomogeneous density distribution at the comoving distance $\chi_l$
 \frac{\delta(\vec{\theta},\chi_l)}{a(\chi_l)},
 \end{equation}
 where $\delta=\rho(\vec{\theta},\chi_l)/\bar{\rho}-1$ is the density contrast
-at the position of lens, $H_0$ is the Hubble parameter, $\Omega_M$ is the
-matter density parameter, $c$ is the speed of light, and $a(\chi_l)$ is the
-scale parameter at the lens position.
+at the position of lens, $H_0$ is the Hubble constant, $\Omega_M$ is the matter
+density parameter, $c$ is the speed of light, $\chi_{sl}$ is the comoving
+distance between source and lens plane, and $a(\chi_l)$ is the scale parameter
+at the lens position.
 
 After substituting comoving distance ($\chi$) with redshift ($z$), we have
 \begin{equation}\label{eq-delta2kappa}
@@ -148,7 +151,7 @@ K(z_l,z_s) =
 0&(z_s \leq z_l),
 \end{cases}
 \end{equation}
-where $E(z)$ is the Hubble parameter as a function of redshift, in units of $H_0$.
+where $E(z)$ is the Hubble constant as a function of redshift, in units of $H_0$.
 
 \begin{figure*}[!t]
  \centering
@@ -175,10 +178,10 @@ where
 \begin{equation}
 D(\vec{\theta})=-\frac{1}{\pi}(\theta_1-i\theta_2)^{-2}.
 \end{equation}
-Here we denote the physical shear distortion as $\gamma_L$, and we note
-that it is not the final shear measurement since the final shear
-measurement is influenced by systematic errors from observations. The
-systematic errors will be discussed in Section \ref{subsec_method_Systematics}.
+Here we denote the physical shear distortion as $\gamma_L$, which is not the
+final shear measurement since the final shear measurement is influenced by
+systematic errors from observations. The systematic errors will be discussed in
+Section \ref{subsec_method_Systematics}.
 
 Combining eq. (\ref{eq-delta2kappa}) with eq. (\ref{eq-kappa2gamma}),
 the expectation of lensing shear signal is
@@ -219,15 +222,16 @@ forms \citep{haloTrunc-Oguri2011} on the mass map reconstruction is left to our
 future work.
 
 As the scales of halos are much smaller than the reachable redshift resolution,
-we neglect the depth of halo on the line of sight direction and set the NFW
-atoms' profiles in the line of sight direction to one-dimensional ($1$-D) Dirac
-delta functions as suggested by \citep{LSS-massMap-Glimpse3D-Leonard2014}. The
-multi-scale NFW atoms are defined as
+we neglect the depth of halo on the line of sight direction and set the
+profiles of the NFW atoms in the line of sight direction to one-dimensional
+($1$-D) Dirac delta functions as suggested by
+\citep{LSS-massMap-Glimpse3D-Leonard2014}. The multi-scale NFW atoms are
+defined as
 \begin{equation}
 \begin{split}
 \phi_s(\vec{r}_{\theta},z) =&\frac{f}{2 \pi r_s^2 }
 F(|\vec{r}_{\theta}|/r_s) \delta_D(z),\\
-&  (s=1...N)
+&  (s=1,...,N)
 \end{split}
 \end{equation}
 where $\vec{r}_\theta$ is the comoving position in the transverse plane,
@@ -243,13 +247,13 @@ F(x)=
 \end{cases}
 \end{equation}
 $f=1/[\ln (1+c)-c/(1+c)]$. In this work, we fix $c=4$ for the NFW atoms in
-different scale frames. Then, we write the basis atoms into the angular
+different scale frames. We then write the basis atoms into the angular
 separation coordinates:
 \begin{equation}
 \begin{split}
 \phi_s(\vec{\theta},z) =&\frac{f \chi(z)^2}{2 \pi r_s^2 }
 F(|\vec{\theta}|\chi(z)/r_s) \delta_D(z),\\
-& (s=1...N)
+& (s=1,...,N)
 \end{split}
 \end{equation}
 where $\chi(z)$ is the comoving distance at the redshift $z$.
@@ -275,7 +279,7 @@ We substitute eq. (\ref{eq-x2delta}) into eq. (\ref{eq-delta2gammat}) and get
 
 In this paper, a dictionary constructed with point mass atoms is used to
 compare with the dictionary of multi-scale atoms. The point mass atoms is a
-$3$-D Dirac function defined as follows
+$3$-D Dirac function defined as
 \begin{equation}
 \phi_{\rm{PM}}(\vec{\theta},z) = \delta_D(\theta_1) \delta_D(\theta_2) \delta_D(z).
 \end{equation}
@@ -312,16 +316,16 @@ carefully studied and incorporated into the forward modeling in this subsection.
     lasso (right) algorithms. The vertical direction is the line of sight
     direction, and the lower boundaries and upper boundaries of the boxes are
     $z=0.01$ and $z=0.85$, respectively. Noises on galaxy shape measurements
-    are neglected in the simulation.  The input halo's virial mass is
+    are neglected in the simulation.  The input mass of halo is
     $M_{200}=10^{15} ~h^{-1}M_{\odot}$, and its redshift is $z=0.35$. The lasso
     reconstruction smears the density field along the line of sight direction.
     } \label{fig_lassoVsadaLasso}
 \end{figure*}
 
 The photometric redshifts of source galaxies in the current large-scale survey
-are estimated with a limited number of broad photometric bands (e.g., $9$ bands
+are estimated with a limited number of broad photometric bands e.g., $9$ bands
 for KIDS$+$VIKING survey \citep{KIDS_VIKING-Hildebrant2020}, $5$ bands for DES
-survey and HSC survey). As a result, the estimated redshifts of galaxies suffer
+survey and HSC survey. As a result, the estimated redshifts of galaxies suffer
 from much larger uncertainty than the redshifts estimated with spectroscopic
 observations. Such photo-$z$ uncertainty smears the lensing kernels
 statistically since a galaxy with a best-fit photo-$z$ estimation of $z_s$ has
@@ -352,11 +356,11 @@ redshift bin.
 The left panel of Figure \ref{fig_corlensKer} shows the lensing kernels for
 lenses at five different redshifts as functions of source galaxy redshifts.
 The results include both the lensing kernels for spectroscopic redshifts with
-neglectable redshift uncertainties and photometric redshifts with redshift
+negligible redshift uncertainties and photometric redshifts with redshift
 uncertainties shown in Figure \ref{fig_pdfpz}. As shown by the dashed lines in
 the left panel of Figure \ref{fig_corlensKer}, the lensing kernels converge to
 zero for source redshifts lower than the lens redshift if the uncertainty on
-the source galaxy redshift estimation are neglectable. However, as demonstrated
+the source galaxy redshift estimation are negligible. However, as demonstrated
 by the solid lines in the same panel, for the source redshifts with large
 photo-$z$ uncertainties, the lensing kernels do not converge to zero at
 redshifts lower than the lens redshift. This is because the galaxies with
@@ -414,13 +418,13 @@ W_\times (z) &=
 \end{cases}
 \end{split}
 \end{equation}
-In this paper, we set $\beta=1.\arcmin5$.
+In this paper, we set $\beta=1\farcm5$.
 
 By definition, the smoothing kernel is normalized as
 \begin{equation}
 \int d^3r W(\vec{r})=1.
 \end{equation}
-With the approximation that the density of galaxy number - $n(\vec{r})$ -
+With the approximation that the density of galaxy number $n(\vec{r})$
 varies slowly at the smoothing scale, the smoothed galaxy number density (in
 unit of number per pixel), which is defined as
 \begin{equation}\label{eq-numDesSmooth}
@@ -455,7 +459,7 @@ isolated sub-regions near the bright stars are masked out since the light from
 bright stars tends to influence the shear measurements on neighboring galaxies.
 
 We define the masking window function according to the smoothed galaxy number
-density (defined in eq. (\ref{eq-numDesSmooth})):
+density defined in eq. (\ref{eq-numDesSmooth}):
 \begin{equation}
  M(\vec{r})=
 \begin{cases}
@@ -494,9 +498,9 @@ We pixelize the smoothed shear field into an $N_\theta \times N_\theta \times
 N_s$ grid, where $N_\theta$ is the number of pixels for the two orthogonal axes
 of the transverse plane and $N_s$ is the number of pixels for the line of sight
 axis. $\gamma_{\alpha}$ denotes the smoothed shear measurements recorded on the
-pixel with index $\alpha$, where $\alpha=1...N_\theta \times N_\theta \times
+pixel with index $\alpha$, where $\alpha=1,...,N_\theta \times N_\theta \times
 N_s$. The grids on the transverse planes are equally spaced with a pixel size
-of $1\arcmin$. While the grids in the line of sight direction follow
+of $1\arcmin$. The grids in the line of sight direction follow
 equal number binning as shown in Figure \ref{fig_bestpz}.
 
 Similarly, we pixelize each scale frame of the projection coefficient field $x$
@@ -506,13 +510,14 @@ smoothed shear field on the transverse plane. At the same time, the projection
 coefficient field is pixelized into equal spaced grids in the line of sight
 direction ranging from redshift $0.01$ to redshift $0.85$. Here, we use $N_l$
 to denote the number of the lens planes and $x_{\beta}$ to denote the
-projection parameter indexed as $\beta$, where $\beta=1...N_\theta \times
-N_\theta \times N_l \times N$. The corresponding pixelized elements of the
-forward transform matrix $\mathbf{A}$ is denoted as $A_{\alpha\beta}$.
+projection parameter indexed as $\beta$, where $\beta=1,...,N_\theta \times
+N_\theta \times N_l \times N$, where $N$ is the number of NFW dictionary
+frames. The corresponding pixelized elements of the forward transform matrix
+$\mathbf{A}$ is denoted as $A_{\alpha\beta}$.
 
 We term the column vectors of the forward transform matrix $\mathbf{A}$ as the
 effective basis atoms. The $l^2$ norm of the $i$-th column vectors weighted by
-the inverse of the noise covariance matrix's diagonal elements is defined as
+the inverse of the diagonal elements the noise covariance matrix is defined as
 \begin{equation}
 \mathcal{N}_{i}=\sum_\alpha A_{i\alpha}A_{i\alpha}/\Sigma_{\alpha\alpha}.
 \end{equation}
@@ -559,14 +564,15 @@ lensing kernels for lenses at different redshifts are highly correlated.
 Therefore, the lasso algorithm cannot select the consistent mass in the line of
 sight direction, and the reconstructed mass suffers from smearing in the line
 of sight direction even in the absence of noise on shear measurements and
-photo-$z$ uncertainty .
+photo-$z$ uncertainty.
 
-Figure \ref{fig_lassoVsadaLasso} shows the reconstructions of a single halo's
-mass map with virial mass equals $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift
-$0.35$. The shear measurement error and photo-$z$ uncertainty are not included
-in the simulation.  The left panel of Figure \ref{fig_lassoVsadaLasso} is the
-reconstruction with the lasso algorithm, which shows a significant smear along
-the line of sight.
+Figure \ref{fig_lassoVsadaLasso} shows the reconstructions of the mass map of a
+single halo with halo mass $M_{200}=10^{15} ~h^{-1}M_{\odot}$ at redshift
+$0.35$. In this paper, we set the non-linear over-density ($\Delta_{\rm{vir}}$)
+to $200$, and use $M_{200}$ to denote the halo mass. The shear measurement
+error and photo-$z$ uncertainty are not included in the simulation.  The left
+panel of Figure \ref{fig_lassoVsadaLasso} is the reconstruction with the lasso
+algorithm, which shows significant smearing along the line of sight.
 
 \citet{AdaLASSO-Zou2006} proposes the adaptive lasso algorithm, which uses
 adaptive weights to penalize different projection coefficients in the $l^1$
@@ -607,15 +613,15 @@ i}x'_{i}) (\gamma_{\beta}-A'_{\beta j}x'_{j}).
 \subsubsection{FISTA}
 
 \citet{FISTA-Beck2009} propose the Fast Iterative Soft Thresholding Algorithm
-(FISTA) to solve the lasso problem.  Since the lasso's loss function and the
-adaptive lasso's loss function only differ in their penalization terms, the
-FISTA is also applicable to solve the adaptive lasso problem. In this paper, we
-apply the FISTA to solve both the preliminary lasso estimation and the final
-adaptive lasso estimation.
+(FISTA) to solve the lasso problem. Since the loss functions of the lasso and
+the adaptive lasso only differ in their penalization terms, the FISTA is also
+applicable to solve the adaptive lasso problem. In this paper, we apply the
+FISTA to solve both the preliminary lasso estimation and the final adaptive
+lasso estimation.
 
 Here we start from the lasso preliminary estimation. The coefficients are
 initialized as $x_i^{(1)}=0$. According to the FISTA algorithm, we iteratively
-update the projection coefficient field ($x$). Taking the $n$'th iteration as
+update the projection coefficient field ($x$). Taking the $n$-th iteration as
 an example, a temporary update is first calculated as
 \begin{equation}
 x'^{(n+1)}_{i}=\mathrm{ST}_{\lambda} \left(x'^{(n)}_{i} -\mu \partial_i G(x'^{(n)})\right),
@@ -629,7 +635,7 @@ modes with an amplitude greater than $\lambda$, and shrink the selected
 estimations by
 $\lambda$.
 $\mu$ is the step size of the gradient descent iteration.  $\partial_i
-G(x'^{(n)})$ refers to the $i$'th element of the gradient vector of $G$ at
+G(x'^{(n)})$ refers to the $i$-th element of the gradient vector of $G$ at
 point $x'^{(n)}$:
 \begin{equation}
 \partial_i G(x'^{(n)})=\Sigma^{-1}_{\alpha\beta}\Re\left(A'^{*}_{\alpha i}(\gamma_{\beta}-A'_{\beta j}x'_{j})\right),
@@ -661,7 +667,7 @@ vector. The spectral norm of the matrix $\mathbf{A^{\dagger}}
 \mathbf{\Sigma}^{-1} \mathbf{A}$ is determined as the maximum $l^2$ norm of the
 transformed vectors.
 
-As summarized in Algorithm \ref{alg-1}, we first initial the projection
+As summarized in Algorithm \ref{alg-1}, we first initialize the projection
 coefficients as zero and use the FISTA algorithm to find the global minimum of
 the lasso loss function. Such a global minimum is the preliminary estimation.
 We then use the preliminary lasso estimation to weight the coefficients and

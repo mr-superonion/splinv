@@ -43,7 +43,7 @@
 \makeatother
 
 \begin{document}
-\title{Cluster Detection from three-dimensional Lensing Mass Map}
+\title{A new method cluster Detection from three-dimensional weak lensing mass map}
 % \author{Xiangchong Li}
 % \affiliation{Department of Physics, University of Tokyo, Tokyo 113-0033, Japan}
 % \affiliation{Kavli Institute for the Physics and Mathematics of the Universe (WPI),\\
@@ -69,22 +69,22 @@ two-dimensional multi-scale NFW surface density profiles on the transverse
 plane and one-dimensional Dirac delta functions in the line of sight direction.
 The adaptive lasso algorithm is applied to find a sparse reconstruction of the
 mass maps.
-We study the performance of three-dimensional cluster detection from the
-reconstructed mass map with simulations that applies shear distortions from
-isolated halo to HSC-like galaxy shapes with realistic photometric redshift
-uncertainties .
-Our findings are summarized as follows:
-1) The lasso reconstructed suffers from a smear of structure in the line of
-sight direction even in the absence of shape noise, and in contrast, the
-adaptive lasso algorithm efficiently removes the line of sight smear.
-2) The algorithm is able to detect halo with minimal mass limits of $10^{14.0}
-M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low
+We study the performance of three-dimensional detection of clusters of galaxies
+from the reconstructed mass map with simulations that apply shear distortions
+from isolated halo to HSC-like galaxy shapes with realistic photometric
+redshift uncertainties .
+We find that the adaptive lasso algorithm efficiently removes the line of sight
+smearing, in contrast to the lasso reconstruction that suffers from  the line
+of sight smearing even in the absence of shape noise.
+The algorithm is able to detect halo with minimal mass limits of $10^{14.0}
+h^{-1}M_{\odot}$, $10^{14.7} h^{-1}M_{\odot}$, $10^{15.0} h^{-1}M_{\odot}$ for the low
 ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts,
 respectively, with an average false detection of 0.022/deg$^2$.
-3) The estimated redshift of the halos detected from the reconstructed mass
-maps are lower than the true redshift by about $0.03$ for halos at low
+The estimated redshift of the halos detected from the reconstructed mass maps
+are slightly lower than the true redshift by about $0.03$ for halos at low
 redshifts ($z\leq 0.4$). The relative redshift bias is below $0.5\%$ for halos
-at $0.4<z\leq 0.85$. The standard deviation of the redshift estimation is $0.092$.
+at $0.4<z\leq 0.85$. The standard deviation of the redshift estimation is
+$0.092$.
 \end{abstract}
 
 \section{Introduction}
@@ -94,7 +94,7 @@ at $0.4<z\leq 0.85$. The standard deviation of the redshift estimation is $0.092
         atoms in Fourier space, and the lower row shows the basis atoms in Real
         space.  The leftmost column is the point mass atom, and the other
         columns are the multi-scale NFW atoms.  The smoothing kernel is
-        Gaussian with a standard dev iation of $1.5$ pixels.
+        Gaussian with a standard deviation of $1.5$ pixels.
     } \label{fig_atoms2D}
 \end{figure*}
 
@@ -108,16 +108,16 @@ at $0.4<z\leq 0.85$. The standard deviation of the redshift estimation is $0.092
 
 Weak lensing refers to the phenomenon that light from distant galaxies is
 weakly yet coherently distorted by the intervening inhomogeneous density
-distribution along the line of sight due to gravity's influence.  As a result,
-the shapes of the background galaxies are distorted and the information of the
-foreground mass distribution is imprinted to the background galaxy images. Weak
-lensing offers a direct probe into the mass distribution, including both
-visible matter and invisible dark matter, in our universe \citep[see][for
-recent reviews]{revKilbinger15,revRachel17}.
+distribution along the line of sight due to the influence of gravity.  As a
+result, the shapes of the background galaxies are distorted such that the
+information of the foreground mass distribution is imprinted to the background
+galaxy images. Weak lensing offers a direct probe into the mass distribution,
+including both visible matter and invisible dark matter, in our universe
+\citep[see][for recent reviews]{revKilbinger15,revRachel17}.
 Several large-scale surveys focus on studying the weak-lensing effect at a high
-precision level (e.g., HSC \citep{HSC1-data}, KIDS \citep{KIDS13}, DES
+precision level e.g., HSC \citep{HSC1-data}, KIDS \citep{KIDS13}, DES
 \citep{DES05}, LSST \citep{LSSTScienceBook}, Euclid \citep{Euclid2011}, NGRST
-\citep{WFIRST15}).
+\citep{WFIRST15}.
 
 % The primary goal of most weak-lensing surveys is to constrain the cosmology
 % model through the $2$-point correlations. The studies include galaxy$-$galaxy
@@ -136,7 +136,7 @@ considerable interest since
 we can constrain the cosmology model using the peak counts, which are
 identified from the weak lensing mass map
 \citep{WL-massMap-peakcounts-Jain2000,WL-massMap-peakcountsAna-Fan2010,WL-massMap-peakcountsFM-Lin2016}.
-Moreover, we can directly detect massive clusters through
+Moreover, we can directly detect massive clusters of galaxies through
 identifying high signal-to-noise (SNR) peaks on the mass map without any
 reference to the mass-to-light ratio
 \citep{WL-massMap-clusDet-Schneider1996,WL-massMap-clusDet-Hamana2004}.
@@ -152,13 +152,13 @@ these large-scale weak-lensing surveys
 \citep{WL-massMap-clusDet-CFHT-Shan2012,WL-massMap-clusDet-HSC-Miyazaki2018,WL-massMap-clusDet-HSC-Hamana2020};
 however, cross matching with some (e.g., optically selected) cluster catalog is
 needed to assign the redshift and extract its physical parameter (such as mass)
-for each cluster selected from $2$-D mass map.
+for each cluster selected from $2$-D mass maps.
 
-On the other hand, we can directly reconstruct $3$-D mass maps taking advantage
-of photometric redshift (photo-$z$) information
+On the other hand, we can directly reconstruct three-dimensional ($3$-D) mass
+maps taking advantage of photometric redshift (photo-$z$) information
 \citep{LSS-massMap-Wiener-Simon2009,WL-massMap-VanderPlas2011}; however, these
 methods either do not have enough spatial resolution to identify clusters, or
-they suffer from smears along the line of sight direction, which need to be
+they suffer from smearing along the line of sight direction, which need to be
 overcome for practical searches of clusters in 3D mass maps.  Alternatively,
 \citet{WL-clusDet-Hennawi2005} propose to perform a maximum-likelihood
 detection of clusters, by convolving tomographic shear measurements with $3$-D
@@ -166,7 +166,7 @@ filters that match the tangential shears induced by multi-scale NFW halos,
 without fully reconstruct the $3$-D mass maps.
 
 In this paper, we develop a novel method for high-resolution $3$-D mass map
-reconstruction that are free from line of sight smears.  The $3$-D
+reconstruction that are free from line of sight smearing.  The $3$-D
 mass map is modeled as a summation of the NFW \citep{halo-NFW1997ApJ} basis
 atoms, which have $2$-D multi-scale NFW surface density profiles on the
 transverse plane and one-dimensional Dirac delta functions in the line of sight
@@ -201,7 +201,7 @@ halos with various halo masses and redshifts. The shear fields are used to
 distort the HSC mock shape catalogs with different realizations of the HSC-like
 shape measurement error and photo-$z$ uncertainty (Section \ref{subsec_Sims}).
 
-Then, we test our algorithm using the simulations with different setups of the
+We then test our algorithm using the simulations with different setups of the
 regularization parameter. We also compare the results of our algorithm, which
 uses the NFW dictionary (Section \ref{subsec_test-nfw}), with the point mass
 dictionary (Section \ref{subsec_test-pm}).
@@ -229,32 +229,39 @@ estimations.  Our method models $3$-D density contrast maps as summations of
 NFW atoms with different comoving radii.  With the prior assumption that the
 clumpy masses sparsely distribute in the $3$-D space, the density map is
 reconstructed using the adaptive lasso algorithm \citep{AdaLASSO-Zou2006}.
-We find that the lasso algorithm's solution suffers from a smear of structure
+We find that the lasso algorithm uffers from smearing of structure
 in the line of sight direction even in the absence of galaxy shape noise, and
-the adaptive lasso algorithm efficiently removes the line of sight smear of
+the adaptive lasso algorithm efficiently removes the line of sight smearing of
 structure.
 
 We study the performance of cluster detection from the reconstructed $3$-D mass
 maps using simulations that apply shear distortions from isolated NFW halos to
 HSC-like shapes and photo-$z$ uncertainties.  We conclude that the algorithm is
-able to detect halo with minimal mass limits of $10^{14.0} M_{\odot}/h$,
-$10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for the low ($z<0.3$), median
-($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts, respectively, with an
-average false detection of 0.022 deg$^{-2}$. The estimated redshifts of the halos
-detected from the reconstructed mass maps are lower than the true redshift by
-about $0.03$ for halos at low redshifts ($z\leq 0.4$).  The relative redshift
-bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$. The standard deviation of
-the redshift estimation is $0.092$.
+able to detect halo with minimal mass limits of $10^{14.0} h^{-1}M_{\odot}$,
+$10^{14.7} h^{-1}M_{\odot}$, $10^{15.0} h^{-1}M_{\odot}$ for the low ($z<0.3$),
+median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$) redshifts, respectively,
+with an average false detection of 0.022 deg$^{-2}$. The estimated redshifts of
+the halos detected from the reconstructed mass maps are slightly lower than the
+true redshift by about $0.03$ for halos at low redshifts ($z\leq 0.4$).  The
+relative redshift bias is below $0.5\%$ for halos at $0.4<z\leq 0.85$. The
+standard deviation of the redshift estimation is $0.092$.
 
 We will apply the $3$-D mass map reconstruction to the shear measurements of
 the HSC survey \citep[e.g.,][]{HSC1-catalog,FPFSHSC1-Li2020} to perform galaxy
 cluster detection in our future work.
 
 \section*{Acknowledgements}
-XL thank Yin Li and Jiaxin Han for useful discussions.
+We thank Yin Li and Jiaxin Han for useful discussions.
 
-XL was supported by Global Science Graduate Course (GSGC) program of
-University of Tokyo and JSPS KAKENHI (JP19J22222).
+XL was supported by Global Science Graduate Course (GSGC) program of University
+of Tokyo and JSPS KAKENHI (JP19J22222).
+
+This work was supported in part by Japan Science and Technology Agency (JST)
+CREST JPMHCR1414, and by JST AIP Acceleration Research Grant No. JP20317829,
+Japan. This work was supported in part by the World Premier International
+Research Center Initiative (WPI Initiative), MEXT, Japan, and JSPS KAKENHI
+Grant Nos. JP18K03693, JP20H00181, JP20H05856.
+
 \bibliographystyle{aasjournal}
 \bibliography{citation}
 

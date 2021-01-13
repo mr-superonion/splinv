@@ -14,11 +14,11 @@
 \end{minipage}
 \caption{The lower panels show the density maps reconstructed from the mock
     galaxy shape catalog with the NFW dictionary. The upper panels show the
-    pixels' number histograms.  The penalization parameters are $\lambda=3.5$
-    (left) and $\lambda=5.0$ (right).  The input halo mass is
+    number histograms of pixel values.  The penalization parameters are
+    $\lambda=3.5$ (left) and $\lambda=5.0$ (right).  The input halo mass is
     $M_{200}=10^{15.02} ~h^{-1}M_{\odot}$, and its redshift is $z=0.164$.  The
-    vertical direction is the line of sight direction. The boxes' lower
-    boundaries and upper boundaries of correspond to $z=0.01$ and $z=0.85$,
+    vertical direction is the line of sight direction. The lower boundaries and
+    upper boundaries of the boxes correspond to $z=0.01$ and $z=0.85$,
     respectively.
     } \label{fig_NFW3D}
 \end{figure*}
@@ -44,7 +44,7 @@ While the final adaptive lasso estimation further enhances the growth of the
 pixels with preliminary estimations greater than $\lambda$.
 
 This paper does not go beyond the resolution limit defined by the Gaussian
-smoothing kernel with a standard deviation of $1.\arcmin 5$ and the $1\arcmin$
+smoothing kernel with a standard deviation of $1\farcm5$ and the $1\arcmin$
 pixel scale as discussed in Section \ref{subsec_method_smoothing} and Section
 \ref{subsec_method_pixel}, respectively.  Therefore, we smooth the
 reconstructed density with the same Gaussian kernel in each lens redshift
@@ -52,12 +52,13 @@ plane.
 
 Figure \ref{fig_NFW3D} shows the $3$-D density maps reconstructed with
 different penalization parameters for a halo with $M_{200}=10^{15.02}
-~h^{-1}M_{\odot}$ at redshift $0.164$. Also, the pixels' histograms are shown
-in Figure \ref{fig_NFW3D}. From these plots, we conclude that the adaptive
-lasso algorithm sets most of the reconstructed pixels to zero and only keeps
-the modes strongly related to the data. Moreover, the reconstructed density maps
-do not suffer from the line of sight smearing. After the reconstruction for
-each simulation, we identify the peaks on the sparse density map.
+~h^{-1}M_{\odot}$ at redshift $0.164$. Also, the histograms of pixel values are
+shown in Figure \ref{fig_NFW3D}. From these plots, we conclude that the
+adaptive lasso algorithm sets most of the reconstructed pixels to zero and only
+keeps the modes strongly related to the data. Moreover, the reconstructed
+density maps do not suffer from the line of sight smearing. After the
+reconstruction for each simulation, we identify the peaks on the sparse density
+map.
 
 \begin{figure*}
  \centering
@@ -68,7 +69,7 @@ each simulation, we identify the peaks on the sparse density map.
      parameters: $\lambda=3.5,4.0,5.0$. The dashed blue steps are the
      corresponding results of the reconstructions from $1000$ realizations of
      pure noise catalogs. The gray lines are the best-fit Gaussian distributions
-     to the noises' peak histograms.
+     to the histograms of noise peaks.
     }\label{fig_peakHist}
 \end{figure*}
 
@@ -90,10 +91,10 @@ plane.
 Also, we simulate $1000$ realizations of pure noise catalogs and perform the
 reconstructions on these noise catalogs to study the noise properties.  The
 histograms of normalized peaks detected from the pure noise catalogs are shown
-in Figure \ref{fig_peakHist} and we show the best-fit Gaussian functions of the
+in Figure \ref{fig_peakHist} along with the best-fit Gaussian functions of the
 noise peaks' histograms.
 
-Figure \ref{fig_peakHist} tells that the densities of peaks (including both
+Figure \ref{fig_peakHist} indicates that the densities of peaks (including both
 true and false peaks) are suppressed as the penalization parameter $\lambda$
 increases. Moreover, we find the standard deviation of noise peaks slightly
 decreases as $\lambda$ increases. As a result, for a higher detection threshold
@@ -101,9 +102,9 @@ decreases as $\lambda$ increases. As a result, for a higher detection threshold
 reconstructed from mock catalogs comparing with the noise peak histogram .
 
 The $2$-D histogram, stacked from all of the simulations, for the offsets of
-the detected peak positions from the input halos' positions is shown in the
+the detected peak positions from the positions of input halos is shown in the
 left panel of Figure \ref{fig_detoffsets}. We see a clustering of peaks close
-to the input halo's position on the stacked position histogram.  For each stamp
+to the position of the input halo on the stacked position histogram.  For each stamp
 simulation, we find the positive peak closest to the input position (in the
 pixel unit). If the closest peak lay inside the region denoted with the dashed
 box in the left panel of Figure \ref{fig_detoffsets}, we take it as a true peak
@@ -118,11 +119,11 @@ and negative peaks, are taken as false detections.
      halos. The $x$-axis is for the deviated distance in the transverse plane,
      and the $y$-axis is for the deviation of the redshift. For each
      simulation, the positive peak inside the dashed black box with the minimal
-     offset (in the pixel unit) from the input halo's position is taken as a
-     true detection. The right panel focuses on the deviation of detected peaks
-     in the line of sight direction. The $x$-axis is the input halo redshifts,
-     and the $y$-axis is the redshift of the detected peak. The `$\cross$'
-     denotes the average redshift of detected peaks for each halo over
+     offset (in the pixel unit) from the position of the input halo is taken as
+     a true detection. The right panel focuses on the deviation of detected
+     peaks in the line of sight direction. The $x$-axis is the input halo
+     redshifts, and the $y$-axis is the redshift of the detected peak. The
+     cross denotes the average redshift of detected peaks for each halo over
      different noise realizations, and the error-bars are the uncertainties of
      the average redshifts. The deep gray area is for the relative redshift
      bias less than $0.05$, and the light gray area is for the relative
@@ -132,33 +133,33 @@ and negative peaks, are taken as false detections.
 \end{figure*}
 
 The right panel of Figure \ref{fig_detoffsets} shows the average redshift of
-true detections for each halo. The estimated redshifts are lower than the true
-redshifts by about $0.03$ for halos in the low-redshift range ($z\leq 0.4$).
-For halos at $0.4<z\leq 0.85$, the relative redshift bias is below $0.5\%$. The
-standard deviation of the redshift estimation is $0.092$.
+true detections for each halo. The estimated redshifts are slightly lower than
+the true redshifts by about $0.03$ for halos in the low-redshift range ($z\leq
+0.4$).  For halos at $0.4<z\leq 0.85$, the relative redshift bias is below
+$0.5\%$. The standard deviation of the redshift estimation is $0.092$.
 
 With the intent to suppress false detections, we select peaks with values
-greater than an ad-hoc threshold as candidates of galaxy clusters following
-\citet{WL-massMap-clusDet-HSC-Miyazaki2018}.  The threshold is set to a few
-times the standard deviation of the noise peaks. We use different detection
-thresholds ($1.5\sigma$ and $3.0\sigma$) to detect galaxy clusters from the
-mass maps reconstructed with $\lambda=3.5,4.0,5.0$. The left and middle columns
-of Figure \ref{fig_detFalsRateNFW} show the detection rates for halos in the
-redshift-mass planes with detection thresholds set to $1.5\sigma$ and
-$3.0\sigma$ of the noise peaks' distributions, respectively.  The right column
-of Figure \ref{fig_detFalsRateNFW} shows the corresponding numbers of false
-detections per square degree as functions of detection thresholds.
+greater than an ad-hoc threshold as candidates of galaxy clusters.  The
+threshold is set to a few times the standard deviation of the noise peaks. We
+use different detection thresholds ($1.5\sigma$ and $3.0\sigma$) to detect
+galaxy clusters from the mass maps reconstructed with $\lambda=3.5,4.0,5.0$.
+The left and middle columns of Figure \ref{fig_detFalsRateNFW} show the
+detection rates for halos in the redshift-mass planes with detection thresholds
+set to $1.5\sigma$ and $3.0\sigma$ of the noise peak distributions,
+respectively.  The right column of Figure \ref{fig_detFalsRateNFW} shows the
+corresponding numbers of false detections per square degree as functions of
+detection thresholds.
 
-Figure \ref{fig_detFalsRateNFW} tells that the false peak density is suppressed
+Figure \ref{fig_detFalsRateNFW} indicates that the false peak density is suppressed
 as the detection threshold increases. Also, the detection rate of halo
 significantly decreases. We decide to set the detection threshold to
 $1.5\sigma$ and set the penalization parameter $\lambda$ to $5.0$ since such a
 setup suppresses the false detection to $0.022$ while keeping a good halo
 detection rate.
 In summary, The algorithm is able to detect halo with minimal mass limits of
-$10^{14.0} M_{\odot}/h$, $10^{14.7} M_{\odot}/h$, $10^{15.0} M_{\odot}/h$ for
-the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high ($0.6\leq z< 0.85$)
-redshifts, respectively.
+$10^{14.0} h^{-1}M_{\odot}$, $10^{14.7} h^{-1}M_{\odot}$, $10^{15.0}
+h^{-1}M_{\odot}$ for the low ($z<0.3$), median ($0.3\leq z< 0.6$) and high
+($0.6\leq z< 0.85$) redshifts, respectively.
 
 \begin{figure*}
  \centering
@@ -181,16 +182,18 @@ number density of detected cluster using the halo mass function of
 package, to calculate the halo mass function.  The predicted halo detection
 number density for the setup ($\lambda=5$, $1.5\sigma$ detection threshold) is
 shown in Figure \ref{fig_detNum}. The expected cluster number density in total
-is $0.49$ $\deg^{-2}$, which corresponds to $78.4$ clusters for the first year
-HSC shear catalog \citep{HSC1-catalog} with a survey area of $\sim 160 \deg^2$.
-The expected number of detections is similar to the number of $2$-D cluster
-detections on the first year HSC shape catalog \citep{HSC1-massMap-cluster}.
+is $0.49$ $\deg^{-2}$, which is much higher than the false detection rate of
+0.022 deg$^{-2}$. This cluster number density corresponds to $78.4$ clusters
+for the first year HSC shear catalog \citep{HSC1-catalog} with a survey area of
+$\sim 160 \deg^2$.  The expected number of detections is similar to the number
+of $2$-D cluster detections on the first year HSC shape catalog
+\citep{HSC1-massMap-cluster}.
 
 \begin{figure}
  \centering
  \includegraphics[width=0.5\textwidth]{detNum_zm.pdf}
  \caption{The expected number density of detected clusters per square degree as
-     a function of halo's virial mass and redshift. The number density in total
+     a function of halo mass and redshift. The number density in total
      is $0.49~\deg^{-2}$.
      } \label{fig_detNum}
 \end{figure}

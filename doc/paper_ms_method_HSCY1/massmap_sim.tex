@@ -18,11 +18,9 @@ $\Omega_\Lambda=0.685$, $\sigma_8=0.811$, $n_s=0.965$
 
 We sample halos in a two-dimensional redshift-mass plane. The redshift-mass
 plane is evenly divided into eight redshift bins and eight mass bins. We
-randomly shift the input halo redshifts and halo masses from the bins' centers
-by a small amount. In the simulation, we set the non-linear over-density
-($\Delta_{\rm{vir}}$) to $200$, and $M_{200}$ refers to the virial mass. The
-concentration of the NFW halo is set to as a function of the halo's virial mass
-($M_{200}$) and redshift ($z_{h}$) according to
+randomly shift the input halo redshifts and halo masses from the bin centers
+by a small amount. The concentration of the NFW halo is set to as a function of
+the halo mass ($M_{200}$) and redshift ($z_{h}$) according to
 \citet{c-M_Magneticum-Ragagnin2019}
 \begin{equation}
 c_{h}=6.02\times\left(\frac{M_{200}}{10^{13} M_{\odot}}\right)^{-0.12}
@@ -45,7 +43,7 @@ photo-$z$ uncertainty.
 The mock galaxy catalogs are generated using the HSC S16A shape catalog
 \citep{HSC1-catalog}.  We use the galaxies in a one square degree region at the
 center of tract 9347 \citep{HSC1-data}. The average galaxy number density in
-this region is $22.94~\rm{arcmin}^{-2}$. The galaxies' positions are randomized to
+this region is $22.94~\rm{arcmin}^{-2}$. The positions of galaxies are randomized to
 distribute homogeneously  in the one-square degree stamp statistically. We
 randomly assign its redshift for each galaxy following the MLZ photo-$z$
 probability distribution function \citep{HSC1-photoz}.
@@ -55,7 +53,7 @@ HSC-like shape estimation errors with different realizations.  The histogram of
 the first component of the HSC-like shape estimation error on galaxy level is
 shown in Figure \ref{fig_noiseHistogram}.  The corresponding histogram of the
 shape measurement error on the pixel level after the smoothing and pixelization is
-also shown in \ref{fig_noiseHistogram}. The standard deviation map of the
+also shown in Figure \ref{fig_noiseHistogram}. The standard deviation map of the
 noise is demonstrated in Figure \ref{fig_noistdmap}. As demonstrated in Figure
 \ref{fig_noiseHistogram}, even though the shape measurement error on the galaxy
 level does not fully follow Gaussian distribution, the error is well described
