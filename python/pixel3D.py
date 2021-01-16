@@ -1,6 +1,7 @@
 import os
 import json
 import cosmology
+import haloSim
 import numpy as np
 from configparser import ConfigParser
 
@@ -112,7 +113,7 @@ class cartesianGrid3D():
         self.pozPdfAve=None
         return
 
-    def pixelize_data(self,x,y,z,v,ws=None,method='FFT'):
+    def pixelize_data(self,x,y,z,v,ws=None,method='FFT',ave=True):
         """pixelize catalog into the cartesian grid
         Parameters:
         -------------
@@ -129,43 +130,43 @@ class cartesianGrid3D():
         method: string [default: FFT]
             method used to convolve with smoothing kernel
         """
-
+        if z is None:
+            # This is for 2D pixeliztion
+            assert self.shape[0]==1
         if ws is None:
-            ws=np.ones(len(x))/0.25**2.
+            # equal weight
+            ws=np.ones(len(x))
         if self.sigma>0. and method=='sample':
             return self._pixelize_data_sample(x,y,z,v,ws)
         else:
             return self._pixelize_data_FFT(x,y,z,v,ws)
 
     def _pixelize_data_FFT(self,x,y,z,v,ws=None):
-        dataOut=numpy.histogramdd((x,y,z),bins=(self.xbound,self.ybound,self.zbound), weights=v*ws)[0]
-        weightOut=numpy.histogramdd((x,y,z),bins=(self.xbound,self.ybound,self.zbound), weights=ws)[0]
-        dataOut=dataOut/weightOut
-        assert dataOut.shape==self.shape
-        varOut=np.zeros(self.shape,dtype=float)
-        # truncate the smoothing kernel
-        # to 3 times of sigma
+        # pixelize value field
+        dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound), weights=v*ws)[0]
+        # pixelize weight field
+        weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound), weights=ws)[0]
         if self.sigma>0:
-            rsig=int(self.sigma/self.delta*3+1)
-        else:
-            pass
-
-        return
+            # Gaussian Kernel in Fourier space (normalized in configuration space)
+            gausKer =   haloSim.GausAtom(ny=ny,nx=nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
+            norm    =   gausKer[0,0]
+            gausKer /=  norm
+            # smothing with Gausian Kernel (weight and value)
+            dataOut =   np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
+            weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
+        # avoid weight is zero
+        mask    =   weightOut>0.
+        dataOut[mask] = dataOut[mask]/weightOut[mask]
+        dataOut[~mask]= 0.
+        return dataOut
 
     def _pixelize_data_sample(self,x,y,z,v,ws=None):
         xbin=np.int_((x-self.xbound[0])/self.delta)
         ybin=np.int_((y-self.ybound[0])/self.delta)
-        if z is None:
-            # This is for 2D pixelaztion
-            assert self.shape[0]==1
         dataOut=np.zeros(self.shape,v.dtype)
-        varOut=np.zeros(self.shape,dtype=float)
+        # varOut=np.zeros(self.shape,dtype=float)
         # sample to 3 times of sigma
-        if self.sigma>0:
-            rsig=int(self.sigma/self.delta*3+1)
-        else:
-            raise ValueError("smoothing scale should be larger than zero")
-            return
+        rsig=int(self.sigma/self.delta*3+1)
         for iz in range(self.shape[0]):
             if z is not None:
                 mskz=(z>=self.zbound[iz])&(z<self.zbound[iz+1])
