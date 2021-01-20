@@ -24,69 +24,56 @@ def four_pi_G_over_c_squared():
     return fourpiGoverc2
 
 class cartesianGrid3D():
-    # pixel3D.cartesianGrid3D
+    """
+    pixlize in a TAN(Gnomonic)-prjected Cartesian Grid
+    """
     def __init__(self,parser):
         """
         Parameters:
         -------------
         parser: parser
         """
-        # Transverse celestial plane
-        # the unit in the configuration
-        # the input data is in unit of degree
+        # The unit of angle in the configuration
         unit=parser.get('transPlane','unit')
+        # It is necessary to do the scaling as the input data is in unit of
+        # degree
         if unit=='degree':
-            ratio=1.
+            self.ratio=1.
         elif unit=='arcmin':
-            ratio=1./60.
+            self.ratio=1./60.
         elif unit=='arcsec':
-            ratio=1./60./60.
-
-        ## ra
-        delta=parser.getfloat('transPlane','scale')*ratio
-        xmin=parser.getfloat('transPlane','xmin')*ratio
-        nx=parser.getint('transPlane','nx')
-        assert nx>=1
-        xmax=xmin+delta*(nx+0.1)
-        xbound=np.arange(xmin,xmax,delta)
-        xcgrid=(xbound[:-1]+xbound[1:])/2.
-        assert len(xcgrid)==nx
-        self.xbound=xbound
-        self.xcgrid=xcgrid
-        ## dec
-        ymin=parser.getfloat('transPlane','ymin')*ratio
-        ny=parser.getint('transPlane','ny')
-        assert ny>=1
-        ymax=ymin+delta*(ny+0.1)
-        ybound=np.arange(ymin,ymax,delta)
-        ycgrid=(ybound[:-1]+ybound[1:])/2.
-        assert len(ycgrid)==ny
-        self.ybound=ybound
-        self.ycgrid=ycgrid
-        self.delta=delta
-        ## Gaussian smoothing
-        self.sigma=parser.getfloat('transPlane','smooth_scale')*ratio
-
-        # line-of-signt direction
-        # background plane
-        if parser.has_option('sourceZ','zbound'):
-            zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
-            nz=len(zbound)-1
+            self.ratio=1./60./60.
+        self.delta=parser.getfloat('transPlane','scale')*self.ratio
+        ## Gaussian smoothing In the projected plane
+        self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+        ## Padding
+        if parser.has_option('transPlane','pad'):
+            self.pad    =   parser.getfloat('transPlane','pad')*self.ratio
         else:
-            zmin=parser.getfloat('sourceZ','zmin')
-            deltaz=parser.getfloat('sourceZ','zscale')
-            nz=parser.getint('sourceZ','nz')
-            assert nz>=1
-            zmax=zmin+deltaz*(nz+0.1)
-            zbound=np.arange(zmin,zmax,deltaz)
+            self.pad    =   0.1 #deg
 
-        zcgrid=(zbound[:-1]+zbound[1:])/2.
+        # Line-of-sight direction for background galaxies
+        if parser.has_section('sourceZ'):
+            if parser.has_option('sourceZ','zbound'):
+                zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
+                nz=len(zbound)-1
+            else:
+                zmin=parser.getfloat('sourceZ','zmin')
+                deltaz=parser.getfloat('sourceZ','zscale')
+                nz=parser.getint('sourceZ','nz')
+                assert nz>=1
+                zmax=zmin+deltaz*(nz+0.1)
+                zbound=np.arange(zmin,zmax,deltaz)
+            zcgrid=(zbound[:-1]+zbound[1:])/2.
+        else:
+            nz  =   1
+            zbound=np.array([0.,100.])
+            zcgrid= None
         self.zbound=zbound
         self.zcgrid=zcgrid
         self.nz=nz
-        self.shape=(nz,ny,nx)
 
-        # foreground plane
+        # Foreground plane
         if parser.has_option('lensZ','zlbound'):
             zlbound=np.array(json.loads(parser.get('sourceZ','zlbound')))
             nzl=len(zlbound)-1
@@ -102,16 +89,118 @@ class cartesianGrid3D():
         self.zlcgrid=   zlcgrid
         self.nzl    =   nzl
 
-        # Only for lensing kernel
+        # For lensing kernel
         if parser.has_option('cosmology','omega_m'):
             omega_m=parser.getfloat('cosmology','omega_m')
         else:
             omega_m=0.3
         self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
-
         self.lensKernel=None
         self.pozPdfAve=None
         return
+
+    def setupTanPlane(self,ra,dec):
+        # if parser.has_option('transPlane','xmin') and \
+        #         parser.has_option('transPlane','ymin'):
+        #     ## ra
+        #     xmin=   parser.getfloat('transPlane','xmin')*self.ratio
+        #     nx  =   parser.getint('transPlane','nx')
+        #     assert nx>=1
+        #     xmax=   xmin+self.delta*(nx+0.1)
+        #     xbound= np.arange(xmin,xmax,self.delta)
+        #     xcgrid= (xbound[:-1]+xbound[1:])/2.
+        #     assert len(xcgrid)==nx
+        #     self.xbound=xbound
+        #     self.xcgrid=xcgrid
+        #     ## dec
+        #     ymin=   parser.getfloat('transPlane','ymin')*self.ratio
+        #     ny  =   parser.getint('transPlane','ny')
+        #     assert ny>=1
+        #     ymax=   ymin+self.delta*(ny+0.1)
+        #     ybound= np.arange(ymin,ymax,self.delta)
+        #     ycgrid= (ybound[:-1]+ybound[1:])/2.
+        #     assert len(ycgrid)==ny
+        #     self.ybound=ybound
+        #     self.ycgrid=ycgrid
+        self.ramax  =   np.max(ra)
+        self.ramin  =   np.min(ra)
+        self.decmax =   np.max(dec)
+        self.decmin =   np.min(dec)
+        self.ra0    =   (self.ramax+self.ramin)/2.
+        self.dec0   =   (self.decmax+self.decmin)/2.
+        self.cosdec0=   np.cos(self.dec0/180.*np.pi)
+        self.sindec0=   np.sin(self.dec0/180.*np.pi)
+        x,y         =   self.project_tan(ra,dec)
+
+        xmin=   (np.min(x)-self.pad)
+        xmax=   (np.max(x)+self.pad)
+        ymin=   (np.min(y)-self.pad)
+        ymax=   (np.max(y)+self.pad)
+        # make sure we have even number of pixels in x and y
+        self.nx =   int((xmax/self.delta-xmin/self.delta+1)//2*2)
+        self.ny =   int((ymax/self.delta-ymin/self.delta+1)//2*2)
+        xmax=   xmin+self.delta*(self.nx+0.1)
+        ymax=   ymin+self.delta*(self.ny+0.1)
+        self.xbound= np.arange(xmin,xmax,self.delta)
+        self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
+        assert len(self.xcgrid)==self.nx
+        self.ybound= np.arange(ymin,ymax,self.delta)
+        self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
+        assert len(self.ycgrid)==self.ny
+        self.shape=(self.nz,self.ny,self.nx)
+        return x,y
+
+    def project_tan(self,ra,dec):
+        """
+        TAN(Gnomonic)-prjection of sky coordiantes
+        (no rotation,no flipping)
+        Parameters:
+        -------------
+        ra:     array of ra to project [deg]
+        dec:    array of dec to project[deg]
+        """
+        rr      =   180.0/np.pi
+        sindec  =   np.sin(dec/rr)
+        cosdec  =   np.cos(dec/rr)
+
+        capa    =   cosdec*np.cos((ra-self.ra0)/rr)
+        # cos of angle distance
+        cosC    =   self.sindec0*sindec+capa*self.cosdec0
+
+        x1      =   cosdec*np.sin((ra-self.ra0)/rr)/cosC*rr+self.ra0
+        x2      =   (self.cosdec0*sindec-capa*self.sindec0)/cosC*rr+self.dec0
+        return x1,x2
+
+    def iproject_tan(self,x1,x2):
+        """
+        inverse TAN(Gnomonic)-prjection of pixel coordiantes
+        (no rotation,no flipping)
+        Parameters:
+        -------------
+        x1:     array of x1 pixel coord [deg]
+        x2:     array of x2 pixel coord [deg]
+        """
+
+        # unit
+        rr      =   180.0/np.pi
+        dx      =   (x1-self.ra0)/rr
+        dy      =   (x2-self.dec0)/rr
+
+        # angle distance
+        rho     =   np.sqrt(dx*dx+dy*dy)
+        cc      =   np.arctan(rho)
+        #
+        cosC    =   np.cos(cc)
+        sinC    =   np.sin(cc)
+
+        cosP    =   dx/rho
+        sinP    =   dy/rho
+
+        xx      =   self.cosdec0*cosC-self.sindec0*sinC*sinP
+        yy      =   sinC*cosP
+        ra      =   self.ra0+np.arctan2(yy,xx)*rr
+        dec     =   np.arcsin(self.sindec0*cosC+self.cosdec0*sinC*sinP)*rr
+        return ra,dec
 
     def pixelize_data(self,x,y,z,v,ws=None,method='FFT',ave=True):
         """pixelize catalog into the cartesian grid
@@ -148,7 +237,7 @@ class cartesianGrid3D():
         weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound), weights=ws)[0]
         if self.sigma>0:
             # Gaussian Kernel in Fourier space (normalized in configuration space)
-            gausKer =   haloSim.GausAtom(ny=ny,nx=nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
+            gausKer =   haloSim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel (weight and value)
