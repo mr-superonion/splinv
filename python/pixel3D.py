@@ -122,6 +122,7 @@ class cartesianGrid3D():
         #     assert len(ycgrid)==ny
         #     self.ybound=ybound
         #     self.ycgrid=ycgrid
+
         self.ramax  =   np.max(ra)
         self.ramin  =   np.min(ra)
         self.decmax =   np.max(dec)
@@ -150,7 +151,7 @@ class cartesianGrid3D():
         self.shape=(self.nz,self.ny,self.nx)
         return x,y
 
-    def project_tan(self,ra,dec):
+    def project_tan(self,ra,dec,pix=False):
         """
         TAN(Gnomonic)-prjection of sky coordiantes
         (no rotation,no flipping)
@@ -169,7 +170,10 @@ class cartesianGrid3D():
 
         x1      =   cosdec*np.sin((ra-self.ra0)/rr)/cosC*rr+self.ra0
         x2      =   (self.cosdec0*sindec-capa*self.sindec0)/cosC*rr+self.dec0
-        return x1,x2
+        if pix:
+            return (x1-self.xbound[0])/self.delta,(x2-self.ybound[0])/self.delta
+        else:
+            return x1,x2
 
     def iproject_tan(self,x1,x2):
         """
