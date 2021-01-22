@@ -206,7 +206,7 @@ class cartesianGrid3D():
         dec     =   np.arcsin(self.sindec0*cosC+self.cosdec0*sinC*sinP)*rr
         return ra,dec
 
-    def pixelize_data(self,x,y,z,v,ws=None,method='FFT',ave=True):
+    def pixelize_data(self,x,y,z,v=None,ws=None,method='FFT',ave=True):
         """pixelize catalog into the cartesian grid
         Parameters:
         -------------
@@ -234,54 +234,64 @@ class cartesianGrid3D():
         else:
             return self._pixelize_data_FFT(x,y,z,v,ws)
 
-    def _pixelize_data_FFT(self,x,y,z,v,ws=None):
+    def _pixelize_data_FFT(self,x,y,z,v=None,ws=None):
         # pixelize value field
-        dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound), weights=v*ws)[0]
+        if v is not None:
+            dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=v*ws)[0]
         # pixelize weight field
-        weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound), weights=ws)[0]
+        weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=ws)[0]
         if self.sigma>0:
-            # Gaussian Kernel in Fourier space (normalized in configuration space)
+            # Gaussian Kernel in Fourier space
+            # (normalized in configuration space)
             gausKer =   haloSim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
             norm    =   gausKer[0,0]
             gausKer /=  norm
-            # smothing with Gausian Kernel (weight and value)
-            dataOut =   np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
+            # smothing with Gausian Kernel
+            # (weight and value)
+            if v is not None:
+                dataOut =   np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
             weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
-        # avoid weight is zero
-        mask    =   weightOut>0.
-        dataOut[mask] = dataOut[mask]/weightOut[mask]
-        dataOut[~mask]= 0.
-        return dataOut
+        if v is not None:
+            # avoid weight is zero
+            mask        =   weightOut>0.
+            dataOut[mask]   =   dataOut[mask]/weightOut[mask]
+            dataOut[~mask]  =   0.
+            return dataOut
+        else:
+            return weightOut
 
-    def _pixelize_data_sample(self,x,y,z,v,ws=None):
-        xbin=np.int_((x-self.xbound[0])/self.delta)
-        ybin=np.int_((y-self.ybound[0])/self.delta)
-        dataOut=np.zeros(self.shape,v.dtype)
-        # varOut=np.zeros(self.shape,dtype=float)
+    def _pixelize_data_sample(self,x,y,z,v=None,ws=None):
+        xbin=   np.int_((x-self.xbound[0])/self.delta)
+        ybin=   np.int_((y-self.ybound[0])/self.delta)
+        if v is not None:
+            dataOut=np.zeros(self.shape,v.dtype)
+        else:
+            dataOut=np.zeros(self.shape)
         # sample to 3 times of sigma
-        rsig=int(self.sigma/self.delta*3+1)
+        rsig=   int(self.sigma/self.delta*3+1)
         for iz in range(self.shape[0]):
             if z is not None:
-                mskz=(z>=self.zbound[iz])&(z<self.zbound[iz+1])
+                mskz=   (z>=self.zbound[iz])&(z<self.zbound[iz+1])
             else:
-                mskz=np.ones(len(x),dtype=bool)
+                mskz=   np.ones(len(x),dtype=bool)
             for iy in range(self.shape[1]):
-                yc=self.ycgrid[iy]
-                msky=mskz&(ybin>=iy-rsig)&(ybin<=iy+rsig)
+                yc  =   self.ycgrid[iy]
+                msky=   mskz&(ybin>=iy-rsig)&(ybin<=iy+rsig)
                 for ix in range(self.shape[2]):
-                    xc=self.xcgrid[ix]
+                    xc  =   self.xcgrid[ix]
                     mskx=msky&(xbin>=ix-rsig)&(xbin<=ix+rsig)
-                    if not np.sum(mskx)>=1:
+                    if not  np.sum(mskx)>=1:
                         continue
-                    rl2=(x[mskx]-xc)**2.+(y[mskx]-yc)**2.
+                    rl2 =(x[mskx]-xc)**2.+(y[mskx]-yc)**2.
                     # convolve with Gaussian kernel
-                    wg=np.exp(-rl2/self.sigma**2./2.)
-                    wgsum=np.sum(wg)
-                    wl=wg*ws[mskx]
-                    if wgsum>2.:
-                        dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
-                        #varOut[iz,iy,ix]=2.*np.sum(wg**2.*ws[mskx])/(np.sum(wl))**2.
-                        # 2 is to account for 2 components of shear (g1 and g2)
+                    wg  =   np.exp(-rl2/self.sigma**2./2.)/self.sigma/np.sqrt(2.*np.pi)
+                    wgsum=  np.sum(wg)
+                    wl  =   wg*ws[mskx]
+                    if wgsum>2./self.sigma/np.sqrt(2.*np.pi):
+                        if v is not None:
+                            dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
+                        else:
+                            dataOut[iz,iy,ix]=np.sum(wl)
         return dataOut
 
     def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
