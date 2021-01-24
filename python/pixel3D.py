@@ -226,9 +226,7 @@ class cartesianGrid3D():
         if z is None:
             # This is for 2D pixeliztion
             assert self.shape[0]==1
-        if ws is None:
-            # equal weight
-            ws=np.ones(len(x))
+            z = np.ones(len(x))
         if self.sigma>0. and method=='sample':
             return self._pixelize_data_sample(x,y,z,v,ws)
         else:
