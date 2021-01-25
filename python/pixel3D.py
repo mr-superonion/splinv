@@ -133,15 +133,22 @@ class cartesianGrid3D():
         self.sindec0=   np.sin(self.dec0/180.*np.pi)
         x,y         =   self.project_tan(ra,dec)
 
-        xmin=   (np.min(x)-self.pad)
-        xmax=   (np.max(x)+self.pad)
-        ymin=   (np.min(y)-self.pad)
-        ymax=   (np.max(y)+self.pad)
+        dxmin   =   self.ra0-(np.min(x)-self.pad)
+        dxmax   =   (np.max(x)+self.pad)-self.ra0
+        dnx     =   int(max(dxmin,dxmax)/self.delta+1.)
+        dymin   =   self.dec0-(np.min(y)-self.pad)
+        dymax   =   (np.max(y)+self.pad)-self.dec0
+        dny     =   int(max(dymin,dymax)/self.delta+1.)
+
         # make sure we have even number of pixels in x and y
-        self.nx =   int((xmax/self.delta-xmin/self.delta+1)//2*2)
-        self.ny =   int((ymax/self.delta-ymin/self.delta+1)//2*2)
-        xmax=   xmin+self.delta*(self.nx+0.1)
-        ymax=   ymin+self.delta*(self.ny+0.1)
+        self.nx =   2*dnx
+        self.ny =   2*dny
+
+        xmin    =   self.ra0-self.delta*(dnx+0.5)
+        xmax    =   xmin+self.delta*(self.nx+1)
+        ymin    =   self.dec0-self.delta*(dny+0.5)
+        ymax    =   ymin+self.delta*(self.ny+1)
+
         self.xbound= np.arange(xmin,xmax,self.delta)
         self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
         assert len(self.xcgrid)==self.nx
