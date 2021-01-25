@@ -35,8 +35,8 @@ class cartesianGrid3D():
         """
         # The unit of angle in the configuration
         unit=parser.get('transPlane','unit')
-        # It is necessary to do the scaling as the input data is in unit of
-        # degree
+        # It is necessary to do the scaling as the
+        # input data is in unit of degree
         if unit=='degree':
             self.ratio=1.
         elif unit=='arcmin':
@@ -99,51 +99,37 @@ class cartesianGrid3D():
         self.pozPdfAve=None
         return
 
-    def setupTanPlane(self,ra,dec):
-        # if parser.has_option('transPlane','xmin') and \
-        #         parser.has_option('transPlane','ymin'):
-        #     ## ra
-        #     xmin=   parser.getfloat('transPlane','xmin')*self.ratio
-        #     nx  =   parser.getint('transPlane','nx')
-        #     assert nx>=1
-        #     xmax=   xmin+self.delta*(nx+0.1)
-        #     xbound= np.arange(xmin,xmax,self.delta)
-        #     xcgrid= (xbound[:-1]+xbound[1:])/2.
-        #     assert len(xcgrid)==nx
-        #     self.xbound=xbound
-        #     self.xcgrid=xcgrid
-        #     ## dec
-        #     ymin=   parser.getfloat('transPlane','ymin')*self.ratio
-        #     ny  =   parser.getint('transPlane','ny')
-        #     assert ny>=1
-        #     ymax=   ymin+self.delta*(ny+0.1)
-        #     ybound= np.arange(ymin,ymax,self.delta)
-        #     ycgrid= (ybound[:-1]+ybound[1:])/2.
-        #     assert len(ycgrid)==ny
-        #     self.ybound=ybound
-        #     self.ycgrid=ycgrid
+    def setupTanPlane(self,ra=None,dec=None,header=None):
+        if (ra is not None) and (dec is not None):
+            self.ramax  =   np.max(ra)
+            self.ramin  =   np.min(ra)
+            self.decmax =   np.max(dec)
+            self.decmin =   np.min(dec)
+            self.ra0    =   (self.ramax+self.ramin)/2.
+            self.dec0   =   (self.decmax+self.decmin)/2.
+            self.cosdec0=   np.cos(self.dec0/180.*np.pi)
+            self.sindec0=   np.sin(self.dec0/180.*np.pi)
+            x,y         =   self.project_tan(ra,dec)
 
-        self.ramax  =   np.max(ra)
-        self.ramin  =   np.min(ra)
-        self.decmax =   np.max(dec)
-        self.decmin =   np.min(dec)
-        self.ra0    =   (self.ramax+self.ramin)/2.
-        self.dec0   =   (self.decmax+self.decmin)/2.
-        self.cosdec0=   np.cos(self.dec0/180.*np.pi)
-        self.sindec0=   np.sin(self.dec0/180.*np.pi)
-        x,y         =   self.project_tan(ra,dec)
+            dxmin   =   self.ra0-(np.min(x)-self.pad)
+            dxmax   =   (np.max(x)+self.pad)-self.ra0
+            dnx     =   int(max(dxmin,dxmax)/self.delta+1.)
+            dymin   =   self.dec0-(np.min(y)-self.pad)
+            dymax   =   (np.max(y)+self.pad)-self.dec0
+            dny     =   int(max(dymin,dymax)/self.delta+1.)
 
-        dxmin   =   self.ra0-(np.min(x)-self.pad)
-        dxmax   =   (np.max(x)+self.pad)-self.ra0
-        dnx     =   int(max(dxmin,dxmax)/self.delta+1.)
-        dymin   =   self.dec0-(np.min(y)-self.pad)
-        dymax   =   (np.max(y)+self.pad)-self.dec0
-        dny     =   int(max(dymin,dymax)/self.delta+1.)
-
-        # make sure we have even number of pixels in x and y
-        self.nx =   2*dnx
-        self.ny =   2*dny
-
+            # make sure we have even number of pixels in x and y
+            self.nx =   2*dnx
+            self.ny =   2*dny
+        elif header is not None:
+            self.delta  =   header['CDELT1']
+            self.ra0    =   header['CRVAL1']
+            self.dec0   =   header['CRVAL1']
+            self.nx     =   int(header['NAXIS1'])
+            self.ny     =   int(header['NAXIS2'])
+            dnx         =   self.nx//2
+            dny         =   self.ny//2
+        print(self.nx,self.ny)
         xmin    =   self.ra0-self.delta*(dnx+0.5)
         xmax    =   xmin+self.delta*(self.nx+1)
         ymin    =   self.dec0-self.delta*(dny+0.5)
@@ -156,7 +142,10 @@ class cartesianGrid3D():
         self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
         assert len(self.ycgrid)==self.ny
         self.shape=(self.nz,self.ny,self.nx)
-        return x,y
+        if (ra is not None) and (dec is not None):
+            return x,y
+        else:
+            return
 
     def project_tan(self,ra,dec,pix=False):
         """
