@@ -7,6 +7,9 @@ __pycache__
 *.html
 *.dvi
 *.aux
+*.fls
+*.xdv
+*.out
 *.synctex.gz
 *-checkpoint.ipynb
 *checkpoints
