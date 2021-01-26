@@ -101,12 +101,17 @@ class cartesianGrid3D():
 
     def setupTanPlane(self,ra=None,dec=None,header=None):
         if (ra is not None) and (dec is not None):
-            self.ramax  =   np.max(ra)
-            self.ramin  =   np.min(ra)
-            self.decmax =   np.max(dec)
-            self.decmin =   np.min(dec)
-            self.ra0    =   (self.ramax+self.ramin)/2.
-            self.dec0   =   (self.decmax+self.decmin)/2.
+            # first try
+            self.ra0    =   (np.max(ra)+np.min(ra))/2.
+            self.dec0   =   (np.max(dec)+np.min(dec))/2.
+            self.cosdec0=   np.cos(self.dec0/180.*np.pi)
+            self.sindec0=   np.sin(self.dec0/180.*np.pi)
+            x,y         =   self.project_tan(ra,dec)
+            xt          =   (np.max(x)+np.min(x))/2.
+            yt          =   (np.max(y)+np.min(y))/2.
+
+            # second try
+            self.ra0,self.dec0=self.iproject_tan(xt,yt)
             self.cosdec0=   np.cos(self.dec0/180.*np.pi)
             self.sindec0=   np.sin(self.dec0/180.*np.pi)
             x,y         =   self.project_tan(ra,dec)
@@ -129,11 +134,10 @@ class cartesianGrid3D():
             self.ny     =   int(header['NAXIS2'])
             dnx         =   self.nx//2
             dny         =   self.ny//2
-        print(self.nx,self.ny)
         xmin    =   self.ra0-self.delta*(dnx+0.5)
-        xmax    =   xmin+self.delta*(self.nx+1)
+        xmax    =   xmin+self.delta*(self.nx+0.1)
         ymin    =   self.dec0-self.delta*(dny+0.5)
-        ymax    =   ymin+self.delta*(self.ny+1)
+        ymax    =   ymin+self.delta*(self.ny+0.1)
 
         self.xbound= np.arange(xmin,xmax,self.delta)
         self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
@@ -223,6 +227,8 @@ class cartesianGrid3D():
             # This is for 2D pixeliztion
             assert self.shape[0]==1
             z = np.ones(len(x))
+        if ws is None:
+            ws = np.ones(len(x))
         if self.sigma>0. and method=='sample':
             return self._pixelize_data_sample(x,y,z,v,ws)
         else:
