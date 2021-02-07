@@ -1,5 +1,17 @@
+# Copyright 20200227 Xiangchong Li.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# GNU General Public License for more details.
+#
 import numpy as np
-import cosmology
+from cosmology import Cosmo
 import scipy.special as spfun
 import astropy.io.fits as pyfits
 
@@ -20,7 +32,66 @@ def four_pi_G_over_c_squared():
     fourpiGoverc2 /= 1.e6
     return fourpiGoverc2
 
-class nfw_lensWB00():
+class nfwHalo(Cosmo):
+    def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=0.3):
+        """
+        @param mass         Mass defined using a spherical overdensity of 200 times the critical density
+                            of the universe, in units of M_solar/h.
+        @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        @param redshift     Redshift of the halo.
+        @param ra           ra of halo center  [arcsec].
+        @param dec          dec of halo center [arcsec].
+        @param omega_m      Omega_matter to pass to Cosmology constructor. [default: 0.3]
+                            omega_lam is set to 1-omega_matter.
+        """
+        # Redshift and Geometry
+        ## ra dec
+        self.ra     =   ra
+        self.dec    =   dec
+        Cosmo.__init__(self,h=1,omega_m=omega_m)
+        self.z      =   float(redshift)
+        self.a      =   1./(1.+self.z)
+        self.DaLens =   self.Da(0.,self.z) # angular distance in Mpc/h
+        # E(z)^{-1}
+        self.ezInv  =   self.Ez_inverse(self.z)
+        # critical density
+        # in unit of M_solar / Mpc^3
+        rho_cZ      =   self.rho0()/self.ezInv**2
+        self.M      =   float(mass)
+        # First, we get the virial radius, which is defined for some spherical
+        # overdensity as 3 M / [4 pi (r_vir)^3] = overdensity Here we have
+        # overdensity = 200 * rhocrit, to determine r_vir (angular distance).
+        # The factor of 1.63e-5 comes from the following set of prefactors: (3
+        # / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar /
+        # Mpc^3.
+        # (H0=100,DH=C_LIGHT/1e3/H0,rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
+        self.rvir        =   1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
+        if conc is not None:
+            self.c  =   float(conc)
+            # scale radius
+            self.rs =   self.rvir/self.c
+            if rs is not None:
+                assert abs(self.rs-rs)<0.01, 'input rs is different from derived'
+        elif rs is not None:
+            self.rs =   float(rs)
+            self.c  =  self.rvir/self.rs
+        else:
+            raise ValueError("need to give conc or rs, at least one")
+
+        # \delta_c in equation (2)
+        self.A      =   1./(np.log(1+self.c)-(self.c)/(1+self.c))
+        self.delta_nfw =200./3*self.c**3*self.A
+        # convert to angular radius in unit of arcsec
+        scale       =   self.rs / self.DaLens
+        arcsec2rad  =   np.pi/180./3600
+        self.rs_arcsec =scale/arcsec2rad
+
+        # Second, derive the charateristic matter density
+        # within virial radius at redshift z
+        self.rho_s=   rho_cZ*self.delta_nfw
+        return
+
+class nfw_lensWB00(nfwHalo):
     """
     Based on the integral functions of a spherical NFW profile:
     Wright & Brainerd(2000, ApJ, 534, 34)
@@ -34,47 +105,8 @@ class nfw_lensWB00():
     @param omega_m      Omega_matter to pass to Cosmology constructor. [default: 0.3]
                         omega_lam is set to 1-omega_matter.
     """
-    def __init__(self,mass,conc,redshift,ra,dec,omega_m=0.3):
-        self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
-        self.M = float(mass)
-        self.c = float(conc)
-        # \delta_c in equation (2)
-        self.delta_nfw  =200./3*self.c**3/(np.log(1+self.c)-(1.*self.c)/(1+self.c))
-        self.z = float(redshift)
-        # E(z)^{-1}
-        self.ezInv=self.cosmo.Ez_inverse(self.z)
-        # critical density
-        # in unit of M_solar / Mpc^3
-        rho_cZ   = self.cosmo.rho0()/self.ezInv**2
-        # charateristic matter density within R200 at redshift z
-        # \delta_c \times \rho_c in equation (1),(11)
-        self.rho_s=   rho_cZ*self.delta_nfw
-        # scale radius
-        self.a = 1./(1.+self.z)
-        self.DaLens=self.cosmo.Da(0.,self.z)
-        # ra_l,dec_l
-        self.ra=ra
-        self.dec=dec
-
-        # First we get the virial radius, which is defined for some spherical overdensity as
-        # 3 M / [4 pi (r_vir)^3] = overdensity
-        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance).
-        # The factor of 1.63e-5 comes from the following set of prefactors:
-        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3.
-        # (H0=100.
-        # DH=C_LIGHT/1e3/H0
-        # rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
-        # The mass in the equation below is in M_solar/h,
-        # which is how the final units are Mpc/h.
-        R200 = 1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
-        self.rs = R200/self.c
-
-        # convert scale radius in arcsec
-        dl = self.cosmo.Da(0.,self.z) # in Mpc/h
-        scale = self.rs / dl
-        arcsec2rad = np.pi/180./3600
-        self.rs_arcsec = scale/arcsec2rad
-        return
+    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=0.3):
+        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=0.3)
 
     def __DdRs(self,ra_s,dec_s):
         """Calculate 'x' the radius r in units of the NFW scale
@@ -220,7 +252,7 @@ class nfw_lensWB00():
         # First mask the data with z<z_l
         k_s =   np.zeros(len(z_s))
         mask=   z_s>self.z
-        k_s[mask] =   self.cosmo.Da(self.z,z_s[mask])*self.DaLens/self.cosmo.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
+        k_s[mask] =   self.Da(self.z,z_s[mask])*self.DaLens/self.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
         return k_s
 
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
@@ -241,8 +273,8 @@ class nfw_lensWB00():
             'input ra and dec have different length '
         # Here we approximate the average rho_M for redshif bin
         # as the rho_M at the mean redshift
-        rhoM_ave=self.cosmo.rho_m((z_bin_min+z_bin_max)/2.)
-        DaBin=self.cosmo.Da(z_bin_min,z_bin_max)
+        rhoM_ave=self.rho_m((z_bin_min+z_bin_max)/2.)
+        DaBin=self.Da(z_bin_min,z_bin_max)
         return rhoM_ave*DaBin
 
     def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
@@ -277,10 +309,11 @@ class nfw_lensWB00():
         atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
         return atomReal
 
-class nfw_lensTJ03():
+class nfw_lensTJ03(nfwHalo):
     """
     Based on the integral functions of a spherical NFW profile:
-    Wright & Brainerd(2000, ApJ, 534, 34)
+    Takada & Jain(2003, MNRAS, 340, 580) Eq.27 -- Surface Density,
+    and Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
 
     @param mass         Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
@@ -291,46 +324,8 @@ class nfw_lensTJ03():
     @param omega_m      Omega_matter to pass to Cosmology constructor. [default: 0.3]
                         omega_lam is set to 1-omega_matter.
     """
-    def __init__(self,mass,conc,redshift,ra,dec,omega_m=0.3):
-        self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
-        self.M = float(mass)
-        self.c = float(conc)
-        # \delta_c in equation (2)
-        self.A=1./(np.log(1+self.c)-(self.c)/(1+self.c))
-        self.delta_nfw  =200./3*self.c**3*self.A
-        self.z = float(redshift)
-        # E(z)^{-1}
-        self.ezInv=self.cosmo.Ez_inverse(self.z)
-        # critical density
-        # in unit of M_solar / Mpc^3
-        rho_cZ   = self.cosmo.rho0()/self.ezInv**2
-        # charateristic matter density within R200 at redshift z
-        # \delta_c \times \rho_c in equation (1),(11)
-        self.rho_s=   rho_cZ*self.delta_nfw
-        # scale radius
-        self.a = 1./(1.+self.z)
-        self.DaLens=self.cosmo.Da(0.,self.z)
-        # ra_l,dec_l
-        self.ra=ra
-        self.dec=dec
-
-        # First we get the virial radius, which is defined for some spherical overdensity as
-        # 3 M / [4 pi (r_vir)^3] = overdensity
-        # Here we have overdensity = 200 * rhocrit, to determine R200 (angular distance).
-        # The factor of 1.63e-5 comes from the following set of prefactors:
-        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar / Mpc^3.
-        # (H0=100,DH=C_LIGHT/1e3/H0,rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
-        # The mass in the equation below is in M_solar/h,
-        # which is how the final units are Mpc/h.
-        R200 = 1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
-        self.rs = R200/self.c
-
-        # convert scale radius in arcsec
-        dl = self.cosmo.Da(0.,self.z) # in Mpc/h
-        scale = self.rs / dl
-        arcsec2rad = np.pi/180./3600
-        self.rs_arcsec = scale/arcsec2rad
-        return
+    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=0.3):
+        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=0.3)
 
     def __DdRs(self,ra_s,dec_s):
         """Calculate 'x' the radius r in units of the NFW scale
@@ -486,7 +481,7 @@ class nfw_lensTJ03():
         # First mask the data with z<z_l
         k_s =   np.zeros(len(z_s))
         mask=   z_s>self.z
-        k_s[mask] =   self.cosmo.Da(self.z,z_s[mask])*self.DaLens/self.cosmo.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
+        k_s[mask] =   self.Da(self.z,z_s[mask])*self.DaLens/self.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
         return k_s
 
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
@@ -507,8 +502,8 @@ class nfw_lensTJ03():
             'input ra and dec have different length '
         # Here we approximate the average rho_M for redshif bin
         # as the rho_M at the mean redshift
-        rhoM_ave=self.cosmo.rho_m((z_bin_min+z_bin_max)/2.)
-        DaBin=self.cosmo.Da(z_bin_min,z_bin_max)
+        rhoM_ave=self.rho_m((z_bin_min+z_bin_max)/2.)
+        DaBin=self.Da(z_bin_min,z_bin_max)
         return rhoM_ave*DaBin
 
     def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
@@ -548,8 +543,8 @@ The following functions are used for halolet construction
 """
 def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
     """
-    Make haloTJ03 atom (l2 normalized) from Fourier space as CS02.
-    https://arxiv.org/pdf/astro-ph/0206508.pdf Eq.(81) Eq.(82)
+    Make haloTJ03 halo (l2 normalized) from Fourier space following CS02:
+    https://arxiv.org/pdf/astro-ph/0206508.pdf Eq.(81) and Eq.(82)
 
     Parameters:
     -----------
@@ -568,8 +563,10 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
     x*=(2*np.pi);y*=(2*np.pi)
     rT=np.sqrt(x**2+y**2)
     if r_s<=0.1:
+        # point mass
         atomFou=np.ones((ny,nx))
     else:
+        # NFW halo
         A= 1./(np.log(1+c)-c/(1.+c))
         r=rT*r_s
         mask=r>0.001
