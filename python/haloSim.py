@@ -541,10 +541,11 @@ class nfw_lensTJ03(nfwHalo):
 """
 The following functions are used for halolet construction
 """
-def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
+def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
     """
-    Make haloTJ03 halo (l2 normalized) from Fourier space following CS02:
-    https://arxiv.org/pdf/astro-ph/0206508.pdf Eq.(81) and Eq.(82)
+    Make haloTJ03 halo (l2 normalized by default) from Fourier space following
+    CS02:
+    https://arxiv.org/pdf/astro-ph/0206508.pdf -- Eq.(81) and Eq.(82)
 
     Parameters:
     -----------
@@ -563,31 +564,38 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True):
     x*=(2*np.pi);y*=(2*np.pi)
     rT=np.sqrt(x**2+y**2)
     if r_s<=0.1:
-        # point mass
-        atomFou=np.ones((ny,nx))
+        # point mass in Fourier space
+        atom=np.ones((ny,nx))
     else:
-        # NFW halo
-        A= 1./(np.log(1+c)-c/(1.+c))
-        r=rT*r_s
-        mask=r>0.001
-        atomFou=np.zeros_like(r, dtype=float)
-        r1=r[mask]
-        si1,ci1=spfun.sici((1+c)*r1)
-        si2,ci2=spfun.sici(r1)
-        atomFou[mask]=A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
-        r0=r[~mask]
-        atomFou[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
-    if smooth_scale>.1:
-        atomFou =   atomFou*np.exp(-(rT*smooth_scale)**2./2.)
-    norm = np.sqrt(np.sum(atomFou*np.conj(atomFou)/nx/ny))
-    # Normalize
-    atomFou=atomFou/norm
+        # NFW halo in Fourier space
+        A       =   1./(np.log(1+c)-c/(1.+c))
+        r       =   rT*r_s
+        mask    =   r>0.001
+        atom    =   np.zeros_like(r,dtype=float)
+        r1      =   r[mask]
+        si1,ci1 =   spfun.sici((1+c)*r1)
+        si2,ci2 =   spfun.sici(r1)
+        atom[mask]= A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
+        r0      =   r[~mask]
+        atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
+    # Smoothing
+    if smooth_scale>0.1:
+        atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
+    # Real space?
     if fou:
-        return atomFou
+        if lnorm>0.:
+            norm=   (np.sum(atom**lnorm)/(nx*ny))**(1./lnorm)
+        else:
+            norm=   1.
     else:
-        return np.real(np.fft.ifft2(atomFou))
+        atom    =   np.real(np.fft.ifft2(atom))
+        if lnorm>0.:
+            norm=   (np.sum(atom**lnorm))**(1./lnorm)
+        else:
+            norm=   1.
+    return atom/norm
 
-def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2):
+def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
     """
     Normalized Gaussian in a postage stamp
     normalized by l2 norm
@@ -602,18 +610,24 @@ def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2):
     """
     if nx is None:
         nx=ny
-    if sigma>0.:
+    if sigma>0.01:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         if fou:
             x  *=   (2*np.pi);y*=(2*np.pi)
             rT  =   np.sqrt(x**2+y**2)
             fun =   np.exp(-(rT*sigma)**2./2.)
-            norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
+            if lnorm>0.:
+                norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
+            else:
+                norm=   1.
         else:
             x  *=   (nx);y*=(ny)
             rT  =   np.sqrt(x**2+y**2)
             fun =   1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
-            norm=   (np.sum(fun**lnorm))**(1./lnorm)
+            if lnorm>0.:
+                norm=   (np.sum(fun**lnorm))**(1./lnorm)
+            else:
+                norm=   1.
         return  fun/norm
     else:
         if fou:

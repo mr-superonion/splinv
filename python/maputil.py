@@ -35,6 +35,19 @@ field_names = {'XMM'    : 'W02',
               'VVDS'    : 'W05',
               'HECTOMAP': 'W06'}
 
+field_nx    = {'XMM'    :   2,
+              'GAMA09H' :   5,
+              'WIDE12H' :   10,
+              'GAMA15H' :   4,
+              'VVDS'    :   7,
+              'HECTOMAP':   4}
+
+field_ny    = {'XMM'    :   2,
+              'GAMA09H' :   2,
+              'WIDE12H' :   2,
+              'GAMA15H' :   1,
+              'VVDS'    :   2,
+              'HECTOMAP':   1}
 
 def rotCatalog(e1, e2, phi=None):
     cs      =   np.cos(phi)
