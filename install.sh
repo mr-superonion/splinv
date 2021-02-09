@@ -1,4 +1,4 @@
-# Change the Dir variable to the current directory
+# Change the Dir variable to the absolute path of the current directory
 
 Dir="$homeSys/code/massMap_Private/"
 
