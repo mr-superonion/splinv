@@ -265,7 +265,7 @@ class cartesianGrid3D():
             weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
         if v is not None:
             # avoid weight is zero
-            mask        =   weightOut>0.
+            mask            =   weightOut>0.62
             dataOut[mask]   =   dataOut[mask]/weightOut[mask]
             dataOut[~mask]  =   0.
             return dataOut
