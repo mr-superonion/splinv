@@ -12,13 +12,19 @@
 #
 import os
 import warnings
-import numpy as np
-import healpy as hp
-
-import astropy.io.fits as pyfits
-from astropy.table import Table,join,vstack
-from scipy.interpolate import griddata
 import cosmology
+import numpy as np
+
+import matplotlib
+matplotlib.use('agg')
+matplotlib.rcParams['ps.useafm'] = True
+matplotlib.rcParams['pdf.use14corefonts'] = True
+matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['font.size'] = 12
+import matplotlib.pyplot as plt
+import astropy.io.fits as pyfits
+from scipy.stats import norm as statnorm
+
 
 # Field keys used in the noise variance file for simulations
 field_keys = {'W02'     : 'XMM',
@@ -96,3 +102,69 @@ def nfwMrs2delta(z,M,rs,omega_m=0.3):
     # within virial radius at redshift z
     rho_s   =   rho_cZ*delta_nfw
     return rho_s
+
+def plotPozAve(titlename,pozBin,pozAve,oname):
+    #plot the average poz
+    plt.close()
+    for i in range(0,10):
+        plt.plot(pozBin,pozAve[i],label=r'zbin:%d' %(i+1))
+    plt.xlim(-0.1,3)
+    plt.ylim(0.,0.082)
+    plt.legend()
+    plt.xlabel('z',fontsize=15)
+    plt.ylabel('PDF',fontsize=15)
+    plt.title(titlename)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(oname)
+    plt.close()
+    return
+
+def plotLensKernel(titlename,zcgrid,lensKernel1,lensKernel2,oname):
+    #plot the lensing kernel
+    plt.close()
+    cmap=plt.get_cmap('tab20')
+    nzl=lensKernel1.shape[1]
+    for i in range(0,nzl,2):
+        norm1=np.sqrt(np.sum(lensKernel1[:,i]**2.))
+        norm2=np.sqrt(np.sum(lensKernel2[:,i]**2.))
+        plt.plot(zcgrid,lensKernel1[:,i]/norm1,'-',c=cmap(i))
+        plt.plot(zcgrid,lensKernel2[:,i]/norm2,'--',c=cmap(i))
+    plt.xlabel(r'$z_s$',fontsize=15)
+    plt.ylabel('lensing kernel',fontsize=15)
+    plt.grid()
+    plt.title(titlename)
+    plt.tight_layout()
+    plt.savefig(oname)
+    plt.close()
+    return
+
+def plotHist(fieldname,array,pixels,oname):
+    # Plot the histogram of observable
+    # both on galaxy level and on pixel level
+    plt.close()
+    cmap=plt.get_cmap('tab20')
+
+    plt.figure(figsize=(8,6))
+
+    gbin=plt.hist(array,bins=100,density=True,range=(-1.2,1.2),histtype='step',label='galaxy',color=cmap(0))[1]
+    gbinGal=(gbin-np.average(array))/np.std(array)
+    a=statnorm.pdf(gbinGal)
+    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0]),color=cmap(0),ls='--')
+
+    gbin=plt.hist(pixels,bins=100,density=True,range=(-1.2,1.2),histtype='step',label='pixel',color=cmap(2))[1]
+
+    gbinPix=(gbin-np.average(pixels))/np.std(pixels)
+    a=statnorm.pdf(gbinPix)
+    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0]),color=cmap(2),ls='--')
+    plt.title('%s' %fieldname,fontsize=20)
+    plt.xlabel(r'$\delta g_1$',fontsize=20)
+    plt.ylabel(r'$P(\delta g_1)$',fontsize=20)
+    plt.legend(fontsize=20)
+    plt.yscale('log')
+    plt.ylim(1e-4,15)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(oname)
+    plt.close()
+    return

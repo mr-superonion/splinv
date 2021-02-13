@@ -11,31 +11,48 @@
 # GNU General Public License for more details.
 #
 import os
+import json
 import cosmology
 import numpy as np
 
-import json
-from configparser import ConfigParser
 import astropy.io.fits as pyfits
+from configparser import ConfigParser
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
 def soft_thresholding(dum,thresholds):
     """
-    Standard Threshold Function
+    Soft-Threshold Function
+
+    Parameters:
+    ----------
+    dum:    array to panelize
+    thresholds: panelization threshold
     """
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
 
 def soft_thresholding_nn(dum,thresholds):
     """
-    Standard Threshold Function
+    Non-negative Soft-Threshold Function
+
+    Parameters:
+    ----------
+    dum:    array to panelize
+    thresholds: panelization threshold
+
     """
     return np.maximum(dum-thresholds,0.)
 
 def firm_thresholding(dum,thresholds):
     """
-    The firm thresholding used by Glimpse3D2013
+    Firm thresholding used by Glimpse3D-2013
+
+    Parameters:
+    ----------
+    dum:    array to panelize
+    thresholds: panelization threshold
+
     """
     mask    =   (np.abs(dum)<= thresholds)
     dum[mask]=  0.
@@ -166,11 +183,11 @@ class massmapSparsityTaskNew():
         """
         Read the pixelized g1,g2,lensKernel
 
-        Parameters
+        Parameters:
         ----------
         parser: config parser
-        """
 
+        """
         g1fname     =   parser.get('prepare','g1fname')
         g2fname     =   parser.get('prepare','g2fname')
         g1Map       =   pyfits.getdata(g1fname)
@@ -191,7 +208,7 @@ class massmapSparsityTaskNew():
         """
         Transform from dictionary space to observational space
 
-        Parameters
+        Parameters:
         ----------
         alphaRIn: modes in dictionary space.
 
@@ -206,7 +223,7 @@ class massmapSparsityTaskNew():
         """
         Traspose operation on observed map
 
-        Parameters
+        Parameters:
         ----------
         shearRIn: input observed map (e.g. opbserved shear map)
 
@@ -220,10 +237,11 @@ class massmapSparsityTaskNew():
         """
         Gradient operation of Chi2 act on dictionary space
 
-        Parameters
+        Parameters:
         ----------
         alphaR: [array]
                 the point at which the gradient is calulated
+
         """
         shearRTmp       =   self.main_forward(alphaR)               #A_{ij} x_j
         self.shearRRes  =   (self.shearR-shearRTmp)*self.sigmaSInv  #y_i-A_{ij} x_j
@@ -233,10 +251,12 @@ class massmapSparsityTaskNew():
         """
         calculate the gradient of the Total Square Variance(TSV) component
         finite difference operator
-        Parameters
+
+        Parameters:
         ----------
         alphaR: [array]
                 the point at which the gradient is calulated
+
         """
         alphaR  =   alphaR*self._w
         difx    =   np.roll(alphaR,1,axis=-1)
@@ -266,10 +286,12 @@ class massmapSparsityTaskNew():
         calculate the gradient of the second order component in the loss
         function wihch includes chi2 components and other second order
         regularization terms (e.g. TSV, Ridge).
+
         Parameters:
         ---------
         alphaR: [array]
                 the point at which the gradient is calulated
+
         """
         gCh2    =   self.gradient_chi2(alphaR)
         if np.max(self.tau)>0.:
@@ -313,6 +335,7 @@ class massmapSparsityTaskNew():
         """
         Calculate stds of the paramters Note that the std should be all 1 since
         we normalize the projectors.  However, we set some stds to +infty
+
         """
         niter   =   100
         # A_i\alpha n_i
@@ -362,11 +385,12 @@ class massmapSparsityTaskNew():
 
     def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):
         """Calculate adaptive weight
+
         Parameters:
         -----------
-        @gamma:     power of the root-n consistent (preliminary)
+        gamma:     power of the root-n consistent (preliminary)
                     estimation
-        @sm_scale:  top-hat smoothing scale for the root-n
+        sm_scale:  top-hat smoothing scale for the root-n
                     consistent estimation [Mpc/h]
         """
         if self.nframe==1 and sm_scale>1e-4:
@@ -407,8 +431,8 @@ class massmapSparsityTaskNew():
         for irun in range(niter):
             dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
-            #Xp1 =   soft_thresholding_nn(Xp1,thresholds)
-            Xp1 =   soft_thresholding(Xp1,thresholds)
+            Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            #Xp1 =   soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
             self.alphaR=Xp1+(ratio*(Xp1-Xp0))
