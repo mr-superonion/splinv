@@ -157,9 +157,13 @@ class massmapSparsityTaskNew():
 
         self.clear_all()
         # Determine Step Size: mu
-        self.mu =   parser.getfloat('sparse','mu')
-        if not self.mu >0.:
+        if parser.has_option('sparse','mu'):
+            self.mu =   parser.getfloat('sparse','mu')
+            if self.mu <0:
+                self.determine_step_size()
+        else:
             self.determine_step_size()
+
 
         # read the pixelized shear,mask
         # Note: this should be done after determine
@@ -321,6 +325,7 @@ class massmapSparsityTaskNew():
             # generate a normalized random vector
             np.random.seed(irun)
             alphaTmp=   np.random.randn(self.nlp,self.nframe,self.ny,self.nx)
+            alphaTmp=   alphaTmp+np.random.randn()
             normTmp =   np.sqrt(np.sum(alphaTmp**2.))
             alphaTmp=   alphaTmp/normTmp
             # apply the transform matrix to the vector

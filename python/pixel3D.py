@@ -44,7 +44,14 @@ class cartesianGrid3D():
         Parameters:
         -------------
         parser: parser
+        transplane- unit
+            unit of the parameters (arcsec/arcmin/deg)
+        transplane- scale:
+            pixel scale
+        transplane- smooth_scale
+            smoothing scale [default: -1 (no smoothing)]
         """
+        self.parser=parser
         # The unit of angle in the configuration
         unit=parser.get('transPlane','unit')
         # It is necessary to do the scaling as the
@@ -57,7 +64,10 @@ class cartesianGrid3D():
             self.ratio=1./60./60.
         self.delta=parser.getfloat('transPlane','scale')*self.ratio
         ## Gaussian smoothing In the projected plane
-        self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+        if parser.has_option('transPlane','smooth_scale'):
+            self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+        else:
+            self.sigma=-1
         ## Padding
         if parser.has_option('transPlane','pad'):
             self.pad    =   parser.getfloat('transPlane','pad')*self.ratio
@@ -111,6 +121,31 @@ class cartesianGrid3D():
         self.pozPdfAve=None
         return
 
+    def setupNaivePlane(self):
+        assert self.parser.has_option('transPlane','nx')
+        assert self.parser.has_option('transPlane','ny')
+        assert self.parser.has_option('transPlane','xmin')
+        assert self.parser.has_option('transPlane','ymin')
+        self.nx     =   self.parser.getint('transPlane','nx')
+        self.ny     =   self.parser.getint('transPlane','ny')
+        dnx         =   self.nx//2
+        dny         =   self.ny//2
+        xmin        =   self.parser.getfloat('transPlane','xmin')*self.ratio
+        xmax        =   xmin+self.delta*(self.nx+0.1)
+        ymin        =   self.parser.getfloat('transPlane','ymin')*self.ratio
+        ymax        =   ymin+self.delta*(self.ny+0.1)
+        self.ra0    =   xmin+self.delta*(dnx+0.5)
+        self.dec0   =   ymin+self.delta*(dny+0.5)
+        self.cosdec0=   np.cos(self.dec0/180.*np.pi)
+        self.sindec0=   np.sin(self.dec0/180.*np.pi)
+
+        self.xbound= np.arange(xmin,xmax,self.delta)
+        self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
+        self.ybound= np.arange(ymin,ymax,self.delta)
+        self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
+        self.shape=(self.nz,self.ny,self.nx)
+        return
+
     def setupTanPlane(self,ra=None,dec=None,header=None):
         if (ra is not None) and (dec is not None):
             # first try
@@ -139,7 +174,7 @@ class cartesianGrid3D():
             self.nx =   2*dnx
             self.ny =   2*dny
         elif header is not None:
-            self.delta  =   header['CDELT1']
+            assert abs(self.delta-header['CDELT1'])/self.delta<1e-2
             self.ra0    =   header['CRVAL1']
             self.dec0   =   header['CRVAL1']
             self.nx     =   int(header['NAXIS1'])
@@ -153,10 +188,8 @@ class cartesianGrid3D():
 
         self.xbound= np.arange(xmin,xmax,self.delta)
         self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
-        assert len(self.xcgrid)==self.nx
         self.ybound= np.arange(ymin,ymax,self.delta)
         self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
-        assert len(self.ycgrid)==self.ny
         self.shape=(self.nz,self.ny,self.nx)
         if (ra is not None) and (dec is not None):
             return x,y
