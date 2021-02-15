@@ -59,12 +59,12 @@ class nfwHalo(Cosmo):
         rho_cZ      =   self.rho0()/self.ezInv**2
         self.M      =   float(mass)
         # First, we get the virial radius, which is defined for some spherical
-        # overdensity as 3 M / [4 pi (r_vir)^3] = overdensity Here we have
+        # overdensity as 3 M / [4 pi (r_vir)^3] = overdensity. Here we have
         # overdensity = 200 * rhocrit, to determine r_vir (angular distance).
-        # The factor of 1.63e-5 comes from the following set of prefactors: (3
-        # / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2 M_solar /
-        # Mpc^3.
-        # (H0=100,DH=C_LIGHT/1e3/H0,rho_crit0=1.5/four_pi_G_over_c_squared()/(DH)**2.)
+        # The factor of 1.63e-5 comes from the following set of prefactors:
+        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2
+        # M_solar / Mpc^3.
+        # (H0=100,DH=C_LIGHT/1e3/H0,rho_crit=1.5/four_pi_G_over_c_squared()/(DH)**2.)
         self.rvir        =   1.63e-5*(self.M*self.ezInv**2)**(1./3.) # in Mpc/h
         if conc is not None:
             self.c  =   float(conc)
