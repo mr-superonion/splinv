@@ -46,42 +46,22 @@ def firm_thresholding(dum,thresholds):
 
 class massmapSparsityTaskNew():
     def __init__(self,parser):
-        #display
-        self.display_iframe=0
-        if parser.has_option('file','fieldN'):
-            self.fieldN =   parser.get('file','fieldN')
-        else:
-            self.fieldN =   'test'
-        if parser.has_option('file','outDir'):
-            self.outDir =   parser.get('file','outDir')
-        else:
-            self.outDir =   './'
-
         #sparse
         self.aprox_method    =   parser.get('sparse','aprox_method')
-        self.lbd    =   parser.getfloat('sparse','lbd') #   For Sparsity
+        self.lbd        =   parser.getfloat('sparse','lbd') #   For l1
         if parser.has_option('sparse','tau'):           #   For Total Square Variance
-            self.tau   =   parser.getfloat('sparse','tau')
+            self.tau    =   parser.getfloat('sparse','tau')
         else:
-            self.tau   =   0.
+            self.tau    =   0.
         self.nframe     =   parser.getint('sparse','nframe')
-        minframe   =   parser.getint('sparse','minframe')
-        # Do debug?
-        if parser.has_option('sparse','debugList'):
-            self.debugList  =   np.array(json.loads(parser.get('sparse','debugList')))
-            self.debugRatios=[]
-            self.debugDeltas=[]
-            self.debugAlphas=[]
-        else:
-            debugList=[]
 
         ##transverse plane
-        self.ny     =   parser.getint('transPlane','ny')
-        self.nx     =   parser.getint('transPlane','nx')
+        self.ny         =   parser.getint('transPlane','ny')
+        self.nx         =   parser.getint('transPlane','nx')
         ##lens z axis
-        self.nlp    =   parser.getint('lensZ','nlp')
-
+        self.nlp        =   parser.getint('lensZ','nlp')
         if self.nlp<=1:
+            # 2D case
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
@@ -92,25 +72,20 @@ class massmapSparsityTaskNew():
         ##source z axis
         self.nz     =   parser.getint('sourceZ','nz')
         if self.nz<=1:
+            # 2D case
+            assert self.nlp<=1
             self.zMin   =   0.01
             self.zscale =   2.5
-            self.zsBin      =   zMeanBin(self.zMin,self.zscale,self.nz)
+            self.zsBin  =   zMeanBin(self.zMin,self.zscale,self.nz)
         else:
-            zbound =   np.array(json.loads(parser.get('sourceZ','zbound')))
-            self.zsBin =   (zbound[:-1]+zbound[1:])/2.
+            zbound      =   np.array(json.loads(parser.get('sourceZ','zbound')))
+            self.zsBin  =   (zbound[:-1]+zbound[1:])/2.
 
-        self.shapeS =   (self.nz,self.ny,self.nx)
-        self.shapeL =   (self.nlp,self.ny,self.nx)
-        self.shapeA =   (self.nlp,self.nframe,self.ny,self.nx)
+        self.shapeS     =   (self.nz,self.ny,self.nx)
+        self.shapeL     =   (self.nlp,self.ny,self.nx)
+        self.shapeA     =   (self.nlp,self.nframe,self.ny,self.nx)
 
-        # For distance calculation
-        if parser.has_option('cosmology','omega_m'):
-            omega_m=parser.getfloat('cosmology','omega_m')
-        else:
-            omega_m=0.3
-        self.cosmo  =   cosmology.Cosmo(h=1,omega_m=omega_m)
-
-        dicname =   parser.get('sparse','dicname')
+        dicname     =   parser.get('sparse','dicname')
         from halolet import nfwShearlet2D
         self.dict2D =   nfwShearlet2D(parser)
 
@@ -119,18 +94,19 @@ class massmapSparsityTaskNew():
         self.sigmaS =   pyfits.getdata(sigfname)
         assert self.sigmaS.shape  ==   self.shapeS, \
             'load wrong pixelized std, shape map shape: (%d,%d,%d)' %self.sigmaS.shape
-        self.mask   =   (self.sigmaS>=1.e-4)
+        # Mask in the shear observation space
+        self.maskS   =   (self.sigmaS>=1.e-4)
         self.sigmaSInv=  np.zeros(self.shapeS)
-        self.sigmaSInv[self.mask]=  1./self.sigmaS[self.mask]
+        self.sigmaSInv[self.maskS]=  1./self.sigmaS[self.maskS]
         self.read_lens_kernel(parser)
 
         # Estimate diagonal elements of the chi2 operator
         self.fast_chi2diagonal_est()
         # weight for normalization of effective column vectors
-        self._w =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-12)
+        self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-12)
 
         # Effective tau
-        muRatio=   np.zeros(self.shapeA)
+        muRatio     =   np.zeros(self.shapeA)
         for izl in range(self.nlp):
             muRatio[izl]=np.max(self.diagonal[izl].flatten())
         self.tau    =  muRatio*self.tau
@@ -140,18 +116,31 @@ class massmapSparsityTaskNew():
 
         self.clear_all()
         # Determine Step Size: mu
-        self.mu =   parser.getfloat('sparse','mu')
+        self.mu     =   parser.getfloat('sparse','mu')
         if not self.mu >0.:
             self.determine_step_size()
 
-        # read the pixelized shear,mask
+        # read the pixelized shear
         # Note: this should be done after determine
-        # step size
+        # step size, since determine_step_size
+        # requires self.shearR to be zero
         self.read_pixel_result(parser)
 
-        # preparation for output
-        outFname    =   'deltaMap_lbd%.1f_%s.fits' %(self.lbd,self.fieldN)
-        self.outFname   =   os.path.join(self.outDir,outFname)
+        # For distance calculation
+        # if parser.has_option('cosmology','omega_m'):
+        #     omega_m     =   parser.getfloat('cosmology','omega_m')
+        # else:
+        #     omega_m     =   0.3
+        # self.cosmo      =   cosmology.Cosmo(h=1,omega_m=omega_m)
+
+        # Do debug?
+        # if parser.has_option('sparse','debugList'):
+        #     self.debugList  =   np.array(json.loads(parser.get('sparse','debugList')))
+        #     self.debugRatios=[]
+        #     self.debugDeltas=[]
+        #     self.debugAlphas=[]
+        # else:
+        #     debugList   =   []
         return
 
     def clear_all(self):
@@ -176,8 +165,10 @@ class massmapSparsityTaskNew():
         g1Map       =   pyfits.getdata(g1fname)
         g2Map       =   pyfits.getdata(g2fname)
         assert g1Map.shape  ==   self.shapeS, \
-            'load wrong pixelized shear, shape should be: (%d,%d,%d)' %self.shapeS
-        self.shearR =   g1Map+np.complex128(1j)*g2Map # shear
+            'load wrong pixelized shear 1, shape should be: (%d,%d,%d)' %self.shapeS
+        assert g2Map.shape  ==   self.shapeS, \
+            'load wrong pixelized shear 2, shape should be: (%d,%d,%d)' %self.shapeS
+        self.shearR =   g1Map+np.complex64(1j)*g2Map # shear
         return
 
     def read_lens_kernel(self,parser):
@@ -199,7 +190,7 @@ class massmapSparsityTaskNew():
         # self._w normalizes the forward operator: A
         alphaRIn    =   alphaRIn*self._w
         shearOut    =   self.dict2D.itransform(alphaRIn)
-        shearOut    =   shearOut*(self.mask.astype(np.int))
+        shearOut    =   shearOut*(self.maskS.astype(np.int))
         return shearOut
 
     def chi2_transpose(self,shearRIn):
@@ -311,38 +302,38 @@ class massmapSparsityTaskNew():
 
     def prox_sigmaA(self):
         """
-        Calculate stds of the paramters Note that the std should be all 1 since
-        we normalize the projectors.  However, we set some stds to +infty
+        Calculate stds of the paramters.
+        Note that the std should be all 1 since we normalize the projectors.
         """
         niter   =   100
         # A_i\alpha n_i
         outData     =   np.zeros(self.shapeA)
         for irun in range(niter):
             np.random.seed(irun)
-            # Here the sigmaS is not per component sigma
-            # We are using the std for g1+ig2, which is sqrt(2) times
-            # of the g1's std.
-            # Since in the transpose operation, we only keep the real part
-            # of alpha filed, such operation makes the alpha's std to
-            # 1/sqrt(2) of the ture one.
+            # Here the sigmaS is not per component sigma.
+            # While, we use using the std for g1+ig2, which is sqrt(2) times of
+            # the g1's std.
+            # Since in the transpose operation, we only keep the real part of
+            # alpha filed, such operation makes the alpha's std to 1/sqrt(2) of
+            # the ture one. Therefore, the final estimation is correct.
             g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
             g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            shearSim=   (g1Sim+np.complex128(1j)*g2Sim)*self.sigmaSInv**2.
+            shearSim=   (g1Sim+np.complex64(1j)*g2Sim)*self.sigmaSInv**2.
             alphaRSim=  -self.chi2_transpose(shearSim) # Real field
             outData +=  alphaRSim**2.
 
-        # masked region is assigned with the maximum of the std
-        # in this frame and lens redshift plane
-        maskL =   np.all(self.sigmaS>1.e-4,axis=0)
+        # masked region is assigned with the maximum of the std in this frame
+        # and lens redshift plane
+        # TODO: accelerate
+        maskL =   np.all(self.maskS,axis=0)
         for izlp in range(self.nlp):
             for iframe in range(self.nframe):
                 outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
-        # Calculate noi std
+        # Calculate noise std
         self.sigmaA =   np.sqrt(outData/niter)
 
-        # mask the paramter field close to the
-        # boundary of the survey
-        # set the stds of these regions to +infty
+        # mask the parameter field close to the boundary of the survey set the
+        # stds of these regions to +infty
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
                 thres=np.max(self.diagonal[izl,iframe].flatten())/10.
@@ -355,9 +346,9 @@ class massmapSparsityTaskNew():
         Reconstruct the delta field from alpha'
         """
         #update deltaR
-        alphaRW         =   self.alphaR.copy()*self._w
+        alphaRW     =   self.alphaR.copy()*self._w
         # Only keep the E-mode
-        self.deltaR     =   self.dict2D.itransformSigma(alphaRW).real
+        self.deltaR =   self.dict2D.itransformSigma(alphaRW).real
         return
 
     def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):
@@ -369,24 +360,24 @@ class massmapSparsityTaskNew():
         @sm_scale:  top-hat smoothing scale for the root-n
                     consistent estimation [Mpc/h]
         """
-        if self.nframe==1 and sm_scale>1e-4:
-            # Smoothing scale in arcmin
-            rsmth0=np.zeros(self.nlp,dtype=int)
-            for iz,zh in enumerate(self.zlBin):
-                rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
+        # if self.nframe==1 and sm_scale>1e-4:
+        #     # Smoothing scale in arcmin
+        #     rsmth0=np.zeros(self.nlp,dtype=int)
+        #     for iz,zh in enumerate(self.zlBin):
+        #         rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
 
-            p   =   np.zeros(self.shapeA)
-            for izl in range(self.nlp):
-                rsmth   =   rsmth0[izl]
-                for jsh in range(-rsmth,rsmth+1):
-                    # only smooth the point mass frame
-                    dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
-                    for ish in range(-rsmth,rsmth+1):
-                        dif2=  np.roll(dif,ish,axis=-1)
-                        p[izl,0] += dif2/(2.*rsmth+1.)#**2.
-            p   =   np.abs(p)
-        else:
-            p   =   np.abs(self.alphaR)/self.lbd
+        #     p   =   np.zeros(self.shapeA)
+        #     for izl in range(self.nlp):
+        #         rsmth   =   rsmth0[izl]
+        #         for jsh in range(-rsmth,rsmth+1):
+        #             # only smooth the point mass frame
+        #             dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
+        #             for ish in range(-rsmth,rsmth+1):
+        #                 dif2=  np.roll(dif,ish,axis=-1)
+        #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
+        #     p   =   np.abs(p)
+        # else:
+        p   =   np.abs(self.alphaR)/self.lbd
 
         # threshold(for value close to zero)
         thres_adp=  1./1e12
@@ -407,20 +398,16 @@ class massmapSparsityTaskNew():
         for irun in range(niter):
             dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
-            #Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            #Xp1=   soft_thresholding_nn(Xp1,thresholds)
             Xp1 =   soft_thresholding(Xp1,thresholds)
-            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
-            ratio= (tn-1.)/tnTmp
+            tnTmp   =   (1.+np.sqrt(1.+4*tn**2.))/2.
+            ratio   =   (tn-1.)/tnTmp
             self.alphaR=Xp1+(ratio*(Xp1-Xp0))
-            tn  = tnTmp
+            tn  =   tnTmp
             Xp0 =   Xp1
         return
 
     def process(self,niter=1000):
         self.fista_gradient_descent(niter)
         self.reconstruct()
-        return
-
-    def write(self):
-        pyfits.writeto(self.outFname,self.deltaR.real,overwrite=True)
         return
