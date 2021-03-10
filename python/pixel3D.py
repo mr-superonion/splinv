@@ -306,7 +306,7 @@ class cartesianGrid3D():
                             dataOut[iz,iy,ix]=np.sum(wl)
         return dataOut
 
-    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None):
+    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None,deltaIn=True):
         """Mapping from an average delta in a lens redshfit bin
         to an average kappa in a source redshift
 
@@ -343,7 +343,10 @@ class cartesianGrid3D():
                 # Surface masss density in lens bin
                 rhoM_ave=self.cosmo.rho_m(zl)
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
-                lensKernel[:,i]=kl*rhoM_ave*DaBin
+                if deltaIn:
+                    lensKernel[:,i]=kl*rhoM_ave*DaBin
+                else:
+                    lensKernel[:,i]=kl
         else:
             # Use poz
             lensK =   np.zeros((len(poz_grids),self.nzl))
@@ -356,7 +359,10 @@ class cartesianGrid3D():
                 # Sigma_M_zl_bin
                 rhoM_ave=self.cosmo.rho_m(zl)
                 DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
-                lensK[:,i]=kl*rhoM_ave*DaBin
+                if deltaIn:
+                    lensK[:,i]=kl*rhoM_ave*DaBin
+                else:
+                    lensK[:,i]=kl
 
             if poz_ave is None:
                 # Prepare the poz average

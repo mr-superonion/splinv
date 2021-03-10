@@ -32,6 +32,33 @@ def four_pi_G_over_c_squared():
     fourpiGoverc2 /= 1.e6
     return fourpiGoverc2
 
+def mc2rs(mass,conc,redshift,omega_m=0.3):
+    """
+    Get the scale radius of NFW halo with mass
+    @param mass         Mass defined using a spherical overdensity of 200 times the critical density
+                        of the universe, in units of M_solar/h.
+    @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+    @param redshift     Redshift of the halo.
+    """
+    cosmo   =   Cosmo(h=1,omega_m=omega_m)
+    z       =   redshift
+    a       =   1./(1.+z)
+    DaLens  =   cosmo.Da(0.,z) # angular distance in Mpc/h
+    # E(z)^{-1}
+    ezInv   =   cosmo.Ez_inverse(z)
+    # critical density
+    # in unit of M_solar / Mpc^3
+    rho_cZ  =   cosmo.rho0()/ezInv**2
+    rvir    =   1.63e-5*(mass*ezInv**2)**(1./3.) # in Mpc/h
+    rs      =   rvir/conc
+    A       =   1./(np.log(1+conc)-(conc)/(1+conc))
+    delta_nfw   =   200./3*conc**3*A
+    # convert to angular radius in unit of arcsec
+    scale       =   rs / DaLens
+    arcmin2rad  =   np.pi/180./60.
+    rs_arcmin   =   scale/arcmin2rad
+    return rs_arcmin
+
 class nfwHalo(Cosmo):
     def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=0.3):
         """
@@ -78,7 +105,6 @@ class nfwHalo(Cosmo):
         else:
             raise ValueError("need to give conc or rs, at least one")
 
-        # \delta_c in equation (2)
         self.A      =   1./(np.log(1+self.c)-(self.c)/(1+self.c))
         self.delta_nfw =200./3*self.c**3*self.A
         # convert to angular radius in unit of arcsec
