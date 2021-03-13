@@ -16,6 +16,8 @@ import haloSim
 import numpy as np
 import cosmology
 
+Default_h0  =   1.
+
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
@@ -64,11 +66,14 @@ class nfwShearlet2D():
     with different angular scale in different redshift plane
     --------
 
-    Construction Parser
-    -------
+    Parameters:
+    ----------
+    Construction Parser:
     nframe  :   number of frames
     ny,nx   :   size of the field (pixel)
     smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
+    nlp     :   number of lens plane
+    nz      :   number of source plane
 
     Methods
     --------
@@ -78,11 +83,13 @@ class nfwShearlet2D():
 
     """
     def __init__(self,parser):
-        ##transverse plane
+        # transverse plane
+        self.nframe =   parser.getint('sparse','nframe')
         self.ny     =   parser.getint('transPlane','ny')
         self.nx     =   parser.getint('transPlane','nx')
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
-        self.nframe =   parser.getint('sparse','nframe')
+
+        # line of sight
         self.nzl    =   parser.getint('lensZ','nlp')
         self.nzs    =   parser.getint('sourceZ','nz')
         if self.nzl  <=  1:
@@ -92,9 +99,9 @@ class nfwShearlet2D():
             self.zlMin  =   parser.getfloat('lensZ','zlMin')
             self.zlscale=   parser.getfloat('lensZ','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nzl)
-        self.smooth_scale =   parser.getfloat('transPlane','smooth_scale')
+        self.smooth_scale = parser.getfloat('transPlane','smooth_scale')
 
-        # shape of output shapelets
+        # Shape of output shapelets
         self.shapeP =   (self.ny,self.nx)
         self.shapeL =   (self.nzl,self.ny,self.nx)
         self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx)
@@ -105,7 +112,7 @@ class nfwShearlet2D():
             omega_m=parser.getfloat('cosmology','omega_m')
         else:
             omega_m=0.3
-        self.cosmo  =   cosmology.Cosmo(h=1,omega_m=omega_m)
+        self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
         lkfname     =   parser.get('prepare','lkfname')
         self.lensKernel=pyfits.getdata(lkfname)
         self.prepareFrames()
@@ -124,16 +131,17 @@ class nfwShearlet2D():
                 # frame with largest angular scale radius
                 rs  =   (ifr+1)*rz
                 if rs<self.resolve_lim:
-                    self.rs_frame[izl,ifr]=0.
+                    self.rs_frame[izl,ifr]= 0.
                     # l2 normalized gaussian
                     iAtomF=haloSim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
-                    self.fouaframesDelta[izl,ifr]=iAtomF             # Fourier Space
+                    self.fouaframesDelta[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF=self.ks2D.transform(iAtomF,outFou=True)
                     self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
                     self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
                     break
                 else:
-                    self.rs_frame[izl,ifr]=rs
+                    self.rs_frame[izl,ifr]= rs
+                    # l2 normalized
                     iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
                     self.fouaframesDelta[izl,ifr]=iAtomF            # Fourier Space
@@ -148,9 +156,9 @@ class nfwShearlet2D():
         redshift plane by redshift plane
         """
         assert dataIn.shape==self.shapeA,\
-                'input should have shape (nzl,nframe,ny,nx)'
+            'input should have shape (nzl,nframe,ny,nx)'
 
-        #Initialize the output with shape (nzs,ny,nx)'
+        # Initialize the output with shape (nzs,ny,nx)'
         dataOut=np.zeros(self.shapeL,dtype=np.complex128)
         for izl in range(self.nzl):
             #Initialize each lens plane with shape (ny,nx)'
@@ -163,54 +171,102 @@ class nfwShearlet2D():
                     # the scale of nfw halo is too small to resolve
                     # so we do not transform the next frame
                     break
-            # assign the iz'th lens plane
+            # Assign the iz'th lens plane
             dataOut[izl] =   np.fft.ifft2(data)
         return dataOut
 
     def itransform(self,dataIn):
         """
-        transform from nfw dictionary space to observations
+        transform from nfw dictionary space to shear measurements
+        Parameters:
+        ----------
+        dataIn: arry to be transformed (in config space, e.g., alpha)
         """
         assert dataIn.shape==self.shapeA,\
-                'input should have shape (nzl,nframe,ny,nx)'
+            'input should have shape (nzl,nframe,ny,nx)'
 
-        #Initialize the output with shape (nzs,ny,nx)'
-        dataOut=np.zeros(self.shapeS,dtype=np.complex128)
-        for izl in range(self.nzl):
-            #Initialize each lens plane with shape (ny,nx)'
-            data=np.zeros(self.shapeP,dtype=np.complex128)
-            for iframe in range(self.nframe)[::-1]:
-                dataTmp=dataIn[izl,iframe]
-                dataTmp=np.fft.fft2(dataTmp)
-                data=data+(dataTmp*self.fouaframes[izl,iframe])
-                if self.rs_frame[izl,iframe]<self.resolve_lim:
-                    # the scale of nfw halo is too small to resolve
-                    # so we do not transform the next frame
-                    break
-            data=np.fft.ifft2(data)
-            dataOut+=data*self.lensKernel[:,izl,None,None]
+        # convolve with atom in each frame/zlens
+        dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp =   dataTmp*self.fouaframes
+        dataTmp =   np.fft.ifft2(dataTmp,axes=(2,3))
+        # sum over frames
+        dataTmp2=   np.sum(dataTmp,axis=1)
+        # project to source plane
+        dataOut =   np.sum(dataTmp2[None,:,:,:]*self.lensKernel[:,:,None,None],axis=1)
         return dataOut
 
     def itranspose(self,dataIn):
         """
         transpose of the inverse transform operator
+        Parameters:
+        ----------
+        dataIn: arry to be operated (in config space, e.g., shear)
         """
         assert dataIn.shape==self.shapeS,\
             'input should have shape (nzs,ny,nx)'
 
-        # Initialize the output with shape (nzl,nframe,ny,nx)
-        dataOut =   np.zeros(self.shapeA,dtype=np.complex128)
-
-        # Projection by lensing kernel
-        dataIn  =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
-        for izl in range(self.nzl):
-            dataTmp =   np.fft.fft2(dataIn[izl])
-            for iframe in range(self.nframe)[::-1]:
-                # project to the dictionary space
-                dataTmp2=   dataTmp*np.conjugate(self.fouaframes[izl,iframe])
-                dataTmp2    =   np.fft.ifft2(dataTmp2)
-                dataOut[izl,iframe,:,:]=dataTmp2
-                if self.rs_frame[izl,iframe]<self.resolve_lim:
-                    break
+        # Projection to lens plane
+        # with shape=(nzl,nframe,ny,nx)
+        dataTmp =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
+        # Convolve with atom*
+        dataTmp =   np.fft.fft2(dataTmp,axes=(2,3))
+        dataTmp =   dataTmp[:,None,:,:]*np.conjugate(self.fouaframes)
+        # The output with shape (nzl,nframe,ny,nx)
+        dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
         return dataOut
 
+    # def itransform(self,dataIn):
+    #     """
+    #     transform from nfw dictionary space to shear measurements
+    #     Parameters:
+    #     ----------
+    #     dataIn: arry to be transformed (in config space, e.g. alpha)
+    #     """
+    #     assert dataIn.shape==self.shapeA,\
+    #         'input should have shape (nzl,nframe,ny,nx)'
+
+    #     # Initialize the output with shape (nzs,ny,nx)'
+    #     dataOut=np.zeros(self.shapeS,dtype=np.complex128)
+    #     for izl in range(self.nzl):
+    #         # Initialize each lens plane with shape (ny,nx)'
+    #         data=np.zeros(self.shapeP,dtype=np.complex128)
+    #         for iframe in range(self.nframe)[::-1]:
+    #             dataTmp=dataIn[izl,iframe]
+    #             dataTmp=np.fft.fft2(dataTmp)
+    #             data=data+(dataTmp*self.fouaframes[izl,iframe])
+    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
+    #                 # The scale of nfw halo is below the resolution limit
+    #                 # so we do not transform the next frame
+    #                 break
+    #         data=np.fft.ifft2(data)
+    #         dataOut+=data*self.lensKernel[:,izl,None,None]
+    #     return dataOut
+
+    # def itranspose(self,dataIn):
+    #     """
+    #     transpose of the inverse transform operator
+    #     Parameters:
+    #     ----------
+    #     dataIn: arry to be operated (in config space)
+    #     """
+    #     assert dataIn.shape==self.shapeS,\
+    #         'input should have shape (nzs,ny,nx)'
+
+    #     # Initialize the output with shape (nzl,nframe,ny,nx)
+    #     dataOut =   np.zeros(self.shapeA,dtype=np.complex128)
+
+    #     # Projection with lensing kernel to an array
+    #     # with shape=(nzl,nframe,ny,nx)
+    #     dataIn  =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
+    #     for izl in range(self.nzl):
+    #         dataTmp =   np.fft.fft2(dataIn[izl])
+    #         for iframe in range(self.nframe)[::-1]:
+    #             # Project to the dictionary space
+    #             dataTmp2=   dataTmp*np.conjugate(self.fouaframes[izl,iframe])
+    #             dataTmp2=   np.fft.ifft2(dataTmp2)
+    #             dataOut[izl,iframe,:,:]=dataTmp2
+    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
+    #                 # the scale of nfw halo is below the resolution limit
+    #                 # so we do not transform the next frame
+    #                 break
+    #     return dataOut

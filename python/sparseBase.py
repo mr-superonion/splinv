@@ -63,19 +63,19 @@ def firm_thresholding(dum,thresholds):
 
 class massmapSparsityTaskNew():
     def __init__(self,parser):
-        ##sparse
-        self.aprox_method    =   parser.get('sparse','aprox_method')
-        self.lbd        =   parser.getfloat('sparse','lbd') #   For l1
-        if parser.has_option('sparse','tau')    #For Total Square Variance
+        # Regularization
+        self.lbd        =   parser.getfloat('sparse','lbd') #   For LASSO
+        if parser.has_option('sparse','tau'):               #   For Total Square Variance
             self.tau    =   parser.getfloat('sparse','tau')
         else:
             self.tau    =   0.
+        # Dictionary
         self.nframe     =   parser.getint('sparse','nframe')
 
-        ##transverse plane
+        # Transverse plane
         self.nx         =   parser.getint('transPlane','nx')
         self.ny         =   parser.getint('transPlane','ny')
-        ##lens z axis
+        # Lens redshift axis
         self.nlp        =   parser.getint('lensZ','nlp')
         if self.nlp<=1:
             # 2D case
@@ -86,7 +86,7 @@ class massmapSparsityTaskNew():
             self.zlscale=   parser.getfloat('lensZ','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nlp)
 
-        ##source z axis
+        # Source z axis
         self.nz     =   parser.getint('sourceZ','nz')
         if self.nz<=1:
             # 2D case
@@ -269,7 +269,7 @@ class massmapSparsityTaskNew():
         gradz   =   0.
         return (gradx+grady+gradz)*self.tau*self._w
 
-    def quad_gradient(self,alphaR):
+    def gradient_Quad(self,alphaR):
         """
         calculate the gradient of the second order component in the loss
         function wihch includes chi2 components and other second order
@@ -313,7 +313,7 @@ class massmapSparsityTaskNew():
             normTmp =   np.sqrt(np.sum(alphaTmp**2.))
             alphaTmp=   alphaTmp/normTmp
             # apply the transform matrix to the vector
-            alphaTmp2=  self.quad_gradient(alphaTmp)
+            alphaTmp2=  self.gradient_Quad(alphaTmp)
             normTmp2=   np.sqrt(np.sum(alphaTmp2**2.))
             if normTmp2>norm:
                 norm=normTmp2
@@ -418,7 +418,7 @@ class massmapSparsityTaskNew():
         tn      =   1.
         Xp0     =   self.alphaR
         for irun in range(niter):
-            dalphaR =   -self.mu*self.quad_gradient(self.alphaR).real
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real # no B-mode
             Xp1 =   self.alphaR+dalphaR
             Xp1 =   soft_thresholding_nn(Xp1,thresholds)
             #Xp1 =   soft_thresholding(Xp1,thresholds)
