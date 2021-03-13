@@ -63,18 +63,18 @@ def firm_thresholding(dum,thresholds):
 
 class massmapSparsityTaskNew():
     def __init__(self,parser):
-        #sparse
+        ##sparse
         self.aprox_method    =   parser.get('sparse','aprox_method')
         self.lbd        =   parser.getfloat('sparse','lbd') #   For l1
-        if parser.has_option('sparse','tau'):           #   For Total Square Variance
+        if parser.has_option('sparse','tau')    #For Total Square Variance
             self.tau    =   parser.getfloat('sparse','tau')
         else:
             self.tau    =   0.
         self.nframe     =   parser.getint('sparse','nframe')
 
         ##transverse plane
-        self.ny         =   parser.getint('transPlane','ny')
         self.nx         =   parser.getint('transPlane','nx')
+        self.ny         =   parser.getint('transPlane','ny')
         ##lens z axis
         self.nlp        =   parser.getint('lensZ','nlp')
         if self.nlp<=1:
@@ -120,13 +120,7 @@ class massmapSparsityTaskNew():
         # Estimate diagonal elements of the chi2 operator
         self.fast_chi2diagonal_est()
         # weight for normalization of effective column vectors
-        self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-12)
-
-        # Effective tau
-        muRatio     =   np.zeros(self.shapeA)
-        for izl in range(self.nlp):
-            muRatio[izl]=np.max(self.diagonal[izl].flatten())
-        self.tau    =  muRatio*self.tau
+        self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-15)
 
         # Estimate sigma map for alpha
         self.prox_sigmaA()
@@ -337,11 +331,11 @@ class massmapSparsityTaskNew():
         outData     =   np.zeros(self.shapeA)
         for irun in range(niter):
             np.random.seed(irun)
-            # Here the sigmaS is not per component sigma.
-            # While, we use using the std for g1+ig2, which is sqrt(2) times of
-            # the g1's std.
+            # Here the sigmaS is not the per-component sigma.
+            # While, we use the std for g1+ig2, which should be sqrt(2) times of
+            # the per component std.
             # Since in the transpose operation, we only keep the real part of
-            # alpha filed, such operation makes the alpha's std to 1/sqrt(2) of
+            # alpha field, such operation makes the alpha's std to 1/sqrt(2) of
             # the ture one. Therefore, the final estimation is correct.
             g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
             g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
@@ -372,10 +366,10 @@ class massmapSparsityTaskNew():
         """
         Reconstruct the delta field from alpha'
         """
-        #update deltaR
-        alphaRW     =   self.alphaR.copy()*self._w
-        # Only keep the E-mode
-        self.deltaR =   self.dict2D.itransformSigma(alphaRW).real
+        # reweight back to True unweighted alpha
+        alphaRT     =   self.alphaR.copy()*self._w
+        # transform from dictionary field to delta field
+        self.deltaR =   self.dict2D.itransformSigma(alphaRT).real
         return
 
     def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):

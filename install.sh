@@ -9,3 +9,6 @@ export PYTHONPATH="$Dir/demo/sim/":$PYTHONPATH
 
 export PATH="$Dir/demo/s19a/":$PATH
 export PYTHONPATH="$Dir/demo/s19a/":$PYTHONPATH
+
+DirBase="$homeSys/code/FPFS_Private/FPFSBASE/"
+export PYTHONPATH="$DirBase/python/":$PYTHONPATH
