@@ -150,47 +150,40 @@ class nfwShearlet2D():
                     self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Real Space
         return
 
-    def itransformSigma(self,dataIn):
+    def itransformInter(self,dataIn):
         """
-        transform from nfw dictionary space to delta space
-        redshift plane by redshift plane
+        transform from model (e.g., nfwlet) dictionary space to intermediate
+        (e.g., delta) space
         """
         assert dataIn.shape==self.shapeA,\
             'input should have shape (nzl,nframe,ny,nx)'
 
-        # Initialize the output with shape (nzs,ny,nx)'
-        dataOut=np.zeros(self.shapeL,dtype=np.complex128)
-        for izl in range(self.nzl):
-            #Initialize each lens plane with shape (ny,nx)'
-            data=np.zeros(self.shapeP,dtype=np.complex128)
-            for iframe in range(self.nframe)[::-1]:
-                dataTmp=dataIn[izl,iframe]
-                dataTmp=np.fft.fft2(dataTmp)
-                data=data+(dataTmp*self.fouaframesDelta[izl,iframe])
-                if self.rs_frame[izl,iframe]<self.resolve_lim:
-                    # the scale of nfw halo is too small to resolve
-                    # so we do not transform the next frame
-                    break
-            # Assign the iz'th lens plane
-            dataOut[izl] =   np.fft.ifft2(data)
+        # convolve with atom in each frame/zlens (to Fourier space)
+        dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp =   dataTmp*self.fouaframesDelta
+        # sum over frames
+        dataTmp =   np.sum(dataTmp,axis=1)
+        # back to configure space
+        dataOut =   np.fft.ifft2(dataTmp,axes=(1,2))
         return dataOut
 
     def itransform(self,dataIn):
         """
-        transform from nfw dictionary space to shear measurements
-        Parameters:
+        transform from model (e.g., nfwlet) dictionary space to measurement
+        (e.g., shear) space
         ----------
-        dataIn: arry to be transformed (in config space, e.g., alpha)
+        dataIn: array to be transformed (in configure space, e.g., alpha)
         """
         assert dataIn.shape==self.shapeA,\
             'input should have shape (nzl,nframe,ny,nx)'
 
-        # convolve with atom in each frame/zlens
+        # convolve with atom in each frame/zlens (to Fourier space)
         dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
         dataTmp =   dataTmp*self.fouaframes
-        dataTmp =   np.fft.ifft2(dataTmp,axes=(2,3))
         # sum over frames
         dataTmp2=   np.sum(dataTmp,axis=1)
+        # back to configure space
+        dataTmp2=   np.fft.ifft2(dataTmp2,axes=(1,2))
         # project to source plane
         dataOut =   np.sum(dataTmp2[None,:,:,:]*self.lensKernel[:,:,None,None],axis=1)
         return dataOut
@@ -209,7 +202,7 @@ class nfwShearlet2D():
         # with shape=(nzl,nframe,ny,nx)
         dataTmp =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
         # Convolve with atom*
-        dataTmp =   np.fft.fft2(dataTmp,axes=(2,3))
+        dataTmp =   np.fft.fft2(dataTmp,axes=(1,2))
         dataTmp =   dataTmp[:,None,:,:]*np.conjugate(self.fouaframes)
         # The output with shape (nzl,nframe,ny,nx)
         dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))

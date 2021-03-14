@@ -369,7 +369,7 @@ class massmapSparsityTaskNew():
         # reweight back to True unweighted alpha
         alphaRT     =   self.alphaR.copy()*self._w
         # transform from dictionary field to delta field
-        self.deltaR =   self.dict2D.itransformSigma(alphaRT).real
+        self.deltaR =   self.dict2D.itransformInter(alphaRT).real
         return
 
     def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):

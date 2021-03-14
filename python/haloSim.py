@@ -40,7 +40,7 @@ def four_pi_G_over_c_squared():
 
 def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
-    Get the scale radius of NFW halo with mass
+    Get the scale radius of NFW halo from mass and redshift
     @param mass         Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
     @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
