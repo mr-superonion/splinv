@@ -11,10 +11,10 @@
 # GNU General Public License for more details.
 #
 import os
-import astropy.io.fits as pyfits
 import haloSim
-import numpy as np
 import cosmology
+import numpy as np
+import astropy.io.fits as pyfits
 
 Default_h0  =   1.
 
@@ -22,11 +22,25 @@ def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
 class massmap_ks2D():
+    """
+    A Class for 2D Kaiser-Squares transform
+    --------
+
+    Parameters:
+    ----------
+    ny,nx: number of pixels in y and x directions
+
+    Methods:
+    --------
+    itransform:
+
+    transform:
+    """
     def __init__(self,ny,nx):
         self.shape   =   (ny,nx)
-        self.e2phiF  =   self.e2phiFou(self.shape)
+        self.e2phiF  =   self.__e2phiFou(self.shape)
 
-    def e2phiFou(self,shape):
+    def __e2phiFou(self,shape):
         ny1,nx1 =   shape
         e2phiF  =   np.zeros(shape,dtype=complex)
         for j in range(ny1):
@@ -59,7 +73,6 @@ class massmap_ks2D():
             gOMap    =   np.fft.ifft2(gOMap)
         return gOMap
 
-
 class nfwShearlet2D():
     """
     A Class for 2D nfwlet transform
@@ -75,7 +88,7 @@ class nfwShearlet2D():
     nlp     :   number of lens plane
     nz      :   number of source plane
 
-    Methods
+    Methods:
     --------
     itransform: transform from halolet space to observed space
 
@@ -92,7 +105,7 @@ class nfwShearlet2D():
         # line of sight
         self.nzl    =   parser.getint('lensZ','nlp')
         self.nzs    =   parser.getint('sourceZ','nz')
-        if self.nzl  <=  1:
+        if self.nzl <=  1:
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
@@ -102,31 +115,37 @@ class nfwShearlet2D():
         self.smooth_scale = parser.getfloat('transPlane','smooth_scale')
 
         # Shape of output shapelets
-        self.shapeP =   (self.ny,self.nx)
-        self.shapeL =   (self.nzl,self.ny,self.nx)
-        self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx)
-        self.shapeS =   (self.nzs,self.ny,self.nx)
-        self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
-        self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
-        if parser.has_option('cosmology','omega_m'):
-            omega_m=parser.getfloat('cosmology','omega_m')
+        self.shapeP =   (self.ny,self.nx)                   # basic plane
+        self.shapeL =   (self.nzl,self.ny,self.nx)          # lens plane
+        self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx) # dictionary plane
+        self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
+        if parser.has_option('lensZ','atomFname'):
+            atFname =   parser.get('lensZ','atomFname')
+            self.aframes    =   None
+            self.fouaframes =   None
+            self.fouaframesInter =   None
         else:
-            omega_m=0.3
-        self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
+            if parser.has_option('cosmology','omega_m'):
+                omega_m =   parser.getfloat('cosmology','omega_m')
+            else:
+                omega_m =   0.3
+            self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
+            self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
+            self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
+            self.prepareFrames()
         lkfname     =   parser.get('prepare','lkfname')
         self.lensKernel=pyfits.getdata(lkfname)
-        self.prepareFrames()
 
     def prepareFrames(self):
         # Initialize
-        self.fouaframes =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
-        self.fouaframesDelta =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
         self.aframes    =   np.zeros(self.shapeA,dtype=np.complex128)# Real Space
+        self.fouaframes =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
+        self.fouaframesInter =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
         self.rs_frame   =   -1.*np.ones((self.nzl,self.nframe)) # Radius in pixel
 
         for izl in range(self.nzl):
             rz      =   self.rs_base/self.cosmo.Dc(0.,self.zlBin[izl])*60.*180./np.pi
-            for ifr in range(self.nframe)[::-1]:
+            for ifr in  range(self.nframe)[::-1]:
                 # For each lens redshfit bins, we begin from the
                 # frame with largest angular scale radius
                 rs  =   (ifr+1)*rz
@@ -134,20 +153,20 @@ class nfwShearlet2D():
                     self.rs_frame[izl,ifr]= 0.
                     # l2 normalized gaussian
                     iAtomF=haloSim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
-                    self.fouaframesDelta[izl,ifr]=iAtomF        # Fourier Space
+                    self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF=self.ks2D.transform(iAtomF,outFou=True)
                     self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
+                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Configure Space
                     break
                 else:
                     self.rs_frame[izl,ifr]= rs
                     # l2 normalized
-                    iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
+                    iAtomF= haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
-                    self.fouaframesDelta[izl,ifr]=iAtomF            # Fourier Space
-                    iAtomF=   self.ks2D.transform(iAtomF,outFou=True)# KS transform
+                    self.fouaframesInter[izl,ifr]=iAtomF            # Fourier Space
+                    iAtomF= self.ks2D.transform(iAtomF,outFou=True) # KS transform
                     self.fouaframes[izl,ifr]=iAtomF                 # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Real Space
+                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Configure Space
         return
 
     def itransformInter(self,dataIn):
@@ -160,7 +179,7 @@ class nfwShearlet2D():
 
         # convolve with atom in each frame/zlens (to Fourier space)
         dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
-        dataTmp =   dataTmp*self.fouaframesDelta
+        dataTmp =   dataTmp*self.fouaframesInter
         # sum over frames
         dataTmp =   np.sum(dataTmp,axis=1)
         # back to configure space

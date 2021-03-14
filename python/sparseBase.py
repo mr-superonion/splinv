@@ -134,18 +134,10 @@ class massmapSparsityTaskNew():
         else:
             self.determine_step_size()
 
-        # read the pixelized shear,mask
-        # Note: this should be done after determine
-        # step size, since determine_step_size
-        # requires self.shearR to be zero
+        # read the pixelized shear,mask Note: this should be done after
+        # determine step size, since determine_step_size requires self.shearR
+        # to be zero
         self.read_pixel_result(parser)
-
-        # For distance calculation
-        # if parser.has_option('cosmology','omega_m'):
-        #     omega_m     =   parser.getfloat('cosmology','omega_m')
-        # else:
-        #     omega_m     =   0.3
-        # self.cosmo      =   cosmology.Cosmo(h=1,omega_m=omega_m)
 
         # Do debug?
         # if parser.has_option('sparse','debugList'):
@@ -167,7 +159,7 @@ class massmapSparsityTaskNew():
 
     def read_pixel_result(self,parser):
         """
-        Read the pixelized g1,g2,lensKernel
+        Read the pixelized g1,g2
 
         Parameters:
         ----------
@@ -186,10 +178,19 @@ class massmapSparsityTaskNew():
         return
 
     def read_lens_kernel(self,parser):
+        """
+        Read the pixelized lensing kernel (normalization not required)
+
+        Parameters:
+        ----------
+        parser: config parser
+
+        """
         lkfname     =   parser.get('prepare','lkfname')
         self.lensKernel=pyfits.getdata(lkfname)
         assert self.lensKernel.shape  ==   (self.nz,self.nlp), \
-            'load wrong lensing kernel, shape should be: (%d,%d)' %(self.nz,self.nlp)
+            'load wrong lensing kernel, shape should be: (%d,%d)' \
+                %(self.nz,self.nlp)
         return
 
     def main_forward(self,alphaRIn):
@@ -292,16 +293,31 @@ class massmapSparsityTaskNew():
         """
         Estimate the diagonal elements of the Chi2 transform matrix
         """
-        asquareframe=   np.zeros((self.nz,self.nframe,self.ny,self.nx))
-        for iz in range(self.nz):
-            maskF   =   np.fft.fft2((self.sigmaSInv[iz]**2.))
-            for iframe in range(self.nframe):
-                fun=np.conj(self.dict2D.aframes[iz,iframe])*self.dict2D.aframes[iz,iframe]
-                asquareframe[iz,iframe,:,:]=np.fft.ifft2(np.fft.fft2(fun)*maskF).real
-
+        # The space is weighted by var^{-2}
+        spaceF  =   np.fft.fft2((self.sigmaSInv**2.)) #[nz,ny,nx]
+        # l2-norm in weighted space
+        fun     =   np.conj(self.dict2D.aframes)*self.dict2D.aframes
+        fun     =   np.fft.fft2(fun) #[nlp,nframe,ny,nx]
+        fun     =   fun[None,:,:,:,:]*spaceF[:,None,None,:,:]
+        asquareframe=np.fft.ifft2(fun).real
         self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
-                *asquareframe[:,None,:,:,:],axis=0)
+                *asquareframe,axis=0)
         return
+
+    # def fast_chi2diagonal_est(self):
+    #     """
+    #     Estimate the diagonal elements of the Chi2 transform matrix
+    #     """
+    #     asquareframe=   np.zeros((self.nz,self.nframe,self.ny,self.nx))
+    #     for iz in range(self.nz):
+    #         spaceF   =   np.fft.fft2((self.sigmaSInv[iz]**2.))
+    #         for iframe in range(self.nframe):
+    #             fun=np.conj(self.dict2D.aframes[iz,iframe])*self.dict2D.aframes[iz,iframe]
+    #             asquareframe[iz,iframe,:,:]=np.fft.ifft2(np.fft.fft2(fun)*spaceF).real
+
+    #     self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
+    #             *asquareframe[:,None,:,:,:],axis=0)
+    #     return
 
     def determine_step_size(self):
         norm        =   0.
