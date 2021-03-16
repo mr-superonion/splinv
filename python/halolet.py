@@ -121,9 +121,15 @@ class nfwShearlet2D():
         self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
         if parser.has_option('lensZ','atomFname'):
             atFname =   parser.get('lensZ','atomFname')
-            self.aframes    =   pyfits.getdata(atFname)
+            tmp     =   pyfits.getdata(atFname)
+            tmp     =   np.fft.fftshift(tmp)
+            nyt,nxt =   tmp.shape
+            ypad    =   (self.ny-nyt)//2
+            xpad    =   (self.nx-nxt)//2
+            tmp`    =   np.pad(tmp,(ypad,ypad),(xpad,xpad))
+            self.aframes    =   tmp
             self.fouaframesInter =   np.fft.fft2(self.aframes)
-            self.fouaframes =   self.ks2D.transform(iAtomF,inFou=True,outFou=True)
+            self.fouaframes =   self.ks2D.transform(self.fouaframesInter,inFou=True,outFou=True)
         else:
             if parser.has_option('cosmology','omega_m'):
                 omega_m =   parser.getfloat('cosmology','omega_m')
@@ -154,7 +160,7 @@ class nfwShearlet2D():
                     # l2 normalized gaussian
                     iAtomF=haloSim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
                     self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
-                    iAtomF=self.ks2D.transform(iAtomF,outFou=True)
+                    iAtomF=self.ks2D.transform(iAtomF,inFou=True,outFou=True)
                     self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
                     self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Configure Space
                     break
@@ -164,7 +170,7 @@ class nfwShearlet2D():
                     iAtomF= haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
                     self.fouaframesInter[izl,ifr]=iAtomF            # Fourier Space
-                    iAtomF= self.ks2D.transform(iAtomF,outFou=True) # KS transform
+                    iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True) # KS transform
                     self.fouaframes[izl,ifr]=iAtomF                 # Fourier Space
                     self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Configure Space
         return
