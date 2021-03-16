@@ -56,7 +56,17 @@ class massmap_ks2D():
         return e2phiF*np.pi
 
     def itransform(self,gMap,inFou=True,outFou=True):
-        assert gMap.shape==self.shape
+        """
+        K-S Transform from gamma map to kappa map
+        --------
+
+        Parameters:
+        ----------
+        gMap:   input gamma map
+        inFou:  input in Fourier space? [default:True=yes]
+        outFou: output in Fourier space? [default:True=yes]
+        """
+        assert gMap.shape[-2:]==self.shape
         if not inFou:
             gMap =   np.fft.fft2(gMap)
         kOMap    =   gMap/self.e2phiF*np.pi
@@ -65,7 +75,17 @@ class massmap_ks2D():
         return kOMap
 
     def transform(self,kMap,inFou=True,outFou=True):
-        assert kMap.shape==self.shape
+        """
+        K-S Transform from kappa map to gamma map
+        --------
+
+        Parameters:
+        ----------
+        gMap:   input kappa map
+        inFou:  input in Fourier space? [default:True=yes]
+        outFou: output in Fourier space? [default:True=yes]
+        """
+        assert kMap.shape[-2:]==self.shape
         if not inFou:
             kMap =   np.fft.fft2(kMap)
         gOMap    =   kMap*self.e2phiF/np.pi
@@ -123,41 +143,48 @@ class nfwShearlet2D():
             atFname =   parser.get('lensZ','atomFname')
             tmp     =   pyfits.getdata(atFname)
             tmp     =   np.fft.fftshift(tmp)
-            nyt,nxt =   tmp.shape
+            nzl,nft,nyt,nxt =   tmp.shape
             ypad    =   (self.ny-nyt)//2
             xpad    =   (self.nx-nxt)//2
-            tmp`    =   np.fft.ifft(np.pad(tmp,(ypad,ypad),(xpad,xpad)))
-            self.aframes    =   tmp
-            self.fouaframesInter =   np.fft.fft2(self.aframes)
-            self.fouaframes =   self.ks2D.transform(self.fouaframesInter,inFou=True,outFou=True)
+            assert self.nframe==nft
+            assert self.nzl==nzl
+            ppad    =   ((0,0),(0,0),(ypad,ypad),(xpad,xpad))
+            tmp     =   np.fft.ifftshift(np.pad(tmp,ppad))
+            tmp     =   np.fft.fft2(tmp)
+            self.fouaframesInter =  tmp
+            self.fouaframes =   self.ks2D.transform(tmp,inFou=True,outFou=True)
+            self.aframes    =   np.fft.ifft2(self.fouaframes)
         else:
-            if parser.has_option('cosmology','omega_m'):
-                omega_m =   parser.getfloat('cosmology','omega_m')
-            else:
-                omega_m =   0.3
-            self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
-            self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
-            self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
             self.prepareFrames()
         lkfname     =   parser.get('prepare','lkfname')
         self.lensKernel=pyfits.getdata(lkfname)
 
     def prepareFrames(self):
-        # Initialize
-        self.aframes    =   np.zeros(self.shapeA,dtype=np.complex128)# Real Space
-        self.fouaframes =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
-        self.fouaframesInter =   np.zeros(self.shapeA,dtype=np.complex128)# Fourier space
+        if parser.has_option('cosmology','omega_m'):
+            omega_m =   parser.getfloat('cosmology','omega_m')
+        else:
+            omega_m =   0.3
+        self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
+        self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
+        self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
+        # Initialize basis predictors
+        # In configure Space
+        self.aframes    =   np.zeros(self.shapeA,dtype=np.complex128)
+        # In Fourier space
+        self.fouaframes =   np.zeros(self.shapeA,dtype=np.complex128)
+        # Intermediate basis in Fourier space
+        self.fouaframesInter =   np.zeros(self.shapeA,dtype=np.complex128)
         self.rs_frame   =   -1.*np.ones((self.nzl,self.nframe)) # Radius in pixel
 
         for izl in range(self.nzl):
             rz      =   self.rs_base/self.cosmo.Dc(0.,self.zlBin[izl])*60.*180./np.pi
             for ifr in  range(self.nframe)[::-1]:
-                # For each lens redshfit bins, we begin from the
+                # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
                 rs  =   (ifr+1)*rz
                 if rs<self.resolve_lim:
                     self.rs_frame[izl,ifr]= 0.
-                    # l2 normalized gaussian
+                    # l2 normalized Gaussian
                     iAtomF=haloSim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
                     self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF=self.ks2D.transform(iAtomF,inFou=True,outFou=True)
@@ -169,10 +196,11 @@ class nfwShearlet2D():
                     # l2 normalized
                     iAtomF= haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
-                    self.fouaframesInter[izl,ifr]=iAtomF            # Fourier Space
-                    iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True) # KS transform
-                    self.fouaframes[izl,ifr]=iAtomF                 # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)      # Configure Space
+                    self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
+                    iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
+                    # KS transform
+                    self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
+                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Configure Space
         return
 
     def itransformInter(self,dataIn):

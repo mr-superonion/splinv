@@ -238,7 +238,7 @@ class massmapSparsityTaskNew():
 
     def gradient_TSV(self,alphaR):
         """
-        calculate the gradient of the Total Square Variance(TSV) component
+        Calculate the gradient of the Total Square Variance(TSV) component
         finite difference operator
 
         Parameters:
@@ -260,12 +260,12 @@ class massmapSparsityTaskNew():
         grady   =   np.roll(dify,-1,axis=-2)
         grady   =   grady-dify # (S)_{ij} (S_2)_{i\alpha} x_\alpha
 
-        # for the z direction
         """
+        # for the z direction
         difz    =   np.roll(alphaR,1,axis=-2)
         difz    =   difz+alphaR #D2
         gradz   =   np.roll(difz,-1,axis=-2)
-        gradz   =   gradz+difz # (S)_{ij} (S_2)_{i\alpha} x_\alpha
+        gradz   =   gradz+difz  #(S)_{ij} (S_2)_{i\alpha} x_\alpha
         """
         gradz   =   0.
         return (gradx+grady+gradz)*self.tau*self._w
@@ -299,7 +299,7 @@ class massmapSparsityTaskNew():
         fun     =   np.conj(self.dict2D.aframes)*self.dict2D.aframes
         fun     =   np.fft.fft2(fun) #[nlp,nframe,ny,nx]
         fun     =   fun[None,:,:,:,:]*spaceF[:,None,None,:,:]
-        asquareframe=np.fft.ifft2(fun).real
+        asquareframe=   np.fft.ifft2(fun).real
         self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
                 *asquareframe,axis=0)
         return
@@ -434,7 +434,8 @@ class massmapSparsityTaskNew():
         tn      =   1.
         Xp0     =   self.alphaR
         for irun in range(niter):
-            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real # no B-mode
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
             Xp1 =   soft_thresholding_nn(Xp1,thresholds)
             #Xp1 =   soft_thresholding(Xp1,thresholds)
