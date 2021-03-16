@@ -126,7 +126,7 @@ class nfwShearlet2D():
             nyt,nxt =   tmp.shape
             ypad    =   (self.ny-nyt)//2
             xpad    =   (self.nx-nxt)//2
-            tmp`    =   np.pad(tmp,(ypad,ypad),(xpad,xpad))
+            tmp`    =   np.fft.ifft(np.pad(tmp,(ypad,ypad),(xpad,xpad)))
             self.aframes    =   tmp
             self.fouaframesInter =   np.fft.fft2(self.aframes)
             self.fouaframes =   self.ks2D.transform(self.fouaframesInter,inFou=True,outFou=True)
