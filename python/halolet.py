@@ -121,9 +121,9 @@ class nfwShearlet2D():
         self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
         if parser.has_option('lensZ','atomFname'):
             atFname =   parser.get('lensZ','atomFname')
-            self.aframes    =   None
-            self.fouaframes =   None
-            self.fouaframesInter =   None
+            self.aframes    =   pyfits.getdata(atFname)
+            self.fouaframesInter =   np.fft.fft2(self.aframes)
+            self.fouaframes =   self.ks2D.transform(iAtomF,inFou=True,outFou=True)
         else:
             if parser.has_option('cosmology','omega_m'):
                 omega_m =   parser.getfloat('cosmology','omega_m')
