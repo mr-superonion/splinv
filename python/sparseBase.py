@@ -65,23 +65,22 @@ class massmapSparsityTaskNew():
     def __init__(self,parser):
         # Regularization
         self.lbd        =   parser.getfloat('sparse','lbd') #   For LASSO
-        if parser.has_option('sparse','tau'):               #   For Total Square Variance
-            self.tau    =   parser.getfloat('sparse','tau')
-        else:
-            self.tau    =   0.
+        self.lcd        =   parser.getfloat('sparse','lcd') #   For ElasticNet
+        self.tau        =   parser.getfloat('sparse','tau') #   For TSV
         # Dictionary
         self.nframe     =   parser.getint('sparse','nframe')
 
         # Transverse plane
-        self.nx         =   parser.getint('transPlane','nx')
         self.ny         =   parser.getint('transPlane','ny')
+        self.nx         =   parser.getint('transPlane','nx')
         # Lens redshift axis
         self.nlp        =   parser.getint('lensZ','nlp')
         if self.nlp<=1:
-            # 2D case
+            # 2D
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
+            # 3D
             self.zlMin  =   parser.getfloat('lensZ','zlMin')
             self.zlscale=   parser.getfloat('lensZ','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nlp)
@@ -89,12 +88,13 @@ class massmapSparsityTaskNew():
         # Source z axis
         self.nz     =   parser.getint('sourceZ','nz')
         if self.nz<=1:
-            # 2D case
+            # 2D
             assert self.nlp<=1
             self.zMin   =   0.01
             self.zscale =   2.5
             self.zsBin  =   zMeanBin(self.zMin,self.zscale,self.nz)
         else:
+            # 3D
             zbound      =   np.array(json.loads(parser.get('sourceZ','zbound')))
             self.zsBin  =   (zbound[:-1]+zbound[1:])/2.
 
@@ -120,12 +120,12 @@ class massmapSparsityTaskNew():
         # Estimate diagonal elements of the chi2 operator
         self.fast_chi2diagonal_est()
         # weight for normalization of effective column vectors
-        self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1.e-15)
+        self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1e-12)
 
         # Estimate sigma map for alpha
         self.prox_sigmaA()
 
-        self.clear_all()
+        self.clean_all()
         # Determine Step Size: mu
         if parser.has_option('sparse','mu'):
             self.mu =   parser.getfloat('sparse','mu')
@@ -138,23 +138,25 @@ class massmapSparsityTaskNew():
         # determine step size, since determine_step_size requires self.shearR
         # to be zero
         self.read_pixel_result(parser)
-
-        # Do debug?
-        # if parser.has_option('sparse','debugList'):
-        #     self.debugList  =   np.array(json.loads(parser.get('sparse','debugList')))
-        #     self.debugRatios=[]
-        #     self.debugDeltas=[]
-        #     self.debugAlphas=[]
-        # else:
-        #     debugList   =   []
         return
 
-    def clear_all(self):
-        # Clear results
+    def clean_all(self):
+        """
+        # Clear all of the data
+        """
         self.alphaR =   np.zeros(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         self.shearR =   np.zeros(self.shapeS)   # shear
+        return
+
+    def clean_outcome(self):
+        """
+        # Clear results
+        """
+        self.alphaR =   np.zeros(self.shapeA)   # alpha
+        self.deltaR =   np.zeros(self.shapeL)   # delta
+        self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         return
 
     def read_pixel_result(self,parser):
@@ -203,8 +205,9 @@ class massmapSparsityTaskNew():
 
         """
         # self._w normalizes the forward operator: A
-        alphaRIn    =   alphaRIn*self._w
-        shearOut    =   self.dict2D.itransform(alphaRIn)
+        __tmp       =   alphaRIn*self._w
+        shearOut    =   self.dict2D.itransform(__tmp)
+        # Mask
         shearOut    =   shearOut*(self.maskS.astype(np.int))
         return shearOut
 
@@ -217,10 +220,10 @@ class massmapSparsityTaskNew():
         shearRIn: input observed map (e.g. opbserved shear map)
 
         """
-        # initializate an empty delta map
+        # Initializate an empty delta map
         # only keep the E-mode
-        alphaRO     =   self.dict2D.itranspose(shearRIn).real
-        return alphaRO*self._w
+        alphaRO     =   self.dict2D.itranspose(shearRIn).real*self._w
+        return alphaRO
 
     def gradient_chi2(self,alphaR):
         """
@@ -229,12 +232,18 @@ class massmapSparsityTaskNew():
         Parameters:
         ----------
         alphaR: [array]
-                the point at which the gradient is calulated
+                the alpha at which the gradient is calulated
 
         """
-        shearRTmp       =   self.main_forward(alphaR)               #A_{ij} x_j
-        self.shearRRes  =   (self.shearR-shearRTmp)*self.sigmaSInv  #y_i-A_{ij} x_j
-        return -self.chi2_transpose(self.shearRRes*self.sigmaSInv)  #-A_{i\alpha}(y_i-A_{ij}x_j)
+        pp  =   self.lcd/(1+self.lcd)
+        # A_{ij} x_j *(1-p)        [weighted A_{ij}]
+        shearRTmp       =   self.main_forward(alphaR)*(1-pp)
+        # (y_i-(1-p)A_{ij} x_j)/sigma_{ii}    [normalized residual]
+        self.shearRRes  =   (self.shearR-shearRTmp)*self.sigmaSInv
+        # (-A_{i\alpha}y_i+(1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
+        out =   -self.chi2_transpose(self.shearRRes*self.sigmaSInv)
+        out =   out+alphaR*pp
+        return out
 
     def gradient_TSV(self,alphaR):
         """
@@ -268,7 +277,8 @@ class massmapSparsityTaskNew():
         gradz   =   gradz+difz  #(S)_{ij} (S_2)_{i\alpha} x_\alpha
         """
         gradz   =   0.
-        return (gradx+grady+gradz)*self.tau*self._w
+        out     =   (gradx+grady+gradz)*self.tau*self._w
+        return out
 
     def gradient_Quad(self,alphaR):
         """
@@ -283,7 +293,7 @@ class massmapSparsityTaskNew():
 
         """
         gCh2    =   self.gradient_chi2(alphaR)
-        if np.max(self.tau)>0.:
+        if self.tau>0.:
             gTSV    =   self.gradient_TSV(alphaR)
         else:
             gTSV    =   0.
@@ -361,7 +371,6 @@ class massmapSparsityTaskNew():
 
         # masked region is assigned with the maximum of the std in this frame
         # and lens redshift plane
-        # TODO: accelerate
         maskL =   np.all(self.maskS,axis=0)
         for izlp in range(self.nlp):
             for iframe in range(self.nframe):
@@ -369,13 +378,13 @@ class massmapSparsityTaskNew():
         # Calculate noise std
         self.sigmaA =   np.sqrt(outData/niter)
 
-        # mask the parameter field close to the boundary of the survey set the
+        # Mask the parameter field close to the boundary of the survey set the
         # stds of these regions to +infty
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
                 thres=np.max(self.diagonal[izl,iframe].flatten())/10.
                 maskLP= self.diagonal[izl,iframe]>thres
-                self.sigmaA[izl,iframe][~maskLP]=1e12
+                self.sigmaA[izl,iframe][~maskLP]=1e15
         return
 
     def reconstruct(self):
@@ -428,6 +437,7 @@ class massmapSparsityTaskNew():
         return w
 
     def fista_gradient_descent(self,niter,w=1.):
+        self.diff=[]
         # The thresholds
         thresholds =   self.lbd*self.sigmaA*self.mu*w
         # FISTA algorithms
@@ -441,9 +451,30 @@ class massmapSparsityTaskNew():
             #Xp1 =   soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
-            self.alphaR=Xp1+(ratio*(Xp1-Xp0))
+            diff=   Xp1-Xp0
+            error=  np.sqrt(np.sum(diff**2.)/np.sum(Xp1**2.))
+            if error<1e-3:
+                break
+            # self.diff.append(error)
+            self.alphaR=Xp1+(ratio*(diff))
             tn  =   tnTmp
             Xp0 =   Xp1
+        # self.diff=np.array(self.diff)
+        return
+
+    def navie_gradient_descent(self,niter,w=1.):
+        # self.diff=[]
+        # The thresholds
+        thresholds =   self.lbd*self.sigmaA*self.mu*w
+        tn      =   1.
+        Xp0     =   self.alphaR
+        for irun in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            self.alphaR =   soft_thresholding_nn(self.alphaR+dalphaR,thresholds)
+            error=  np.sqrt(np.sum(dalphaR**2.))
+            self.diff.append(error)
+        # self.diff=np.array(self.diff)
         return
 
     def process(self,niter=1000):

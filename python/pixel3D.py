@@ -356,6 +356,9 @@ class cartesianGrid3D():
 
         poz_ave:    array
             average POZ in source bins
+
+        deltaIn:    bool [default: True (yes)]
+            is mapping from delta to kappa
         """
         assert (poz_data is not None)==(poz_best is not None), \
             'Please provide both photo-z bins and photo-z data'
