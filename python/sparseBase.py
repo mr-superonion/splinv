@@ -65,7 +65,7 @@ class massmapSparsityTaskNew():
     def __init__(self,parser):
         # Regularization
         self.lbd        =   parser.getfloat('sparse','lbd') #   For LASSO
-        self.lcd        =   parser.getfloat('sparse','lcd') #   For ElasticNet
+        self.lcd        =   parser.getfloat('sparse','lcd') #   For Ridge
         self.tau        =   parser.getfloat('sparse','tau') #   For TSV
         # Dictionary
         self.nframe     =   parser.getint('sparse','nframe')
@@ -127,14 +127,11 @@ class massmapSparsityTaskNew():
 
         self.clean_all()
         # Determine Step Size: mu
-        if parser.has_option('sparse','mu'):
-            self.mu =   parser.getfloat('sparse','mu')
-            if self.mu <0:
-                self.determine_step_size()
-        else:
+        self.mu =   parser.getfloat('sparse','mu')
+        if self.mu <0:
             self.determine_step_size()
 
-        # read the pixelized shear,mask Note: this should be done after
+        # Read the pixelized shear,mask Note: this should be done after
         # determine step size, since determine_step_size requires self.shearR
         # to be zero
         self.read_pixel_result(parser)
@@ -144,7 +141,7 @@ class massmapSparsityTaskNew():
         """
         # Clear all of the data
         """
-        self.alphaR =   np.zeros(self.shapeA)   # alpha
+        self.alphaR =   np.ones(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         self.shearR =   np.zeros(self.shapeS)   # shear
@@ -154,7 +151,7 @@ class massmapSparsityTaskNew():
         """
         # Clear results
         """
-        self.alphaR =   np.zeros(self.shapeA)   # alpha
+        self.alphaR =   np.ones(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes   = np.zeros(self.shapeS)# shear residuals
         return
@@ -393,6 +390,8 @@ class massmapSparsityTaskNew():
         """
         # reweight back to True unweighted alpha
         alphaRT     =   self.alphaR.copy()*self._w
+        # shrink 1./(1+lcd) if no lasso
+        alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
         self.deltaR =   self.dict2D.itransformInter(alphaRT).real
         return
@@ -437,7 +436,15 @@ class massmapSparsityTaskNew():
         return w
 
     def fista_gradient_descent(self,niter,w=1.):
-        self.diff=[]
+        """
+        FISTA gradient descent solver of loss fucntion
+
+        Parameters:
+        -----------
+        niter:      number of iteration
+        w:          adaptive weight [default: 1.]
+        """
+        # self.diff=[]
         # The thresholds
         thresholds =   self.lbd*self.sigmaA*self.mu*w
         # FISTA algorithms
@@ -463,7 +470,15 @@ class massmapSparsityTaskNew():
         return
 
     def navie_gradient_descent(self,niter,w=1.):
-        # self.diff=[]
+        """
+        Navie gradient descent solver of loss fucntion
+        (Slow convergence)
+
+        Parameters:
+        -----------
+        niter:      number of iteration
+        w:          adaptive weight [default: 1.]
+        """
         # The thresholds
         thresholds =   self.lbd*self.sigmaA*self.mu*w
         tn      =   1.
@@ -474,10 +489,39 @@ class massmapSparsityTaskNew():
             self.alphaR =   soft_thresholding_nn(self.alphaR+dalphaR,thresholds)
             error=  np.sqrt(np.sum(dalphaR**2.))
             self.diff.append(error)
-        # self.diff=np.array(self.diff)
         return
 
-    def process(self,niter=1000):
-        self.fista_gradient_descent(niter)
-        self.reconstruct()
+    def multiplicative_update(self,niter,w=1.):
+        """
+        Multiplicative update solver of loss fucntion
+        (Only works for positive models and positive parameters)
+
+        Parameters:
+        -----------
+        niter:      number of iteration
+        w:          adaptive weight [default: 1.]
+        """
+        self.diff=[]
+        # The thresholds
+        thresholds  =   self.lbd*self.sigmaA*w
+        # A_{i\alpha}y_i/sigma^2_{ii}
+        nominator   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
+        nominator   =   soft_thresholding_nn(nominator,thresholds)
+        pp  =   self.lcd/(1+self.lcd)
+        for irun in range(niter):
+            # A_{ij} x_j *(1-p)        [weighted A_{ij}]
+            shearRTmp       =   self.main_forward(self.alphaR)*(1-pp)
+            # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
+            denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
+            # Add pp*I_{\alphaj} x_j
+            denominator =   denominator+self.alphaR*pp
+            rr      =   nominator/(denominator+1e-12)
+            alphaR  =   self.alphaR*rr
+            diff    =   alphaR-self.alphaR
+            error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
+            if error<1e-3:
+                break
+            self.diff.append(error)
+            self.alphaR =   alphaR
+        self.diff=np.array(self.diff)
         return
