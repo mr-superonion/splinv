@@ -143,8 +143,10 @@ class massmapSparsityTaskNew():
         """
         self.alphaR =   np.ones(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
-        self.shearRRes   = np.zeros(self.shapeS)# shear residuals
-        self.shearR =   np.zeros(self.shapeS)   # shear
+        self.shearRRes  = np.zeros(self.shapeS)# shear residuals
+        self.shearR     =   np.zeros(self.shapeS)   # shear
+        self.shearProj  =   None
+        self.diff   =   []
         return
 
     def clean_outcome(self):
@@ -153,7 +155,9 @@ class massmapSparsityTaskNew():
         """
         self.alphaR =   np.ones(self.shapeA)   # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
-        self.shearRRes   = np.zeros(self.shapeS)# shear residuals
+        self.shearRRes  =   np.zeros(self.shapeS)# shear residuals
+        self.shearProj  =   None
+        self.diff   =   []
         return
 
     def read_pixel_result(self,parser):
@@ -394,6 +398,7 @@ class massmapSparsityTaskNew():
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
         self.deltaR =   self.dict2D.itransformInter(alphaRT).real
+        self.diff   =   np.array(self.diff)
         return
 
     def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):
@@ -435,7 +440,7 @@ class massmapSparsityTaskNew():
         w[~mask]=   1./thres_adp
         return w
 
-    def fista_gradient_descent(self,niter,w=1.):
+    def fista_gradient_descent(self,niter,w=1.,tn0=1.):
         """
         FISTA gradient descent solver of loss fucntion
 
@@ -444,12 +449,12 @@ class massmapSparsityTaskNew():
         niter:      number of iteration
         w:          adaptive weight [default: 1.]
         """
-        # self.diff=[]
+        tn  =   tn0
         # The thresholds
-        thresholds =   self.lbd*self.sigmaA*self.mu*w
+        thresholds  =   self.lbd*self.sigmaA*self.mu*w
         # FISTA algorithms
-        tn      =   1.
-        Xp0     =   self.alphaR
+        Xp0         =   self.alphaR
+        self.diff   =   []
         for irun in range(niter):
             # (.real means no B-mode)
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
@@ -460,13 +465,12 @@ class massmapSparsityTaskNew():
             ratio= (tn-1.)/tnTmp
             diff=   Xp1-Xp0
             error=  np.sqrt(np.sum(diff**2.)/np.sum(Xp1**2.))
-            if error<1e-3:
-                break
-            # self.diff.append(error)
             self.alphaR=Xp1+(ratio*(diff))
             tn  =   tnTmp
             Xp0 =   Xp1
-        # self.diff=np.array(self.diff)
+            self.diff.append(error)
+            if irun>50 and error<2e-3:
+                break
         return
 
     def navie_gradient_descent(self,niter,w=1.):
@@ -483,11 +487,14 @@ class massmapSparsityTaskNew():
         thresholds =   self.lbd*self.sigmaA*self.mu*w
         tn      =   1.
         Xp0     =   self.alphaR
+        self.diff   =   []
         for irun in range(niter):
             # (.real means no B-mode)
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
             self.alphaR =   soft_thresholding_nn(self.alphaR+dalphaR,thresholds)
             error=  np.sqrt(np.sum(dalphaR**2.))
+            if irun>50 and error<2e-3:
+                break
             self.diff.append(error)
         return
 
@@ -501,27 +508,27 @@ class massmapSparsityTaskNew():
         niter:      number of iteration
         w:          adaptive weight [default: 1.]
         """
-        self.diff=[]
         # The thresholds
         thresholds  =   self.lbd*self.sigmaA*w
         # A_{i\alpha}y_i/sigma^2_{ii}
-        nominator   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
-        nominator   =   soft_thresholding_nn(nominator,thresholds)
-        pp  =   self.lcd/(1+self.lcd)
+        if self.shearProj is None:
+            self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
+        nominator   =   soft_thresholding_nn(self.shearProj,thresholds)
+        pp          =   self.lcd/(1+self.lcd)
+        self.diff   =   []
         for irun in range(niter):
             # A_{ij} x_j *(1-p)        [weighted A_{ij}]
-            shearRTmp       =   self.main_forward(self.alphaR)*(1-pp)
+            shearRTmp   =   self.main_forward(self.alphaR)*(1-pp)
             # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
             denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
-            # Add pp*I_{\alphaj} x_j
+            # Add pp*I_{\alphaj} x_j (for Ridge regression)
             denominator =   denominator+self.alphaR*pp
             rr      =   nominator/(denominator+1e-12)
             alphaR  =   self.alphaR*rr
             diff    =   alphaR-self.alphaR
             error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
-            if error<1e-3:
+            if irun>50 and error<2e-3:
                 break
             self.diff.append(error)
             self.alphaR =   alphaR
-        self.diff=np.array(self.diff)
         return
