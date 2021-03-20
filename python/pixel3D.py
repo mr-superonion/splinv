@@ -358,8 +358,9 @@ class cartesianGrid3D():
             average POZ in source bins
 
         deltaIn:    bool [default: True (yes)]
-            is mapping from delta to kappa
+            is mapping from (yes) delta to kappa (no) or from mass to kappa
         """
+
         assert (poz_data is not None)==(poz_best is not None), \
             'Please provide both photo-z bins and photo-z data'
         assert (self.nzl==1)==(self.nz==1), \
@@ -375,14 +376,14 @@ class cartesianGrid3D():
                 kl[mask] =   self.cosmo.Da(zl,self.zcgrid[mask])*self.cosmo.Da(0.,zl)\
                         /self.cosmo.Da(0.,self.zcgrid[mask])
                 kl*=four_pi_G_over_c_squared()
-                # Sigma_M_zl_bin
-                # Surface masss density in lens bin
-                rhoM_ave=self.cosmo.rho_m(zl)
-                DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 if deltaIn:
+                    # Sigma_M_zl_bin
+                    # Surface masss density in lens bin
+                    rhoM_ave=   self.cosmo.rho_m(zl)
+                    DaBin   =   self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                     lensKernel[:,i]=kl*rhoM_ave*DaBin
                 else:
-                    lensKernel[:,i]=kl
+                    lensKernel[:,i]=kl*1e14
         else:
             # Use poz
             lensK =   np.zeros((len(poz_grids),self.nzl))
@@ -392,13 +393,13 @@ class cartesianGrid3D():
                 #Dsl*Dl/Ds
                 kl[mask] =   self.cosmo.Da(zl,poz_grids[mask])*self.cosmo.Da(0.,zl)/self.cosmo.Da(0.,poz_grids[mask])
                 kl*=four_pi_G_over_c_squared()
-                # Sigma_M_zl_bin
-                rhoM_ave=self.cosmo.rho_m(zl)
-                DaBin=self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
                 if deltaIn:
-                    lensK[:,i]=kl*rhoM_ave*DaBin
+                    # Sigma_M_zl_bin
+                    rhoM_ave=   self.cosmo.rho_m(zl)
+                    DaBin   =   self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
+                    lensK[:,i]= kl*rhoM_ave*DaBin
                 else:
-                    lensK[:,i]=kl
+                    lensK[:,i]= kl*1e14
 
             if poz_ave is None:
                 # Prepare the poz average

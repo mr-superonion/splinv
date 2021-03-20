@@ -22,10 +22,10 @@ KG_PER_SUN  =   1.98892e30      # kg/M_solar
 M_PER_PARSEC=   3.08568025e16   # m/pc
 Default_OmegaM= 0.315
 Default_h0  =   1.              # set to 1
-# rho~ [h^2]
-# R~ [h^-1]
-# V~ [h^-3]
-# M~ [h^-1]
+# rho~  [h^2]
+# R~    [h^-1]
+# V~    [h^-3]
+# M~    [h^-1]
 
 def four_pi_G_over_c_squared():
     # = 1.5*H0^2/roh_0/c^2

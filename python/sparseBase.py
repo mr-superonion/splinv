@@ -123,9 +123,9 @@ class massmapSparsityTaskNew():
         self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1e-12)
 
         # Estimate sigma map for alpha
-        self.prox_sigmaA()
-
+        # self.prox_sigmaA()
         self.clean_all()
+
         # Determine Step Size: mu
         self.mu =   parser.getfloat('sparse','mu')
         if self.mu <0:
@@ -141,9 +141,9 @@ class massmapSparsityTaskNew():
         """
         # Clear all of the data
         """
-        self.alphaR =   np.ones(self.shapeA)   # alpha
+        self.alphaR =   self.maskA              # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
-        self.shearRRes  = np.zeros(self.shapeS)# shear residuals
+        self.shearRRes  = np.zeros(self.shapeS) # shear residuals
         self.shearR     =   np.zeros(self.shapeS)   # shear
         self.shearProj  =   None
         self.diff   =   []
@@ -153,7 +153,7 @@ class massmapSparsityTaskNew():
         """
         # Clear results
         """
-        self.alphaR =   np.ones(self.shapeA)   # alpha
+        self.alphaR =   self.maskA              # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
         self.shearRRes  =   np.zeros(self.shapeS)# shear residuals
         self.shearProj  =   None
@@ -221,9 +221,8 @@ class massmapSparsityTaskNew():
         shearRIn: input observed map (e.g. opbserved shear map)
 
         """
-        # Initializate an empty delta map
         # only keep the E-mode
-        alphaRO     =   self.dict2D.itranspose(shearRIn).real*self._w
+        alphaRO     =   self.dict2D.itranspose(shearRIn).real*self._w*self.maskA
         return alphaRO
 
     def gradient_chi2(self,alphaR):
@@ -313,6 +312,14 @@ class massmapSparsityTaskNew():
         asquareframe=   np.fft.ifft2(fun).real
         self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
                 *asquareframe,axis=0)
+
+        # Determine the mask on parameters
+        self.maskA  =   np.ones(self.shapeA)
+        for izl in range(self.nlp):
+            for iframe in range(self.nframe):
+                thres=np.max(self.diagonal[izl,iframe].flatten())/5.
+                maskLP= (self.diagonal[izl,iframe]>thres)
+                self.maskA[izl,iframe][~maskLP]=0.
         return
 
     # def fast_chi2diagonal_est(self):
@@ -378,14 +385,16 @@ class massmapSparsityTaskNew():
                 outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
         # Calculate noise std
         self.sigmaA =   np.sqrt(outData/niter)
+        self.maskA  =   np.ones(self.shapeA)
 
         # Mask the parameter field close to the boundary of the survey set the
         # stds of these regions to +infty
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
-                thres=np.max(self.diagonal[izl,iframe].flatten())/10.
+                thres=np.max(self.diagonal[izl,iframe].flatten())/5.
                 maskLP= self.diagonal[izl,iframe]>thres
                 self.sigmaA[izl,iframe][~maskLP]=1e15
+                self.maskA[izl,iframe][~maskLP]=0.
         return
 
     def reconstruct(self):
@@ -451,7 +460,7 @@ class massmapSparsityTaskNew():
         """
         tn  =   tn0
         # The thresholds
-        thresholds  =   self.lbd*self.sigmaA*self.mu*w
+        thresholds  =   self.lbd*self.mu*w#*self.sigmaA
         # FISTA algorithms
         Xp0         =   self.alphaR
         self.diff   =   []
@@ -484,7 +493,7 @@ class massmapSparsityTaskNew():
         w:          adaptive weight [default: 1.]
         """
         # The thresholds
-        thresholds =   self.lbd*self.sigmaA*self.mu*w
+        thresholds =   self.lbd*self.mu*w#*self.sigmaA
         tn      =   1.
         Xp0     =   self.alphaR
         self.diff   =   []
@@ -509,7 +518,7 @@ class massmapSparsityTaskNew():
         w:          adaptive weight [default: 1.]
         """
         # The thresholds
-        thresholds  =   self.lbd*self.sigmaA*w
+        thresholds  =   self.lbd*w#*self.sigmaA
         # A_{i\alpha}y_i/sigma^2_{ii}
         if self.shearProj is None:
             self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
@@ -518,11 +527,11 @@ class massmapSparsityTaskNew():
         self.diff   =   []
         for irun in range(niter):
             # A_{ij} x_j *(1-p)        [weighted A_{ij}]
-            shearRTmp   =   self.main_forward(self.alphaR)*(1-pp)
+            shearRTmp   =   self.main_forward(self.alphaR)
             # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
             denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
             # Add pp*I_{\alphaj} x_j (for Ridge regression)
-            denominator =   denominator+self.alphaR*pp
+            denominator =   denominator*(1-pp)+self.alphaR*pp
             rr      =   nominator/(denominator+1e-12)
             alphaR  =   self.alphaR*rr
             diff    =   alphaR-self.alphaR
