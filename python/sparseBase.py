@@ -320,6 +320,9 @@ class massmapSparsityTaskNew():
                 thres=np.max(self.diagonal[izl,iframe].flatten())/5.
                 maskLP= (self.diagonal[izl,iframe]>thres)
                 self.maskA[izl,iframe][~maskLP]=0.
+        maskLP      =   np.all(self.maskA,axis=0)
+        for izl in range(self.nlp):
+            self.maskA[izl]=maskLP
         return
 
     # def fast_chi2diagonal_est(self):
@@ -354,48 +357,48 @@ class massmapSparsityTaskNew():
         self.mu =   1./norm/3.
         return
 
-    def prox_sigmaA(self):
-        """
-        Calculate stds of the paramters Note that the std should be all 1 since
-        we normalize the projectors.  However, we set some stds to +infty
-        (masked out)
-        """
-        niter   =   100
-        # A_i\alpha n_i
-        outData     =   np.zeros(self.shapeA)
-        for irun in range(niter):
-            np.random.seed(irun)
-            # Here the sigmaS is not the per-component sigma.
-            # While, we use the std for g1+ig2, which should be sqrt(2) times of
-            # the per component std.
-            # Since in the transpose operation, we only keep the real part of
-            # alpha field, such operation makes the alpha's std to 1/sqrt(2) of
-            # the ture one. Therefore, the final estimation is correct.
-            g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
-            shearSim=   (g1Sim+np.complex64(1j)*g2Sim)*self.sigmaSInv**2.
-            alphaRSim=  -self.chi2_transpose(shearSim) # Real field
-            outData +=  alphaRSim**2.
+    # def prox_sigmaA(self):
+    #     """
+    #     Calculate stds of the paramters Note that the std should be all 1 since
+    #     we normalize the projectors.  However, we set some stds to +infty
+    #     (masked out)
+    #     """
+    #     niter   =   100
+    #     # A_i\alpha n_i
+    #     outData     =   np.zeros(self.shapeA)
+    #     for irun in range(niter):
+    #         np.random.seed(irun)
+    #         # Here the sigmaS is not the per-component sigma.
+    #         # While, we use the std for g1+ig2, which should be sqrt(2) times of
+    #         # the per component std.
+    #         # Since in the transpose operation, we only keep the real part of
+    #         # alpha field, such operation makes the alpha's std to 1/sqrt(2) of
+    #         # the ture one. Therefore, the final estimation is correct.
+    #         g1Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+    #         g2Sim   =   np.random.randn(self.nz,self.ny,self.nx)*self.sigmaS
+    #         shearSim=   (g1Sim+np.complex64(1j)*g2Sim)*self.sigmaSInv**2.
+    #         alphaRSim=  -self.chi2_transpose(shearSim) # Real field
+    #         outData +=  alphaRSim**2.
 
-        # masked region is assigned with the maximum of the std in this frame
-        # and lens redshift plane
-        maskL =   np.all(self.maskS,axis=0)
-        for izlp in range(self.nlp):
-            for iframe in range(self.nframe):
-                outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
-        # Calculate noise std
-        self.sigmaA =   np.sqrt(outData/niter)
-        self.maskA  =   np.ones(self.shapeA)
+    #     # masked region is assigned with the maximum of the std in this frame
+    #     # and lens redshift plane
+    #     maskL =   np.all(self.maskS,axis=0)
+    #     for izlp in range(self.nlp):
+    #         for iframe in range(self.nframe):
+    #             outData[izlp,iframe][~maskL]=np.max(outData[izlp,iframe])
+    #     # Calculate noise std
+    #     self.sigmaA =   np.sqrt(outData/niter)
+    #     self.maskA  =   np.ones(self.shapeA)
 
-        # Mask the parameter field close to the boundary of the survey set the
-        # stds of these regions to +infty
-        for izl in range(self.nlp):
-            for iframe in range(self.nframe):
-                thres=np.max(self.diagonal[izl,iframe].flatten())/5.
-                maskLP= self.diagonal[izl,iframe]>thres
-                self.sigmaA[izl,iframe][~maskLP]=1e15
-                self.maskA[izl,iframe][~maskLP]=0.
-        return
+    #     # Mask the parameter field close to the boundary of the survey set the
+    #     # stds of these regions to +infty
+    #     for izl in range(self.nlp):
+    #         for iframe in range(self.nframe):
+    #             thres=np.max(self.diagonal[izl,iframe].flatten())/5.
+    #             maskLP= self.diagonal[izl,iframe]>thres
+    #             self.sigmaA[izl,iframe][~maskLP]=1e15
+    #             self.maskA[izl,iframe][~maskLP]=0.
+    #     return
 
     def reconstruct(self):
         """
@@ -410,15 +413,52 @@ class massmapSparsityTaskNew():
         self.diff   =   np.array(self.diff)
         return
 
-    def adaptive_lasso_weight(self,gamma=1,sm_scale=0.25):
-        """Calculate adaptive weight
+    def adaptive_lasso_weight(self,gamma=1):
+        """
+        Calculate adaptive weight for adaptive lasso
 
         Parameters:
         -----------
         gamma:     power of the root-n consistent (preliminary)
                     estimation
-        sm_scale:  top-hat smoothing scale for the root-n
-                    consistent estimation [Mpc/h]
+        """
+        # sm_scale=0.25
+        # if self.nframe==1 and sm_scale>1e-4:
+        #     # Smoothing scale in arcmin
+        #     rsmth0=np.zeros(self.nlp,dtype=int)
+        #     for iz,zh in enumerate(self.zlBin):
+        #         rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
+
+        #     p   =   np.zeros(self.shapeA)
+        #     for izl in range(self.nlp):
+        #         rsmth   =   rsmth0[izl]
+        #         for jsh in range(-rsmth,rsmth+1):
+        #             # only smooth the point mass frame
+        #             dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
+        #             for ish in range(-rsmth,rsmth+1):
+        #                 dif2=  np.roll(dif,ish,axis=-1)
+        #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
+        #     p   =   np.abs(p)
+        # else:
+        p   =   np.abs(self.alphaR)/self.lbd
+
+        # threshold(for value close to zero)
+        thres_adp=  1./1e12
+        mask=   (p**gamma>thres_adp)
+
+        # weight estimation
+        w       =   np.zeros(self.shapeA)
+        w[mask] =   1./(p[mask])**(gamma)
+        w[~mask]=   1./thres_adp
+        return w
+
+    def adaptive_lasso_prior_weight(self,prior):
+        """
+        Calculate adaptive weight using a given prior
+
+        Parameters:
+        -----------
+        prior:      [nlp,nframe]
         """
         # if self.nframe==1 and sm_scale>1e-4:
         #     # Smoothing scale in arcmin
@@ -478,7 +518,7 @@ class massmapSparsityTaskNew():
             tn  =   tnTmp
             Xp0 =   Xp1
             self.diff.append(error)
-            if irun>50 and error<2e-3:
+            if irun>200 and error<1e-3:
                 break
         return
 
@@ -502,7 +542,7 @@ class massmapSparsityTaskNew():
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
             self.alphaR =   soft_thresholding_nn(self.alphaR+dalphaR,thresholds)
             error=  np.sqrt(np.sum(dalphaR**2.))
-            if irun>50 and error<2e-3:
+            if irun>200 and error<1e-3:
                 break
             self.diff.append(error)
         return
@@ -536,7 +576,7 @@ class massmapSparsityTaskNew():
             alphaR  =   self.alphaR*rr
             diff    =   alphaR-self.alphaR
             error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
-            if irun>50 and error<2e-3:
+            if irun>200 and error<1e-3:
                 break
             self.diff.append(error)
             self.alphaR =   alphaR
