@@ -25,9 +25,9 @@ import os
 import gc
 import numpy as np
 import astropy.io.fits as pyfits
-from pixel3D import cartesianGrid3D
 from configparser import ConfigParser
 import sim_analysis_utilities as utility
+from sparseBase import massmapSparsityTaskNew
 
 # lsst Tasks
 import lsst.pex.config as pexConfig
@@ -36,25 +36,23 @@ from lsst.pipe.base import TaskRunner
 from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
-class pixShearObsBatchConfig(pexConfig.Config):
-    obsDir  =   pexConfig.Field(dtype=str, default='HSC-obs/20200328/',
-                doc = 'obs directory name')
-    configName  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/config-pix96-nl20.ini',
-                doc = 'configuration file name')
-    outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/pix96-ns10/',
-                doc = 'output directory')
-
+class processMapBatchConfig(pexConfig.Config):
+    configName  =   pexConfig.Field(dtype=str, default='config-nl10.ini',
+                    doc = 'configuration file name')
+    pixDir      =   pexConfig.Field(dtype=str, default='test/mock/',
+                    doc = 'pixelization directory name')
+    outDir      =   pexConfig.Field(dtype=str, default='planck-cosmo/pix96-ns10/',
+                    doc = 'output directory name')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
     def validate(self):
         pexConfig.Config.validate(self)
-        assert os.path.isdir(self.obsDir),\
-            'Cannot find observation directory: %s' %self.obsDir
         assert os.path.isfile(self.configName),\
             'Cannot find configure file: %s' %self.configName
-class pixShearObsRunner(TaskRunner):
+        assert os.path.isdir(self.pixDir),\
+            'Cannot find pixelization directory: %s' %self.pixDir
+
+class processMapRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
@@ -63,10 +61,10 @@ def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
 
-class pixShearObsBatchTask(BatchPoolTask):
-    ConfigClass = pixShearObsBatchConfig
-    RunnerClass = pixShearObsRunner
-    _DefaultName = "pixShearObsBatch"
+class processMapBatchTask(BatchPoolTask):
+    ConfigClass = processMapBatchConfig
+    RunnerClass = processMapRunner
+    _DefaultName = "processMapBatch"
     def __reduce__(self):
         """Pickler"""
         return unpickle, (self.__class__, [], dict(config=self.config, name=self._name,
@@ -77,52 +75,37 @@ class pixShearObsBatchTask(BatchPoolTask):
     @abortOnError
     def runDataRef(self,fieldname):
         """
-        @param id    group id
+        @param id:    group id
         """
         #Prepare the pool
-        pool    =   Pool("pixShearObs")
+        pool    =   Pool("processMap")
         pool.cacheClear()
-        pool.storeSet(obsDir=self.config.obsDir)
         pool.storeSet(configName=self.config.configName)
+        pool.storeSet(pixDir=self.config.pixDir)
         pool.storeSet(fieldname=fieldname)
-        outDir =   os.path.join(self.config.outDir,fieldname)
-        if not os.path.isdir(outDirH):
-            os.system('mkdir -p %s' %outDir)
+        # outDir  =   os.path.join(self.config.outDir,fieldname)
+        # if not os.path.isdir(outDirH):
+        #     os.system('mkdir -p %s' %outDir)
         pool.storeSet(outDirH=outDir)
         nrun    =   1
         pool.map(self.process,range(nrun))
         return
 
-    def process(self,cache,fieldname):
+    def process(self,cache,irun):
         """
         simulate shear field of halo and pixelize on postage-stamp
         Parameters:
-        @param cache        cache of the pool
-        @param fieldname    field name of HSC observation
+        @param cache:       cache of the pool
+        @param irun:        field name of HSC observation
         """
-
-        # Noise catalog
-        obsName =   os.path.join(cache.obsDir,'%s.fits' %fieldname)
-        obs     =   pyfits.getdata(obsName)
+        g1fname =   os.path.join(cache.pixDir,'g1Map-dempz-%d.fits' %irun)
+        g2fname =   os.path.join(cache.pixDir,'g2Map-dempz-%d.fits' %irun)
+        stdfname=   os.path.join(cache.pixDir,'stdMap-dempz.fits')
+        lenskerfname=os.path.join(cache.outDirH,'lensker-dempz-10bins.fits')
 
         parser  =   ConfigParser()
         parser.read(cache.configName)
-        gridInfo=   cartesianGrid3D(parser)
 
-        self.log.info('processing field %s' %fieldname)
-
-        # pixelaztion class
-        val     =   obs['g1n']+obs['g2n']*1j+shear
-        g1g2    =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val)
-
-        pnm     =   '%s' %(fieldname)
-        g1fname =   os.path.join(cache.outDirH,'pixShearR-g1-%s.fits' %pnm)
-        g2fname =   os.path.join(cache.outDirH,'pixShearR-g2-%s.fits' %pnm)
-        pyfits.writeto(g1fname,g1g2.real,overwrite=True)
-        pyfits.writeto(g2fname,g1g2.imag,overwrite=True)
-        del g1g2
-        del shear
-        del val
         gc.collect()
         return
 
