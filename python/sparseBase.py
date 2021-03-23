@@ -406,7 +406,7 @@ class massmapSparsityTaskNew():
         """
         # reweight back to True unweighted alpha
         alphaRT     =   self.alphaR.copy()*self._w
-        # shrink 1./(1+lcd) if no lasso
+        # shrink 1./(1+lcd) if only Ridge
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
         self.deltaR =   self.dict2D.itransformInter(alphaRT).real
