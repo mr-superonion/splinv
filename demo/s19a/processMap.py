@@ -41,7 +41,7 @@ class processMapBatchConfig(pexConfig.Config):
                     doc = 'configuration file name')
     pixDir      =   pexConfig.Field(dtype=str, default='test/mock/',
                     doc = 'pixelization directory name')
-    outDir      =   pexConfig.Field(dtype=str, default='test/out',
+    outDir      =   pexConfig.Field(dtype=str, default='test/out2-mock',
                     doc = 'output directory name')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
@@ -56,7 +56,8 @@ class processMapRunner(TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         # number of halos
-        return [(ref, kwargs) for ref in utility.field_names]
+        #return [(ref, kwargs) for ref in utility.field_names]
+        return [(ref, kwargs) for ref in range(1)]
 def unpickle(factory, args, kwargs):
     """Unpickle something by calling a factory"""
     return factory(*args, **kwargs)
@@ -82,11 +83,10 @@ class processMapBatchTask(BatchPoolTask):
         pool.storeSet(configName=self.config.configName)
         pool.storeSet(pixDir=self.config.pixDir)
         pool.storeSet(fieldname=fieldname)
-        # outDir  =   os.path.join(self.config.outDir,fieldname)
-        # if not os.path.isdir(outDirH):
+        # if not os.path.isdir(outDir):
         #     os.system('mkdir -p %s' %outDir)
-        pool.storeSet(outDirH=outDir)
-        nrun    =   1
+        pool.storeSet(outDir=self.config.outDir)
+        nrun    =   100
         pool.map(self.process,range(nrun))
         return
 
@@ -98,7 +98,7 @@ class processMapBatchTask(BatchPoolTask):
         g1fname =   os.path.join(cache.pixDir,'g1Map-dempz-%d.fits' %irun)
         g2fname =   os.path.join(cache.pixDir,'g2Map-dempz-%d.fits' %irun)
         stdfname=   os.path.join(cache.pixDir,'stdMap-dempz.fits')
-        lenskerfname=os.path.join(cache.outDirH,'lensker-dempz-10bins.fits')
+        lenskerfname=os.path.join(cache.outDir,'lensker-dempz-10bins.fits')
         dictfname=  'prior/haloBasis-nl10.fits'
         assert os.path.isfile(g1fname)
         assert os.path.isfile(g2fname)
@@ -122,7 +122,6 @@ class processMapBatchTask(BatchPoolTask):
         parser.set('sparse','nframe','1' )
         parser.set('sparse','mu','4e-4')
 
-        sparse3D    =   massmapSparsityTaskNew(parser)
         return parser
 
     def process(self,cache,irun):
@@ -132,23 +131,36 @@ class processMapBatchTask(BatchPoolTask):
         @param cache:       cache of the pool
         @param irun:        simulation id
         """
-        prepareParser(cache,irun)
-        sparse3D.clean_outcome()
-        sparse3D.lbd    =   1.
-        sparse3D.lcd    =   0.8
-        sparse3D.fista_gradient_descent(1500)
 
-        sparse3D.lbd    =   2.5
-        sparse3D.lcd    =   0.
+        parser   =  self.prepareParser(cache,irun)
+        outfnameP1=  os.path.join(cache.outDir,'alphaRW-enet-%d.fits' %irun)
+        outfnameP2=  os.path.join(cache.outDir,'deltaR-enet-%d.fits' %irun)
+        outfname1=  os.path.join(cache.outDir,'alphaRW-alasso-%d.fits' %irun)
+        outfname2=  os.path.join(cache.outDir,'deltaR-alasso-%d.fits' %irun)
+        if not os.path.isfile(outfname2):
+            sparse3D    =   massmapSparsityTaskNew(parser)
+            sparse3D.clean_outcome()
+            print('lasso')
+            sparse3D.lbd=   1.
+            sparse3D.lcd=   0.8
+            sparse3D.fista_gradient_descent(1500)
+            sparse3D.reconstruct()
+            pyfits.writeto(outfnameP1,sparse3D.alphaR,overwrite=True)
+            pyfits.writeto(outfnameP2,sparse3D.deltaR,overwrite=True)
 
-        for _iada in range(2):
-            w        =   sparse3D.adaptive_lasso_weight(gamma=3.)
-            sparse3D.fista_gradient_descent(800,w=w)
-        sparse3D.reconstruct()
-        outfname1=  os.path.join(outDir,'alphaRW-lasso-.fits')
-        outfname2=  os.path.join(outDir,'deltaR-lasso-.fits')
-        pyfits.writeto(outfname1,sparse3D.deltaR,overwrite=True)
-        pyfits.writeto(outfname2,sparse3D.deltaR,overwrite=True)
+            sparse3D.lbd=   2.
+            sparse3D.lcd=   0.
+            print('adaptive lasso')
+            for _iada in range(2):
+                w       =   sparse3D.adaptive_lasso_weight(gamma=3.)
+                sparse3D.fista_gradient_descent(800,w=w)
+
+            sparse3D.reconstruct()
+            pyfits.writeto(outfname1,sparse3D.alphaR,overwrite=True)
+            pyfits.writeto(outfname2,sparse3D.deltaR,overwrite=True)
+        outfname3=  os.path.join(cache.outDir,'peaks-%d.fits' %irun)
+        #if not os.path.isfile(outfname3):
+
         return
 
     @classmethod
