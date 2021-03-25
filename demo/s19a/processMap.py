@@ -39,9 +39,9 @@ from lsst.ctrl.pool.pool import Pool, abortOnError
 class processMapBatchConfig(pexConfig.Config):
     configName  =   pexConfig.Field(dtype=str, default='config-nl10.ini',
                     doc = 'configuration file name')
-    pixDir      =   pexConfig.Field(dtype=str, default='test/mock/',
+    pixDir      =   pexConfig.Field(dtype=str, default='test2/mock/',
                     doc = 'pixelization directory name')
-    outDir      =   pexConfig.Field(dtype=str, default='test/out2-mock',
+    outDir      =   pexConfig.Field(dtype=str, default='test2/out-mock',
                     doc = 'output directory name')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
@@ -87,7 +87,7 @@ class processMapBatchTask(BatchPoolTask):
         #     os.system('mkdir -p %s' %outDir)
         pool.storeSet(outDir=self.config.outDir)
         nrun    =   100
-        pool.map(self.process,range(nrun))
+        pool.map(self.process,range(100,200))
         return
 
     def prepareParser(self,cache,irun):
@@ -141,7 +141,7 @@ class processMapBatchTask(BatchPoolTask):
             sparse3D    =   massmapSparsityTaskNew(parser)
             sparse3D.clean_outcome()
             print('lasso')
-            sparse3D.lbd=   1.
+            sparse3D.lbd=   0.8
             sparse3D.lcd=   0.8
             sparse3D.fista_gradient_descent(1500)
             sparse3D.reconstruct()
@@ -160,7 +160,6 @@ class processMapBatchTask(BatchPoolTask):
             pyfits.writeto(outfname2,sparse3D.deltaR,overwrite=True)
         outfname3=  os.path.join(cache.outDir,'peaks-%d.fits' %irun)
         #if not os.path.isfile(outfname3):
-
         return
 
     @classmethod

@@ -315,14 +315,20 @@ class massmapSparsityTaskNew():
 
         # Determine the mask on parameters
         self.maskA  =   np.ones(self.shapeA)
+        self.maskA2 =   np.ones(self.shapeA)
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
                 thres=np.max(self.diagonal[izl,iframe].flatten())/5.
                 maskLP= (self.diagonal[izl,iframe]>thres)
                 self.maskA[izl,iframe][~maskLP]=0.
+                thres2=np.max(self.diagonal[izl,iframe].flatten())/3.
+                maskLP2= (self.diagonal[izl,iframe]>thres2)
+                self.maskA2[izl,iframe][~maskLP2]=0.
         maskLP      =   np.all(self.maskA,axis=0)
+        maskLP2     =   np.all(self.maskA2,axis=0)
         for izl in range(self.nlp):
             self.maskA[izl]=maskLP
+            self.maskA2[izl]=maskLP2
         return
 
     # def fast_chi2diagonal_est(self):
@@ -405,7 +411,7 @@ class massmapSparsityTaskNew():
         Reconstruct the delta field from alpha'
         """
         # reweight back to True unweighted alpha
-        alphaRT     =   self.alphaR.copy()*self._w
+        alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
         # shrink 1./(1+lcd) if only Ridge
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
