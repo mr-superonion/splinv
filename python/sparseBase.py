@@ -124,6 +124,7 @@ class massmapSparsityTaskNew():
 
         # Estimate sigma map for alpha
         # self.prox_sigmaA()
+        # self.sigmaA=1.
         self.clean_all()
 
         # Determine Step Size: mu
@@ -235,7 +236,7 @@ class massmapSparsityTaskNew():
                 the alpha at which the gradient is calulated
 
         """
-        pp  =   self.lcd/(1+self.lcd)
+        pp  =   self.lcd/(1.+self.lcd)
         # A_{ij} x_j *(1-p)        [weighted A_{ij}]
         shearRTmp       =   self.main_forward(alphaR)*(1-pp)
         # (y_i-(1-p)A_{ij} x_j)/sigma_{ii}    [normalized residual]
@@ -410,7 +411,7 @@ class massmapSparsityTaskNew():
         """
         Reconstruct the delta field from alpha'
         """
-        # reweight back to True unweighted alpha
+        # reweight back to the real unweighted (not the weigthed) alpha
         alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
         # shrink 1./(1+lcd) if only Ridge
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
@@ -419,7 +420,7 @@ class massmapSparsityTaskNew():
         self.diff   =   np.array(self.diff)
         return
 
-    def adaptive_lasso_weight(self,gamma=1):
+    def adaptive_lasso_weight(self,gamma=1,sigA=1.):
         """
         Calculate adaptive weight for adaptive lasso
 
@@ -446,7 +447,7 @@ class massmapSparsityTaskNew():
         #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
         #     p   =   np.abs(p)
         # else:
-        p   =   np.abs(self.alphaR)/self.lbd
+        p   =   np.abs(self.alphaR)/self.lbd/sigA*self.maskA2
 
         # threshold(for value close to zero)
         thres_adp=  1./1e12
@@ -466,23 +467,6 @@ class massmapSparsityTaskNew():
         -----------
         prior:      [nlp,nframe]
         """
-        # if self.nframe==1 and sm_scale>1e-4:
-        #     # Smoothing scale in arcmin
-        #     rsmth0=np.zeros(self.nlp,dtype=int)
-        #     for iz,zh in enumerate(self.zlBin):
-        #         rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
-
-        #     p   =   np.zeros(self.shapeA)
-        #     for izl in range(self.nlp):
-        #         rsmth   =   rsmth0[izl]
-        #         for jsh in range(-rsmth,rsmth+1):
-        #             # only smooth the point mass frame
-        #             dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
-        #             for ish in range(-rsmth,rsmth+1):
-        #                 dif2=  np.roll(dif,ish,axis=-1)
-        #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
-        #     p   =   np.abs(p)
-        # else:
         p   =   np.abs(self.alphaR)/self.lbd
 
         # threshold(for value close to zero)
