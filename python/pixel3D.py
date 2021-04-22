@@ -50,12 +50,19 @@ class cartesianGrid3D():
             pixel scale
         transplane- smooth_scale
             smoothing scale [default: -1 (no smoothing)]
+        sourceZ- zbound:
+            boundarys of z-axes [optional]
+        sourceZ- nz:
+            number of z binning
+        sourceZ- zmin:
+            lowest boundary of z
+        sourceZ- zscale:
+            z pixel scale
         """
         self.parser=parser
         # The unit of angle in the configuration
         unit=parser.get('transPlane','unit')
-        # It is necessary to do the scaling as the
-        # input data is in unit of degree
+        # Rescaling to degree
         if unit=='degree':
             self.ratio=1.
         elif unit=='arcmin':
@@ -63,16 +70,13 @@ class cartesianGrid3D():
         elif unit=='arcsec':
             self.ratio=1./60./60.
         self.delta=parser.getfloat('transPlane','scale')*self.ratio
+
+
         ## Gaussian smoothing In the projected plane
         if parser.has_option('transPlane','smooth_scale'):
             self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
         else:
             self.sigma=-1
-        ## Padding
-        if parser.has_option('transPlane','pad'):
-            self.pad    =   parser.getfloat('transPlane','pad')*self.ratio
-        else:
-            self.pad    =   0.1 #deg
 
         # Line-of-sight direction for background galaxies
         if parser.has_section('sourceZ'):
@@ -80,11 +84,11 @@ class cartesianGrid3D():
                 zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
                 nz=len(zbound)-1
             else:
-                zmin=parser.getfloat('sourceZ','zmin')
-                deltaz=parser.getfloat('sourceZ','zscale')
                 nz=parser.getint('sourceZ','nz')
                 assert nz>=1
+                zmin=parser.getfloat('sourceZ','zmin')
                 zmax=zmin+deltaz*(nz+0.1)
+                deltaz=parser.getfloat('sourceZ','zscale')
                 zbound=np.arange(zmin,zmax,deltaz)
             zcgrid=(zbound[:-1]+zbound[1:])/2.
         else:
@@ -121,18 +125,22 @@ class cartesianGrid3D():
         self.pozPdfAve=None
         return
 
-    def setupNaivePlane(self):
-        assert self.parser.has_option('transPlane','nx')
-        assert self.parser.has_option('transPlane','ny')
-        assert self.parser.has_option('transPlane','xmin')
-        assert self.parser.has_option('transPlane','ymin')
-        self.nx     =   self.parser.getint('transPlane','nx')
-        self.ny     =   self.parser.getint('transPlane','ny')
+    def setupNaivePlane(self,nx,ny,xmin,ymin):
+        """
+        setup Tan projection plane from basic parameters
+        (no rotation,no flipping)
+        Parameters:
+        -------------
+        nx:     number of x bins [int]
+        ny:     number of y bins [int]
+        xmin:   minimum of x [deg]
+        ymin:   minimum of y [deg]
+        """
+        self.nx     =   nx
+        self.ny     =   ny
         dnx         =   self.nx//2
         dny         =   self.ny//2
-        xmin        =   self.parser.getfloat('transPlane','xmin')*self.ratio
         xmax        =   xmin+self.delta*(self.nx+0.1)
-        ymin        =   self.parser.getfloat('transPlane','ymin')*self.ratio
         ymax        =   ymin+self.delta*(self.ny+0.1)
         self.ra0    =   xmin+self.delta*(dnx+0.5)
         self.dec0   =   ymin+self.delta*(dny+0.5)
@@ -146,7 +154,17 @@ class cartesianGrid3D():
         self.shape=(self.nz,self.ny,self.nx)
         return
 
-    def setupTanPlane(self,ra=None,dec=None,header=None):
+    def setupTanPlane(self,ra=None,dec=None,pad=0.1,header=None):
+        """
+        setup Tan projection plane from (ra,dec) array or header
+        (no rotation,no flipping)
+        Parameters:
+        -------------
+        ra:     array of ra to project  [deg]
+        dec:    array of dec to project [deg]
+        pad:    padding distance [degree]
+        header: header with projection information
+        """
         if (ra is not None) and (dec is not None):
             # first try
             self.ra0    =   (np.max(ra)+np.min(ra))/2.
@@ -163,11 +181,11 @@ class cartesianGrid3D():
             self.sindec0=   np.sin(self.dec0/180.*np.pi)
             x,y         =   self.project_tan(ra,dec)
 
-            dxmin   =   self.ra0-(np.min(x)-self.pad)
-            dxmax   =   (np.max(x)+self.pad)-self.ra0
+            dxmin   =   self.ra0-(np.min(x)-pad)
+            dxmax   =   (np.max(x)+pad)-self.ra0
             dnx     =   int(max(dxmin,dxmax)/self.delta+1.)
-            dymin   =   self.dec0-(np.min(y)-self.pad)
-            dymax   =   (np.max(y)+self.pad)-self.dec0
+            dymin   =   self.dec0-(np.min(y)-pad)
+            dymax   =   (np.max(y)+pad)-self.dec0
             dny     =   int(max(dymin,dymax)/self.delta+1.)
 
             # make sure we have even number of pixels in x and y
@@ -202,8 +220,9 @@ class cartesianGrid3D():
         (no rotation,no flipping)
         Parameters:
         -------------
-        ra:     array of ra to project [deg]
-        dec:    array of dec to project[deg]
+        ra:     array of ra to project  [deg]
+        dec:    array of dec to project [deg]
+        pix:    return in unit of pixel or not [bool]
         """
         rr      =   180.0/np.pi
         sindec  =   np.sin(dec/rr)
@@ -220,7 +239,7 @@ class cartesianGrid3D():
         else:
             return x1,x2
 
-    def iproject_tan(self,x1,x2):
+    def iproject_tan(self,x1,x2,pix=False):
         """
         inverse TAN(Gnomonic)-prjection of pixel coordiantes
         (no rotation,no flipping)
@@ -228,7 +247,13 @@ class cartesianGrid3D():
         -------------
         x1:     array of x1 pixel coord [deg]
         x2:     array of x2 pixel coord [deg]
+        pix:    input in unit of pixel or not [bool]
         """
+
+        if pix:
+            # transform to in unit of degree
+            x1  =   x1*self.delta+self.xbound[0]
+            x2  =   x2*self.delta+self.ybound[0]
 
         # unit
         rr      =   180.0/np.pi

@@ -16,7 +16,6 @@ import cosmology
 import numpy as np
 
 import astropy.io.fits as pyfits
-from configparser import ConfigParser
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
