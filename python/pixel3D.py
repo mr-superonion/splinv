@@ -194,7 +194,9 @@ class cartesianGrid3D():
         elif header is not None:
             assert abs(self.delta-header['CDELT1'])/self.delta<1e-2
             self.ra0    =   header['CRVAL1']
-            self.dec0   =   header['CRVAL1']
+            self.dec0   =   header['CRVAL2']
+            self.cosdec0=   np.cos(self.dec0/180.*np.pi)
+            self.sindec0=   np.sin(self.dec0/180.*np.pi)
             self.nx     =   int(header['NAXIS1'])
             self.ny     =   int(header['NAXIS2'])
             dnx         =   self.nx//2
