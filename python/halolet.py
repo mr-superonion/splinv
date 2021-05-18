@@ -155,11 +155,11 @@ class nfwShearlet2D():
             self.fouaframes =   self.ks2D.transform(tmp,inFou=True,outFou=True)
             self.aframes    =   np.fft.ifft2(self.fouaframes)
         else:
-            self.prepareFrames()
+            self.prepareFrames(parser)
         lkfname     =   parser.get('prepare','lkfname')
         self.lensKernel=pyfits.getdata(lkfname)
 
-    def prepareFrames(self):
+    def prepareFrames(self,parser):
         if parser.has_option('cosmology','omega_m'):
             omega_m =   parser.getfloat('cosmology','omega_m')
         else:
