@@ -44,10 +44,10 @@ class pixShearSimBatchConfig(pexConfig.Config):
                 default='planck-cosmo/nfw-halos/haloCat-202010032144.csv',
                 doc = 'halo catalog file name')
     configName  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/config-pix96-nl20.ini',
+                default='planck-cosmo/config-pix48-nl10-pc.ini',
                 doc = 'configuration file name')
     outDir  =   pexConfig.Field(dtype=str,
-                default='planck-cosmo/pix96-ns10/',
+                default='planck-cosmo/pix48-ns10/pixes/',
                 doc = 'output directory')
     """
     outDir  =   pexConfig.Field(dtype=str,
@@ -203,22 +203,26 @@ class pixShearSimBatchTask(BatchPoolTask):
             deltaSigma= halo.DeltaSigmaComplex(obs['raR']*3600.,obs['decR']*3600.)
             lensKer =   halo.lensKernel(obs['ztrue']) # lensing kernel
             shear   =   deltaSigma*lensKer
+            shear1  =   shear.real
+            shear2  =   shear.imag
+            del shear
         else:
-            shear   =   0.
+            shear1  =   0.
+            shear2  =   0.
             iz      =   800
             im      =   800
 
-        val     =   obs['g1n']+obs['g2n']*1j+shear
-        g1g2    =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val)
+        val1    =   obs['g1n']+shear1
+        val2    =   obs['g2n']+shear2
+        g1Pix   =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val1,ws=None)
+        g2Pix   =   gridInfo.pixelize_data(obs[raname],obs[decname],obs[zname],val2,ws=None)
 
         pnm     =   '%d%d-sim%d' %(iz,im,isim)
-        g1fname     =   os.path.join(cache.outDirH,'pixShearR-g1-%s.fits' %pnm)
-        g2fname     =   os.path.join(cache.outDirH,'pixShearR-g2-%s.fits' %pnm)
-        pyfits.writeto(g1fname,g1g2.real,overwrite=True)
-        pyfits.writeto(g2fname,g1g2.imag,overwrite=True)
-        del g1g2
-        del shear
-        del val
+        g1fname =   os.path.join(cache.outDirH,'pixShearR-g1-%s.fits' %pnm)
+        g2fname =   os.path.join(cache.outDirH,'pixShearR-g2-%s.fits' %pnm)
+        pyfits.writeto(g1fname,g1Pix,overwrite=True)
+        pyfits.writeto(g2fname,g2Pix,overwrite=True)
+        del shear1,shear2,g1Pix,g2Pix,val1,val2
         gc.collect()
         return
 

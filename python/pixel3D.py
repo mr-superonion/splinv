@@ -59,45 +59,52 @@ class cartesianGrid3D():
         sourceZ- zscale:
             z pixel scale
         """
-        self.parser=parser
         # The unit of angle in the configuration
-        unit=parser.get('transPlane','unit')
+        unit    =   parser.get('transPlane','unit')
         # Rescaling to degree
-        if unit=='degree':
-            self.ratio=1.
-        elif unit=='arcmin':
-            self.ratio=1./60.
-        elif unit=='arcsec':
-            self.ratio=1./60./60.
-        self.delta=parser.getfloat('transPlane','scale')*self.ratio
-
-
-        ## Gaussian smoothing In the projected plane
-        if parser.has_option('transPlane','smooth_scale'):
-            self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
-        else:
-            self.sigma=-1
+        if unit ==  'degree':
+            self.ratio= 1.
+        elif unit== 'arcmin':
+            self.ratio= 1./60.
+        elif unit== 'arcsec':
+            self.ratio= 1./60./60.
+        self.delta= parser.getfloat('transPlane','scale')*self.ratio
 
         # Line-of-sight direction for background galaxies
         if parser.has_section('sourceZ'):
             if parser.has_option('sourceZ','zbound'):
                 zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
-                nz=len(zbound)-1
+                nz  =   len(zbound)-1
             else:
-                nz=parser.getint('sourceZ','nz')
+                nz  =   parser.getint('sourceZ','nz')
                 assert nz>=1
-                zmin=parser.getfloat('sourceZ','zmin')
-                zmax=zmin+deltaz*(nz+0.1)
-                deltaz=parser.getfloat('sourceZ','zscale')
-                zbound=np.arange(zmin,zmax,deltaz)
-            zcgrid=(zbound[:-1]+zbound[1:])/2.
+                zmin=   parser.getfloat('sourceZ','zmin')
+                zmax=   zmin+deltaz*(nz+0.1)
+                deltaz= parser.getfloat('sourceZ','zscale')
+                zbound= np.arange(zmin,zmax,deltaz)
+            zcgrid  =   (zbound[:-1]+zbound[1:])/2.
         else:
             nz  =   1
-            zbound=np.array([0.,100.])
-            zcgrid= None
-        self.zbound=zbound
-        self.zcgrid=zcgrid
-        self.nz=nz
+            zbound  =   np.array([0.,100.])
+            zcgrid  =   None
+        self.zbound =   zbound
+        self.zcgrid =   zcgrid
+        self.nz =   nz
+
+        # Transverse Plane
+        if parser.has_option('transPlane','nx')\
+            and parser.has_option('transPlane','xmin'):
+            nx      =   parser.getint('transPlane','nx')
+            ny      =   parser.getint('transPlane','ny')
+            xmin    =   parser.getfloat('transPlane','xmin')*self.ratio
+            ymin    =   parser.getfloat('transPlane','ymin')*self.ratio
+            self.setupNaivePlane(nx,ny,xmin,ymin)
+
+        ## Gaussian smoothing in the transverse plane
+        if parser.has_option('transPlane','smooth_scale'):
+            self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+        else:
+            self.sigma=-1
 
         # Foreground plane
         if parser.has_option('lensZ','zlbound'):
@@ -121,8 +128,8 @@ class cartesianGrid3D():
         else:
             omega_m=0.3
         self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
-        self.lensKernel=None
-        self.pozPdfAve=None
+        self.lensKernel =   None
+        self.pozPdfAve  =   None
         return
 
     def setupNaivePlane(self,nx,ny,xmin,ymin):
@@ -147,11 +154,11 @@ class cartesianGrid3D():
         self.cosdec0=   np.cos(self.dec0/180.*np.pi)
         self.sindec0=   np.sin(self.dec0/180.*np.pi)
 
-        self.xbound= np.arange(xmin,xmax,self.delta)
-        self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
-        self.ybound= np.arange(ymin,ymax,self.delta)
-        self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
-        self.shape=(self.nz,self.ny,self.nx)
+        self.xbound =   np.arange(xmin,xmax,self.delta)
+        self.xcgrid =   (self.xbound[:-1]+self.xbound[1:])/2.
+        self.ybound =   np.arange(ymin,ymax,self.delta)
+        self.ycgrid =   (self.ybound[:-1]+self.ybound[1:])/2.
+        self.shape  =   (self.nz,self.ny,self.nx)
         return
 
     def setupTanPlane(self,ra=None,dec=None,pad=0.1,header=None):
@@ -300,6 +307,7 @@ class cartesianGrid3D():
             assert self.shape[0]==1
             z = np.ones(len(x))
         if ws is None:
+            # Without weight
             ws = np.ones(len(x))
         if self.sigma>0. and method=='sample':
             return self._pixelize_data_sample(x,y,z,v,ws)
@@ -307,22 +315,23 @@ class cartesianGrid3D():
             return self._pixelize_data_FFT(x,y,z,v,ws)
 
     def _pixelize_data_FFT(self,x,y,z,v=None,ws=None):
-        # pixelize value field
         if v is not None:
+            # pixelize value field
             dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=v*ws)[0]
         # pixelize weight field
         weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=ws)[0]
-        if self.sigma>0:
+        if self.sigma/self.delta>0.01:
             # Gaussian Kernel in Fourier space
-            # (normalized in configuration space)
+            # (normalize to flux-1)
             gausKer =   haloSim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel
-            # (weight and value)
+            # (for both weight and value)
             if v is not None:
-                dataOut =   np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
+                dataOut=np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
             weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
+
         if v is not None:
             # avoid weight is zero
             mask            =   weightOut>0.62
@@ -402,7 +411,7 @@ class cartesianGrid3D():
                 mask=  (zl<self.zcgrid)
                 kl[mask] =   self.cosmo.Da(zl,self.zcgrid[mask])*self.cosmo.Da(0.,zl)\
                         /self.cosmo.Da(0.,self.zcgrid[mask])
-                kl*=four_pi_G_over_c_squared()
+                kl*=    four_pi_G_over_c_squared()
                 if deltaIn:
                     # Sigma_M_zl_bin
                     # Surface masss density in lens bin

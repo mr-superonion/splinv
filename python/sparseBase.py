@@ -105,7 +105,7 @@ class massmapSparsityTaskNew():
         from halolet import nfwShearlet2D
         self.dict2D =   nfwShearlet2D(parser)
 
-        # Read pixelized sigma map for shear
+        # Read pixelized noise std-map for shear
         sigfname    =   parser.get('prepare','sigmafname')
         self.sigmaS =   pyfits.getdata(sigfname)
         assert self.sigmaS.shape  ==   self.shapeS, \
@@ -121,9 +121,6 @@ class massmapSparsityTaskNew():
         # weight for normalization of effective column vectors
         self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1e-12)
 
-        # Estimate sigma map for alpha
-        # self.prox_sigmaA()
-        # self.sigmaA=1.
         self.clean_all()
 
         # Determine Step Size: mu
@@ -135,6 +132,7 @@ class massmapSparsityTaskNew():
         # determine step size, since determine_step_size requires self.shearR
         # to be zero
         self.read_pixel_result(parser)
+        self.nonNeg =   True
         return
 
     def clean_all(self):
@@ -143,7 +141,7 @@ class massmapSparsityTaskNew():
         """
         self.alphaR =   self.maskA              # alpha
         self.deltaR =   np.zeros(self.shapeL)   # delta
-        self.shearRRes  = np.zeros(self.shapeS) # shear residuals
+        self.shearRRes  =   np.zeros(self.shapeS) # shear residuals
         self.shearR     =   np.zeros(self.shapeS)   # shear
         self.shearProj  =   None
         self.diff   =   []
@@ -235,6 +233,7 @@ class massmapSparsityTaskNew():
                 the alpha at which the gradient is calulated
 
         """
+        # Eq (14) of Elastic net (Zou 2005)
         pp  =   self.lcd/(1.+self.lcd)
         # A_{ij} x_j *(1-p)        [weighted A_{ij}]
         shearRTmp       =   self.main_forward(alphaR)*(1-pp)
@@ -313,15 +312,17 @@ class massmapSparsityTaskNew():
         self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
                 *asquareframe,axis=0)
 
-        # Determine the mask on parameters
+        # Determine the mask on the parameter vector
+        ## prameters mask during the estimation
         self.maskA  =   np.ones(self.shapeA)
+        ## parameters finally kept
         self.maskA2 =   np.ones(self.shapeA)
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
-                thres=np.max(self.diagonal[izl,iframe].flatten())/5.
+                thres=np.max(self.diagonal[izl,iframe].flatten())/8.
                 maskLP= (self.diagonal[izl,iframe]>thres)
                 self.maskA[izl,iframe][~maskLP]=0.
-                thres2=np.max(self.diagonal[izl,iframe].flatten())/3.
+                thres2=np.max(self.diagonal[izl,iframe].flatten())/4.
                 maskLP2= (self.diagonal[izl,iframe]>thres2)
                 self.maskA2[izl,iframe][~maskLP2]=0.
         maskLP      =   np.all(self.maskA,axis=0)
@@ -366,8 +367,7 @@ class massmapSparsityTaskNew():
     # def prox_sigmaA(self):
     #     """
     #     Calculate stds of the paramters Note that the std should be all 1 since
-    #     we normalize the projectors.  However, we set some stds to +infty
-    #     (masked out)
+    #     we normalize the projectors. We set some stds to +infty
     #     """
     #     niter   =   100
     #     # A_i\alpha n_i
@@ -412,7 +412,7 @@ class massmapSparsityTaskNew():
         """
         # reweight back to the real unweighted (not the weigthed) alpha
         alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
-        # shrink 1./(1+lcd) if only Ridge
+        # shrink 1./(1+lcd) if lbd<=0 and lcd>0.
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
         self.deltaR =   self.dict2D.itransformInter(alphaRT).real
@@ -481,6 +481,7 @@ class massmapSparsityTaskNew():
     def fista_gradient_descent(self,niter,w=1.,tn0=1.):
         """
         FISTA gradient descent solver of loss fucntion
+        (Beck & Teboulle 2009)
 
         Parameters:
         -----------
@@ -489,7 +490,7 @@ class massmapSparsityTaskNew():
         """
         tn  =   tn0
         # The thresholds
-        thresholds  =   self.lbd*self.mu*w#*self.sigmaA
+        thresholds  =   self.lbd*self.mu*w
         # FISTA algorithms
         Xp0         =   self.alphaR
         self.diff   =   []
@@ -497,8 +498,10 @@ class massmapSparsityTaskNew():
             # (.real means no B-mode)
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
-            Xp1 =   soft_thresholding_nn(Xp1,thresholds)
-            #Xp1 =   soft_thresholding(Xp1,thresholds)
+            if self.nonNeg:
+                Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            else:
+                Xp1 =   soft_thresholding(Xp1,thresholds)
             tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
             ratio= (tn-1.)/tnTmp
             diff=   Xp1-Xp0
@@ -511,7 +514,48 @@ class massmapSparsityTaskNew():
                 break
         return
 
-    def navie_gradient_descent(self,niter,w=1.):
+    def optimized_gradient_descent(self,niter,tn0=1.):
+        """
+        Optimized gradient descent solver of loss fucntion
+        (Kim & Fessier 2017)
+
+        Parameters:
+        -----------
+        niter:      number of iteration
+        """
+        tn          =   tn0
+        # OGM algorithms
+        Xp0         =   self.alphaR
+        self.diff   =   []
+        for irun in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            Xp1     =   self.alphaR+dalphaR
+            tnTmp   =   (1.+np.sqrt(1.+4.*tn**2.))/2.
+            ratio1  =   (tn-1.)/tnTmp
+            ratio2  =   tn/tnTmp
+            diff1   =   Xp1-Xp0
+            diff2   =   Xp1-self.alphaR
+            error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
+            self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
+            tn      =   tnTmp
+            Xp0     =   Xp1
+            self.diff.append(error)
+            if irun>200 and error<1e-3:
+                break
+        tnTmp   =   (1.+np.sqrt(1.+8.*tn**2.))/2.
+        ratio1  =   (tn-1.)/tnTmp
+        ratio2  =   tn/tnTmp
+        diff1   =   Xp1-Xp0
+        diff2   =   Xp1-self.alphaR
+        error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
+        self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
+        tn      =   tnTmp
+        Xp0     =   Xp1
+        self.diff.append(error)
+        return
+
+    def navie_gradient_descent(self,niter):
         """
         Navie gradient descent solver of loss fucntion
         (Slow convergence)
@@ -519,21 +563,23 @@ class massmapSparsityTaskNew():
         Parameters:
         -----------
         niter:      number of iteration
-        w:          adaptive weight [default: 1.]
         """
-        # The thresholds
-        thresholds =   self.lbd*self.mu*w#*self.sigmaA
+        assert not self.nonNeg, \
+                'non-negative setup, please use FISTA'
+        assert not self.lbd>0., \
+                'LASSO regression, please use FISTA'
+
         tn      =   1.
         Xp0     =   self.alphaR
         self.diff   =   []
         for irun in range(niter):
             # (.real means no B-mode)
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
-            self.alphaR =   soft_thresholding_nn(self.alphaR+dalphaR,thresholds)
+            self.alphaR =   soft_thresholding(self.alphaR+dalphaR,thresholds)
             error=  np.sqrt(np.sum(dalphaR**2.))
+            self.diff.append(error)
             if irun>200 and error<1e-3:
                 break
-            self.diff.append(error)
         return
 
     def multiplicative_update(self,niter,w=1.):
@@ -547,7 +593,7 @@ class massmapSparsityTaskNew():
         w:          adaptive weight [default: 1.]
         """
         # The thresholds
-        thresholds  =   self.lbd*w#*self.sigmaA
+        thresholds  =   self.lbd*w
         # A_{i\alpha}y_i/sigma^2_{ii}
         if self.shearProj is None:
             self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)

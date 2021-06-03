@@ -513,7 +513,8 @@ class nfw_lensTJ03(nfwHalo):
         # First mask the data with z<z_l
         k_s =   np.zeros(len(z_s))
         mask=   z_s>self.z
-        k_s[mask] =   self.Da(self.z,z_s[mask])*self.DaLens/self.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
+        k_s[mask] =   self.Da(self.z,z_s[mask])*self.DaLens\
+                /self.Da(0.,z_s[mask])*four_pi_G_over_c_squared()
         return k_s
 
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
@@ -610,16 +611,23 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
         atom[mask]= A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
         r0      =   r[~mask]
         atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
-    # Smoothing with flux1 gaussian
+
     if smooth_scale>0.1:
+        # Gaussian smoothing
         atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
-    # Real space?
+    elif smooth_scale<=0:
+        # top-hat smoothing
+        atom    =   atom*TophatAtom(width=1.,ny=ny,nx=nx,fou=True)
+    # elif smooth_scale <0: pass
+
     if fou:
+        # Fourier space
         if lnorm>0.:
             norm=   (np.sum(atom**lnorm)/(nx*ny))**(1./lnorm)
         else:
             norm=   1.
     else:
+        # configuration space
         atom    =   np.real(np.fft.ifft2(atom))
         if lnorm>0.:
             norm=   (np.sum(atom**lnorm))**(1./lnorm)
@@ -630,36 +638,33 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
 def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
     """
     Normalized Gaussian in a postage stamp
-    normalized by l2 norm
     Parameters:
     --------------
-    ny:     int
-    number of pixel y directions.
-    nx:     int [default=None]
-    number of pixel x directions.
-    sigma:  float
-    scale factortor of the Gaussian function
+    sigma:  std of Gaussian function; [float]
+    ny:     number of pixel y directions; [int]
+    nx:     number of pixel for x; [int, default=None]
+    fou:    in Fourier/configuration space [bool, ture/false]
+    lnorm:  normalized by lp norm [float]
     """
     if nx is None:
         nx=ny
     if sigma>0.01:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
+        norm=   1. # an initialization
         if fou:
+            # Fourier space
             x  *=   (2*np.pi);y*=(2*np.pi)
             rT  =   np.sqrt(x**2+y**2)
             fun =   np.exp(-(rT*sigma)**2./2.)
             if lnorm>0.:
                 norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
-            else:
-                norm=   1.
         else:
+            # Configuration space
             x  *=   (nx);y*=(ny)
             rT  =   np.sqrt(x**2+y**2)
             fun =   1./np.sqrt(2.*np.pi)/sigma*np.exp(-(rT/sigma)**2./2.)
             if lnorm>0.:
                 norm=   (np.sum(fun**lnorm))**(1./lnorm)
-            else:
-                norm=   1.
         return  fun/norm
     else:
         if fou:
@@ -668,6 +673,36 @@ def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
             out =   np.zeros((ny,nx))
             out[0,0]=1
             return out
+
+def TophatAtom(width,ny,nx=None,fou=True,lnorm=-1):
+    """
+    Normalized top-hat atom in a postage stamp
+    Parameters:
+    --------------
+    width:  width of top-hat function(in unit of pixel)
+    ny:     number of pixel y directions; [int]
+    nx:     number of pixel for x; [int, default=None]
+    fou:    in Fourier/configuration space [bool, ture/false]
+    lnorm:  normalized by lp norm [float]
+    """
+    if nx is None:
+        nx=ny
+    assert width>0.9 and width<nx-4 and width<ny-4
+    width=int(width+0.5)
+    norm=1.
+    if fou:
+        x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
+        x  *=   (2*np.pi);y*=(2*np.pi)
+        funx = np.divide(np.sin(width*x/2),(width*x/2),out=np.ones_like(x), where=x!=0)
+        funy = np.divide(np.sin(width*y/2),(width*y/2),out=np.ones_like(y), where=y!=0)
+        fun  = funx*funy
+        if lnorm>0.:
+            norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
+    else:
+        sx=(nx-width)//2;sy=(ny-width)//2
+        fun=np.zeros((ny,nx))
+        fun[sy+1:sy+width,sx+1:sx+width]=1./width**2.
+    return  fun/norm
 
 def ksInverse(gMap):
     gFouMap =   np.fft.fft2(gMap)
