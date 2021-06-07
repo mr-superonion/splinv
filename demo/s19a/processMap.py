@@ -26,7 +26,6 @@ import gc
 import numpy as np
 import astropy.io.fits as pyfits
 from configparser import ConfigParser
-import sim_analysis_utilities as utility
 from sparseBase import massmapSparsityTaskNew
 
 # lsst Tasks
@@ -37,11 +36,11 @@ from lsst.ctrl.pool.parallel import BatchPoolTask
 from lsst.ctrl.pool.pool import Pool, abortOnError
 
 class processMapBatchConfig(pexConfig.Config):
-    configName  =   pexConfig.Field(dtype=str, default='config-nl10.ini',
+    configName  =   pexConfig.Field(dtype=str, default='sim/config-obs-nl12-pc.ini',
                     doc = 'configuration file name')
-    pixDir      =   pexConfig.Field(dtype=str, default='test2/mock/',
+    pixDir      =   pexConfig.Field(dtype=str, default='test4/pixes-mock/',
                     doc = 'pixelization directory name')
-    outDir      =   pexConfig.Field(dtype=str, default='test2/out-mock',
+    outDir      =   pexConfig.Field(dtype=str, default='test4/out-mock',
                     doc = 'output directory name')
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
@@ -83,11 +82,9 @@ class processMapBatchTask(BatchPoolTask):
         pool.storeSet(configName=self.config.configName)
         pool.storeSet(pixDir=self.config.pixDir)
         pool.storeSet(fieldname=fieldname)
-        # if not os.path.isdir(outDir):
-        #     os.system('mkdir -p %s' %outDir)
         pool.storeSet(outDir=self.config.outDir)
         nrun    =   100
-        pool.map(self.process,range(100,200))
+        pool.map(self.process,range(50,200))
         return
 
     def prepareParser(self,cache,irun):
@@ -97,9 +94,9 @@ class processMapBatchTask(BatchPoolTask):
 
         g1fname =   os.path.join(cache.pixDir,'g1Map-dempz-%d.fits' %irun)
         g2fname =   os.path.join(cache.pixDir,'g2Map-dempz-%d.fits' %irun)
-        stdfname=   os.path.join(cache.pixDir,'stdMap-dempz.fits')
+        stdfname=   os.path.join(cache.outDir,'stdMap-dempz.fits')
         lenskerfname=os.path.join(cache.outDir,'lensker-dempz-10bins.fits')
-        dictfname=  'prior/haloBasis-nl10.fits'
+        dictfname=  'sim/prior/haloBasis-obs-nl12-m146_152.fits'
         assert os.path.isfile(g1fname)
         assert os.path.isfile(g2fname)
         assert os.path.isfile(stdfname)
@@ -137,29 +134,18 @@ class processMapBatchTask(BatchPoolTask):
         outfnameP2=  os.path.join(cache.outDir,'deltaR-enet-%d.fits' %irun)
         outfname1=  os.path.join(cache.outDir,'alphaRW-alasso-%d.fits' %irun)
         outfname2=  os.path.join(cache.outDir,'deltaR-alasso-%d.fits' %irun)
-        if not os.path.isfile(outfname2):
+        if not os.path.isfile(outfnameP2):
             sparse3D    =   massmapSparsityTaskNew(parser)
             sparse3D.clean_outcome()
-            print('lasso')
-            sparse3D.lbd=   0.8
-            sparse3D.lcd=   0.8
+            sparse3D.lbd=   0.
+            sparse3D.lcd=   1.
+            sparse3D.nonNeg=False
             sparse3D.fista_gradient_descent(1500)
-            sparse3D.reconstruct()
             pyfits.writeto(outfnameP1,sparse3D.alphaR,overwrite=True)
-            pyfits.writeto(outfnameP2,sparse3D.deltaR,overwrite=True)
-
-            sparse3D.lbd=   2.
-            sparse3D.lcd=   0.
-            print('adaptive lasso')
-            for _iada in range(2):
-                w       =   sparse3D.adaptive_lasso_weight(gamma=3.)
-                sparse3D.fista_gradient_descent(800,w=w)
-
             sparse3D.reconstruct()
-            pyfits.writeto(outfname1,sparse3D.alphaR,overwrite=True)
-            pyfits.writeto(outfname2,sparse3D.deltaR,overwrite=True)
-        outfname3=  os.path.join(cache.outDir,'peaks-%d.fits' %irun)
-        #if not os.path.isfile(outfname3):
+            pyfits.writeto(outfnameP2,sparse3D.deltaR,overwrite=True)
+            del sparse3D
+            gc.collect()
         return
 
     @classmethod

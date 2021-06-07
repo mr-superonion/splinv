@@ -334,7 +334,7 @@ class cartesianGrid3D():
 
         if v is not None:
             # avoid weight is zero
-            mask            =   weightOut>0.62
+            mask            =   weightOut>0.1
             dataOut[mask]   =   dataOut[mask]/weightOut[mask]
             dataOut[~mask]  =   0.
             return dataOut
@@ -368,7 +368,7 @@ class cartesianGrid3D():
                     wg  =   np.exp(-rl2/self.sigma**2./2.)/self.sigma/np.sqrt(2.*np.pi)
                     wgsum=  np.sum(wg)
                     wl  =   wg*ws[mskx]
-                    if wgsum>2./self.sigma/np.sqrt(2.*np.pi):
+                    if wgsum>0.1/self.sigma/np.sqrt(2.*np.pi):
                         if v is not None:
                             dataOut[iz,iy,ix]=np.sum(wl*v[mskx])/np.sum(wl)
                         else:

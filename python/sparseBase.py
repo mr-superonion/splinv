@@ -139,8 +139,8 @@ class massmapSparsityTaskNew():
         """
         # Clear all of the data
         """
-        self.alphaR =   self.maskA              # alpha
-        self.deltaR =   np.zeros(self.shapeL)   # delta
+        self.alphaR     =   self.maskA              # alpha
+        self.deltaR     =   np.zeros(self.shapeL)   # delta
         self.shearRRes  =   np.zeros(self.shapeS) # shear residuals
         self.shearR     =   np.zeros(self.shapeS)   # shear
         self.shearProj  =   None
@@ -319,7 +319,7 @@ class massmapSparsityTaskNew():
         self.maskA2 =   np.ones(self.shapeA)
         for izl in range(self.nlp):
             for iframe in range(self.nframe):
-                thres=np.max(self.diagonal[izl,iframe].flatten())/8.
+                thres=np.max(self.diagonal[izl,iframe].flatten())/15.
                 maskLP= (self.diagonal[izl,iframe]>thres)
                 self.maskA[izl,iframe][~maskLP]=0.
                 thres2=np.max(self.diagonal[izl,iframe].flatten())/4.
@@ -419,7 +419,7 @@ class massmapSparsityTaskNew():
         self.diff   =   np.array(self.diff)
         return
 
-    def adaptive_lasso_weight(self,gamma=1,sigA=1.):
+    def adaptive_lasso_weight(self,gamma=1):
         """
         Calculate adaptive weight for adaptive lasso
 
@@ -446,11 +446,11 @@ class massmapSparsityTaskNew():
         #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
         #     p   =   np.abs(p)
         # else:
-        p   =   np.abs(self.alphaR)/self.lbd/sigA*self.maskA2
+        p       =   np.abs(self.alphaR)*self.maskA
 
         # threshold(for value close to zero)
         thres_adp=  1./1e12
-        mask=   (p**gamma>thres_adp)
+        mask    =   (p**gamma>thres_adp)
 
         # weight estimation
         w       =   np.zeros(self.shapeA)
@@ -460,7 +460,10 @@ class massmapSparsityTaskNew():
 
     def adaptive_lasso_prior_weight(self,prior):
         """
-        Calculate adaptive weight using a given prior
+        Calculate adaptive weight using a given prior.
+        Based on Zou & Li, The Annuals of Statisics 2008,
+        Vol. 36 No. 4, 1509--1533
+        (unfinished)
 
         Parameters:
         -----------
