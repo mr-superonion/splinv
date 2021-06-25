@@ -16,11 +16,9 @@ import cosmology
 import numpy as np
 
 import matplotlib
-matplotlib.use('agg')
-matplotlib.rcParams['ps.useafm'] = True
-matplotlib.rcParams['pdf.use14corefonts'] = True
-matplotlib.rcParams['text.usetex'] = True
-matplotlib.rcParams['font.size'] = 12
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
+
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 from scipy.stats import norm as statnorm
@@ -62,63 +60,85 @@ def rotCatalog(e1, e2, phi=None):
     e2_rot  =   (-1.0) * e1 * ss + e2 * cs
     return e1_rot, e2_rot
 
-def plotPozAve(titlename,pozBin,pozAve,oname):
+def plotPozAve(oname,pozBin,pozAve,pozBound=None,titlename=''):
+    cmap = cm.tab20
     #plot the average poz
     plt.close()
-    for i in range(0,10):
-        plt.plot(pozBin,pozAve[i],label=r'zbin:%d' %(i+1))
+    plt.figure(figsize=(7,6))
+    nbin    =   pozAve.shape[0]
+    norm = Normalize(vmin=0, vmax=nbin-1)
+    for i in range(nbin):
+        plt.plot(pozBin,pozAve[i],color=cmap(norm(i)))
     plt.xlim(-0.1,3)
     plt.ylim(0.,0.082)
-    plt.legend()
-    plt.xlabel('z',fontsize=15)
-    plt.ylabel('PDF',fontsize=15)
-    plt.title(titlename)
-    plt.grid()
+    plt.xlabel('Redshift')
+    plt.ylabel('PDF')
+    if len(titlename)>0:
+        plt.title(titlename,fontsize=20)
+    if pozBound is not None:
+        assert len(pozBound)==nbin+1
+        for i in range(nbin):
+            plt.axvspan(pozBound[i],pozBound[i+1],\
+                    alpha=0.2, color=cmap(norm(i)))
+    else:
+        plt.grid()
     plt.tight_layout()
     plt.savefig(oname)
     plt.close()
     return
 
-def plotLensKernel(titlename,zcgrid,lensKernel1,lensKernel2,oname):
+def plotLensKernel(oname,zcgrid,lensKernel1,lensKernel2,titlename=''):
     #plot the lensing kernel
     plt.close()
+    plt.figure(figsize=(7,6))
     cmap=plt.get_cmap('tab20')
     nzl=lensKernel1.shape[1]
     for i in range(0,nzl,2):
         norm1=np.sqrt(np.sum(lensKernel1[:,i]**2.))
         norm2=np.sqrt(np.sum(lensKernel2[:,i]**2.))
-        plt.plot(zcgrid,lensKernel1[:,i]/norm1,'-',c=cmap(i))
-        plt.plot(zcgrid,lensKernel2[:,i]/norm2,'--',c=cmap(i))
-    plt.xlabel(r'$z_s$',fontsize=15)
-    plt.ylabel('lensing kernel',fontsize=15)
+        plt.plot(zcgrid,lensKernel1[:,i]/norm1,'-',\
+                c=cmap(i),linewidth=2.)
+        plt.plot(zcgrid,lensKernel2[:,i]/norm2,'--',\
+                c=cmap(i),linewidth=2.)
+    plt.xlabel('Source galaxy redshift')
+    plt.ylabel('Lensing kernel')
     plt.grid()
-    plt.title(titlename)
+    if len(titlename)>0:
+        plt.title(titlename,fontsize=20)
     plt.tight_layout()
     plt.savefig(oname)
     plt.close()
     return
 
-def plotHist(fieldname,array,pixels,oname):
+def plotHist(oname,array,pixels,titlename=''):
     # Plot the histogram of observable
     # both on galaxy level and on pixel level
     plt.close()
-    cmap=plt.get_cmap('tab20')
+    cmap=   plt.get_cmap('tab20')
 
-    plt.figure(figsize=(8,6))
+    plt.figure(figsize=(7,6))
 
-    gbin=plt.hist(array,bins=100,density=True,range=(-1.2,1.2),histtype='step',label='galaxy',color=cmap(0))[1]
+    gbin=   plt.hist(array,bins=100,density=True,\
+            range=(-1.2,1.2),histtype='step',\
+            label='galaxy',color=cmap(0),linewidth=2.)[1]
     gbinGal=(gbin-np.average(array))/np.std(array)
-    a=statnorm.pdf(gbinGal)
-    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0]),color=cmap(0),ls='--')
+    a   =   statnorm.pdf(gbinGal)
+    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0])\
+            ,color=cmap(0),ls='--',linewidth=2.)
 
-    gbin=plt.hist(pixels,bins=100,density=True,range=(-1.2,1.2),histtype='step',label='pixel',color=cmap(2))[1]
+    gbin=plt.hist(pixels,bins=100,density=True,\
+            range=(-1.2,1.2),histtype='step',\
+            label='pixel',color=cmap(2),linewidth=2.)[1]
 
     gbinPix=(gbin-np.average(pixels))/np.std(pixels)
     a=statnorm.pdf(gbinPix)
-    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0]),color=cmap(2),ls='--')
-    plt.title('%s' %fieldname,fontsize=20)
-    plt.xlabel(r'$\delta g_1$',fontsize=20)
-    plt.ylabel(r'$P(\delta g_1)$',fontsize=20)
+    plt.plot(gbin,a/np.sum(a)/(gbin[1]-gbin[0]),\
+            color=cmap(2),ls='--',linewidth=2.)
+
+    if len(titlename)>0:
+        plt.title('%s' %titlename,fontsize=20)
+    plt.xlabel(r'$g_1$')
+    plt.ylabel(r'$P(g_1)$')
     plt.legend(fontsize=20)
     plt.yscale('log')
     plt.ylim(1e-4,15)

@@ -322,7 +322,7 @@ class massmapSparsityTaskNew():
                 thres=np.max(self.diagonal[izl,iframe].flatten())/15.
                 maskLP= (self.diagonal[izl,iframe]>thres)
                 self.maskA[izl,iframe][~maskLP]=0.
-                thres2=np.max(self.diagonal[izl,iframe].flatten())/4.
+                thres2=np.max(self.diagonal[izl,iframe].flatten())/2.
                 maskLP2= (self.diagonal[izl,iframe]>thres2)
                 self.maskA2[izl,iframe][~maskLP2]=0.
         maskLP      =   np.all(self.maskA,axis=0)
