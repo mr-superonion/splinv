@@ -53,7 +53,7 @@ field_ny    = {'XMM'    :   2,
               'VVDS'    :   2,
               'HECTOMAP':   1}
 
-def rotCatalog(e1, e2, phi=None):
+def rotCatalog(e1, e2, phi):
     cs      =   np.cos(phi)
     ss      =   np.sin(phi)
     e1_rot  =   e1 * cs + e2 * ss
