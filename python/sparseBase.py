@@ -64,7 +64,7 @@ class massmapSparsityTaskNew():
     def __init__(self,parser):
         # Regularization
         self.lbd        =   parser.getfloat('sparse','lbd') #   For LASSO
-        self.lcd        =   parser.getfloat('sparse','lcd') #   For Ridge
+        self.lcd        =   parser.getfloat('sparse','lcd') #   For Elastic net
         self.tau        =   parser.getfloat('sparse','tau') #   For TSV
         # Dictionary
         self.nframe     =   parser.getint('sparse','nframe')
@@ -332,21 +332,6 @@ class massmapSparsityTaskNew():
             self.maskA2[izl]=maskLP2
         return
 
-    # def fast_chi2diagonal_est(self):
-    #     """
-    #     Estimate the diagonal elements of the Chi2 transform matrix
-    #     """
-    #     asquareframe=   np.zeros((self.nz,self.nframe,self.ny,self.nx))
-    #     for iz in range(self.nz):
-    #         spaceF   =   np.fft.fft2((self.sigmaSInv[iz]**2.))
-    #         for iframe in range(self.nframe):
-    #             fun=np.conj(self.dict2D.aframes[iz,iframe])*self.dict2D.aframes[iz,iframe]
-    #             asquareframe[iz,iframe,:,:]=np.fft.ifft2(np.fft.fft2(fun)*spaceF).real
-
-    #     self.diagonal=  np.sum(self.lensKernel[:,:,None,None,None]**2.\
-    #             *asquareframe[:,None,:,:,:],axis=0)
-    #     return
-
     def determine_step_size(self):
         norm        =   0.
         for irun in range(1000):
@@ -458,8 +443,8 @@ class massmapSparsityTaskNew():
         w[~mask]=   1./thres_adp
         return w
 
+    """
     def adaptive_lasso_prior_weight(self,prior):
-        """
         Calculate adaptive weight using a given prior.
         Based on Zou & Li, The Annuals of Statisics 2008,
         Vol. 36 No. 4, 1509--1533
@@ -468,7 +453,6 @@ class massmapSparsityTaskNew():
         Parameters:
         -----------
         prior:      [nlp,nframe]
-        """
         p   =   np.abs(self.alphaR)/self.lbd
 
         # threshold(for value close to zero)
@@ -480,6 +464,7 @@ class massmapSparsityTaskNew():
         w[mask] =   1./(p[mask])**(gamma)
         w[~mask]=   1./thres_adp
         return w
+    """
 
     def fista_gradient_descent(self,niter,w=1.,tn0=1.):
         """
