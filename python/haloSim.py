@@ -413,7 +413,7 @@ class nfw_lensTJ03(nfwHalo):
 
     def Sigma(self,ra_s,dec_s):
         """Calculate Surface Density (Sigma) of halo.
-        Equation (11) in Wright & Brainerd (2000, ApJ, 534, 34).
+        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
         @param ra_s       ra of sources [arcsec].
         @param dec_s      dec of sources [arcsec].
         """
@@ -463,7 +463,8 @@ class nfw_lensTJ03(nfwHalo):
         return out*self.rs * self.rho_s*2.
 
     def DeltaSigma(self,ra_s,dec_s):
-        """Calculate excess surface density of halo.
+        """Calculate excess surface density of halo according to
+        Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
         @param ra_s       ra of sources [arcsec].
         @param dec_s      dec of sources [arcsec].
         """
