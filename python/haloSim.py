@@ -41,10 +41,11 @@ def four_pi_G_over_c_squared():
 def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
     Get the scale radius of NFW halo from mass and redshift
-    @param mass         Mass defined using a spherical overdensity of 200 times the critical density
+    Parameters:
+        mass:        Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
-    @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-    @param redshift     Redshift of the halo.
+        conc:        Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        redshift:    Redshift of the halo.
     """
     cosmo   =   Cosmo(h=Default_h0,omega_m=omega_m)
     z       =   redshift
@@ -68,13 +69,14 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
 class nfwHalo(Cosmo):
     def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=Default_OmegaM):
         """
-        @param mass         Mass defined using a spherical overdensity of 200 times the critical density
+        Parameters:
+            mass:         Mass defined using a spherical overdensity of 200 times the critical density
                             of the universe, in units of M_solar/h.
-        @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-        @param redshift     Redshift of the halo.
-        @param ra           ra of halo center  [arcsec].
-        @param dec          dec of halo center [arcsec].
-        @param omega_m      Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
+            conc:         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+            redshift:     Redshift of the halo.
+            ra:           ra of halo center  [arcsec].
+            dec:          dec of halo center [arcsec].
+            omega_m:      Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
                             omega_lam is set to 1-omega_matter.
         """
         # Redshift and Geometry
@@ -127,14 +129,15 @@ class nfw_lensWB00(nfwHalo):
     """
     Based on the integral functions of a spherical NFW profile:
     Wright & Brainerd(2000, ApJ, 534, 34)
+    Parameters:
 
-    @param mass         Mass defined using a spherical overdensity of 200 times the critical density
+        mass:         Mass defined using a spherical overdensity of 200 times the critical density
                         of the universe, in units of M_solar/h.
-    @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-    @param redshift     Redshift of the halo.
-    @param ra           ra of halo center  [arcsec].
-    @param dec          dec of halo center [arcsec].
-    @param omega_m      Omega_matter to pass to Cosmology constructor. [default: 0.3]
+        conc:         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        redshift:     Redshift of the halo.
+        ra:           ra of halo center  [arcsec].
+        dec:          dec of halo center [arcsec].
+        omega_m:      Omega_matter to pass to Cosmology constructor. [default: 0.3]
                         omega_lam is set to 1-omega_matter.
     """
     def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=0.3):
@@ -143,16 +146,18 @@ class nfw_lensWB00(nfwHalo):
     def __DdRs(self,ra_s,dec_s):
         """Calculate 'x' the radius r in units of the NFW scale
         radius, r_s.
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         x = ((ra_s - self.ra)**2 + (dec_s - self.dec)**2)**0.5/self.rs_arcsec
         return x
 
     def __sin2phi(self,ra_s,dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
@@ -162,8 +167,9 @@ class nfw_lensWB00(nfwHalo):
 
     def __cos2phi(self,ra_s,dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
@@ -191,8 +197,9 @@ class nfw_lensWB00(nfwHalo):
     def Sigma(self,ra_s,dec_s):
         """Calculate Surface Density (Sigma) of halo.
         Equation (11) in Wright & Brainerd (2000, ApJ, 534, 34).
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
@@ -237,8 +244,9 @@ class nfw_lensWB00(nfwHalo):
 
     def DeltaSigma(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
@@ -255,8 +263,9 @@ class nfw_lensWB00(nfwHalo):
     def DeltaSigmaComplex(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
         return a complex array \Delta \Sigma_1+ i \Delta \Sigma_2
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
@@ -275,7 +284,8 @@ class nfw_lensWB00(nfwHalo):
 
     def lensKernel(self,z_s):
         """Lensing kernel from surface density at lens redshfit to source redshift
-        @param z_s        redshift of sources.
+        Parameters:
+            z_s:        redshift of sources.
         """
         # convenience: call with single number
         if not isinstance(z_s, np.ndarray):
@@ -290,8 +300,9 @@ class nfw_lensWB00(nfwHalo):
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
         """Zero-order Surface mass density **background**
         within redshift bin [z_bin_min,z_bin_max].
-        @param z_bin_min   minimum of redshift bin.
-        @param z_bin_max   maximum of redshift bin.
+        Parameters:
+            z_bin_min:   minimum of redshift bin.
+            z_bin_max:   maximum of redshift bin.
         """
         # convenience: call with single number
         assert isinstance(z_bin_min,np.ndarray)==isinstance(z_bin_max,np.ndarray),\
@@ -311,8 +322,9 @@ class nfw_lensWB00(nfwHalo):
 
     def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
         """NFW Atom
-        @param pix_scale    pixel sacle [arcsec]
-        @param ngrid        number of pixels on x and y axis
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
         """
         if xc is None:
             xc  =   self.ra
@@ -327,8 +339,9 @@ class nfw_lensWB00(nfwHalo):
 
     def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
         """NFW Atom
-        @param pix_scale    pixel sacle [arcsec]
-        @param ngrid        number of pixels on x and y axis
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
         """
         if xc is None:
             xc  =   self.ra
@@ -346,15 +359,15 @@ class nfw_lensTJ03(nfwHalo):
     Based on the integral functions of a spherical NFW profile:
     Takada & Jain(2003, MNRAS, 340, 580) Eq.27 -- Surface Density,
     and Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
-
-    @param mass         Mass defined using a spherical overdensity of 200 times the critical density
-                        of the universe, in units of M_solar/h.
-    @param conc         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-    @param redshift     Redshift of the halo.
-    @param ra           ra of halo center  [arcsec].
-    @param dec          dec of halo center [arcsec].
-    @param omega_m      Omega_matter to pass to Cosmology constructor. [default: 0.3]
-                        omega_lam is set to 1-omega_matter.
+    Parameters:
+        mass:         Mass defined using a spherical overdensity of 200 times the critical density
+                      of the universe, in units of M_solar/h.
+        conc:         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        redshift:     Redshift of the halo.
+        ra:           ra of halo center  [arcsec].
+        dec:          dec of halo center [arcsec].
+        omega_m:      Omega_matter to pass to Cosmology constructor. [default: 0.3]
+                      omega_lam is set to 1-omega_matter.
     """
     def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=0.3):
         nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=0.3)
@@ -362,16 +375,16 @@ class nfw_lensTJ03(nfwHalo):
     def __DdRs(self,ra_s,dec_s):
         """Calculate 'x' the radius r in units of the NFW scale
         radius, r_s.
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         x = ((ra_s - self.ra)**2 + (dec_s - self.dec)**2)**0.5/self.rs_arcsec
         return x
 
     def __sin2phi(self,ra_s,dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
@@ -381,8 +394,8 @@ class nfw_lensTJ03(nfwHalo):
 
     def __cos2phi(self,ra_s,dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+        ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
@@ -414,8 +427,8 @@ class nfw_lensTJ03(nfwHalo):
     def Sigma(self,ra_s,dec_s):
         """Calculate Surface Density (Sigma) of halo.
         Takada & Jain(2003, MNRAS, 340, 580) Eq.27
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
 
         # convenience: call with single number
@@ -465,8 +478,8 @@ class nfw_lensTJ03(nfwHalo):
     def DeltaSigma(self,ra_s,dec_s):
         """Calculate excess surface density of halo according to
         Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
@@ -483,8 +496,8 @@ class nfw_lensTJ03(nfwHalo):
     def DeltaSigmaComplex(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
         return a complex array \Delta \Sigma_1+ i \Delta \Sigma_2
-        @param ra_s       ra of sources [arcsec].
-        @param dec_s      dec of sources [arcsec].
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
         assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
@@ -504,8 +517,8 @@ class nfw_lensTJ03(nfwHalo):
     def lensKernel(self,z_s):
         """Lensing kernel from surface density at lens redshfit to source redshift
         to kappa at source redshift
-        Lensing kernel of halo as function of source redshift.
-        @param z_s        redshift of sources.
+        Parameters:
+            z_s:        redshift of sources.
         """
         # convenience: call with single number
         if not isinstance(z_s, np.ndarray):
@@ -519,10 +532,11 @@ class nfw_lensTJ03(nfwHalo):
         return k_s
 
     def Sigma_M_bin(self,z_bin_min,z_bin_max):
-        """Zero-order Surface mass density
-        within redshift bin [z_bin_min,z_bin_max].
-        @param z_bin_min   minimum of redshift bin.
-        @param z_bin_max   maximum of redshift bin.
+        """Zero-order Surface mass density within redshift bin
+        [z_bin_min,z_bin_max].
+        Parameters:
+            z_bin_min:   minimum of redshift bin.
+            z_bin_max:   maximum of redshift bin.
         """
         # convenience: call with single number
         assert isinstance(z_bin_min,np.ndarray)==isinstance(z_bin_max,np.ndarray),\
@@ -542,8 +556,9 @@ class nfw_lensTJ03(nfwHalo):
 
     def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
         """NFW Sigma in a postage stamp
-        @param pix_scale    pixel sacle [arcsec]
-        @param ngrid        number of pixels on x and y axis
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
         """
         if xc is None:
             xc  =   self.ra
@@ -558,8 +573,9 @@ class nfw_lensTJ03(nfwHalo):
 
     def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
         """NFW Delta Sigma in a postage stamp
-        @param pix_scale    pixel sacle [arcsec]
-        @param ngrid        number of pixels on x and y axis
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
         """
         if xc is None:
             xc  =   self.ra
@@ -582,15 +598,14 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
     https://arxiv.org/pdf/astro-ph/0206508.pdf -- Eq.(81) and Eq.(82)
 
     Parameters:
-    -----------
-    r_s     [float]
-            scale radius (in unit of pixel).
-    ny,nx   [int]
-            number of pixel in y and x directions.
-    c       [float]
-            truncation ratio (concentration)
-    fou     [bool]
-            in Fourier space
+        r_s:    [float]
+                scale radius (in unit of pixel).
+        ny,nx:  [int]
+                number of pixel in y and x directions.
+        c:      [float]
+                truncation ratio (concentration)
+        fou:    [bool]
+                in Fourier space
     """
     if nx is None:
         nx=ny
@@ -640,12 +655,11 @@ def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
     """
     Normalized Gaussian in a postage stamp
     Parameters:
-    --------------
-    sigma:  std of Gaussian function; [float]
-    ny:     number of pixel y directions; [int]
-    nx:     number of pixel for x; [int, default=None]
-    fou:    in Fourier/configuration space [bool, ture/false]
-    lnorm:  normalized by lp norm [float]
+        sigma:  std of Gaussian function; [float]
+        ny:     number of pixel y directions; [int]
+        nx:     number of pixel for x; [int, default=None]
+        fou:    in Fourier/configuration space [bool, ture/false]
+        lnorm:  normalized by lp norm [float]
     """
     if nx is None:
         nx=ny
@@ -679,12 +693,11 @@ def TophatAtom(width,ny,nx=None,fou=True,lnorm=-1):
     """
     Normalized top-hat atom in a postage stamp
     Parameters:
-    --------------
-    width:  width of top-hat function(in unit of pixel)
-    ny:     number of pixel y directions; [int]
-    nx:     number of pixel for x; [int, default=None]
-    fou:    in Fourier/configuration space [bool, ture/false]
-    lnorm:  normalized by lp norm [float]
+        width:  width of top-hat function(in unit of pixel)
+        ny:     number of pixel y directions; [int]
+        nx:     number of pixel for x; [int, default=None]
+        fou:    in Fourier/configuration space [bool, ture/false]
+        lnorm:  normalized by lp norm [float]
     """
     if nx is None:
         nx=ny
