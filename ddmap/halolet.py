@@ -11,12 +11,11 @@
 # GNU General Public License for more details.
 #
 import os
-import haloSim
-import cosmology
+from . import halosim
+from .default import *
 import numpy as np
 import astropy.io.fits as pyfits
-
-Default_h0  =   1.
+from astropy.cosmology import FlatLambdaCDM as Cosmo
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -100,19 +99,15 @@ class nfwShearlet2D():
     --------
 
     Parameters:
-    ----------
-    Construction Parser:
-    nframe  :   number of frames
-    ny,nx   :   size of the field (pixel)
-    smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
-    nlp     :   number of lens plane
-    nz      :   number of source plane
+        nframe  :   number of frames
+        ny,nx   :   size of the field (pixel)
+        smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
+        nlp     :   number of lens plane
+        nz      :   number of source plane
 
     Methods:
-    --------
-    itransform: transform from halolet space to observed space
-
-    itranspose: transpose of itransform operator
+        itransform: transform from halolet space to observed space
+        itranspose: transpose of itransform operator
 
     """
     def __init__(self,parser):
@@ -164,7 +159,7 @@ class nfwShearlet2D():
             omega_m =   parser.getfloat('cosmology','omega_m')
         else:
             omega_m =   0.3
-        self.cosmo  =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
+        self.cosmo  =   cosmology.Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
         self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
         # Initialize basis predictors
@@ -177,7 +172,7 @@ class nfwShearlet2D():
         self.rs_frame   =   -1.*np.ones((self.nzl,self.nframe)) # Radius in pixel
 
         for izl in range(self.nzl):
-            rz      =   self.rs_base/self.cosmo.Dc(0.,self.zlBin[izl])*60.*180./np.pi
+            rz      =   self.rs_base/self.cosmo.comoving_distance(self.zlBin[izl])*60.*180./np.pi
             for ifr in  range(self.nframe)[::-1]:
                 # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
@@ -185,7 +180,7 @@ class nfwShearlet2D():
                 if rs<self.resolve_lim:
                     self.rs_frame[izl,ifr]= 0.
                     # l2 normalized Gaussian
-                    iAtomF=haloSim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
+                    iAtomF=halosim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
                     self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF=self.ks2D.transform(iAtomF,inFou=True,outFou=True)
                     self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
@@ -194,7 +189,7 @@ class nfwShearlet2D():
                 else:
                     self.rs_frame[izl,ifr]= rs
                     # l2 normalized
-                    iAtomF= haloSim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
+                    iAtomF= halosim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
                     self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
@@ -224,8 +219,8 @@ class nfwShearlet2D():
         """
         transform from model (e.g., nfwlet) dictionary space to measurement
         (e.g., shear) space
-        ----------
-        dataIn: array to be transformed (in configure space, e.g., alpha)
+        Parameters:
+            dataIn: array to be transformed (in configure space, e.g., alpha)
         """
         assert dataIn.shape==self.shapeA,\
             'input should have shape (nzl,nframe,ny,nx)'
@@ -245,8 +240,7 @@ class nfwShearlet2D():
         """
         transpose of the inverse transform operator
         Parameters:
-        ----------
-        dataIn: arry to be operated (in config space, e.g., shear)
+            dataIn: arry to be operated (in config space, e.g., shear)
         """
         assert dataIn.shape==self.shapeS,\
             'input should have shape (nzs,ny,nx)'
@@ -265,8 +259,7 @@ class nfwShearlet2D():
     #     """
     #     transform from nfw dictionary space to shear measurements
     #     Parameters:
-    #     ----------
-    #     dataIn: arry to be transformed (in config space, e.g. alpha)
+    #        dataIn: arry to be transformed (in config space, e.g. alpha)
     #     """
     #     assert dataIn.shape==self.shapeA,\
     #         'input should have shape (nzl,nframe,ny,nx)'

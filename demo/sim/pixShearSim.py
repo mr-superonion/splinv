@@ -23,7 +23,7 @@
 # python lib
 import os
 import gc
-import haloSim
+import halosim
 import numpy as np
 import astropy.io.fits as pyfits
 import astropy.io.ascii as pyascii
@@ -136,11 +136,11 @@ class pixShearSimBatchTask(BatchPoolTask):
         conc    =   ss['conc']
         zh      =   ss['zh']
         # TJ03 halo
-        halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
+        halo    =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,\
                     redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
         """
         # WB00 halo
-        halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
+        halo    =   halosim.nfw_lensWB00(mass=M_200,conc=conc,\
                     redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
         """
 
@@ -193,11 +193,11 @@ class pixShearSimBatchTask(BatchPoolTask):
             conc    =   ss['conc']
             zh      =   ss['zh']
             # TJ03 halo
-            halo    =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,\
+            halo    =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,\
                         redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
             """
             # WB00 halo
-            halo    =   haloSim.nfw_lensWB00(mass=M_200,conc=conc,\
+            halo    =   halosim.nfw_lensWB00(mass=M_200,conc=conc,\
                         redshift=zh,ra=0.,dec=0.,omega_m=omega_m)
             """
             deltaSigma= halo.DeltaSigmaComplex(obs['raR']*3600.,obs['decR']*3600.)

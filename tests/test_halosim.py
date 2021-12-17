@@ -1,7 +1,8 @@
-import haloSim
+from ddmap import halosim
 import numpy as np
 from configparser import ConfigParser
-from pixel3D import cartesianGrid3D
+from ddmap.pixel3D import cartesianGrid3D
+
 try:
     import galsim
     has_galsim=True
@@ -10,15 +11,16 @@ except:
 
 
 def test_WB00_Galsim(log_m=15,zh=0.3):
+    '''Test cosistency between WB00 and Galsim.nfw_halo
+    '''
     if not has_galsim:
         print("do not have Galsim; therefore, we skip checking WB00 profile with galsim")
         return
 
-    print('Testing the consistency of WB00 with Galsim')
     M_200   =   10**log_m
     conc    =   6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
     # create an WB00 halo
-    halo=haloSim.nfw_lensWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
+    halo=halosim.nfw_lensWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
     # create an galsim halo
     pos_cl  =   galsim.PositionD(0.,0.)
     haloGS  =   galsim.nfw_halo.NFWHalo(mass= M_200,
@@ -47,20 +49,17 @@ def test_WB00_Galsim(log_m=15,zh=0.3):
 
 
 def test_TJ03_Fourier(log_m=15.,zh=0.3):
-    '''
-    Test whether the TJ03 halo simulation in Fourier space is consistent to
-    that in configuration space.
+    '''Test cosistency between TJ03 Fourier- and Real- based simulation
     '''
 
-    print('Testing the consistency between TJ03 in Fourier and configuration space')
     # halo properties
     M_200=  10.**(log_m)
     conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
 
     # initialize halo
-    halo =   haloSim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    halo =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     # initialize pixel grids
-    configName  =   'test_haloSim.ini'
+    configName  =   'test_halosim.ini'
     parser      =   ConfigParser()
     parser.read(configName)
     gridInfo    =   cartesianGrid3D(parser)
@@ -74,7 +73,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     haloSigma2=haloSigma2/norm
 
     rpix    =   halo.rs_arcsec/gridInfo.delta/3600.
-    haloSigma1= np.fft.fftshift(haloSim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,c=halo.c,fou=False))
+    haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,c=halo.c,fou=False))
     # The (0,0) point is unstable
     haloSigma1[gridInfo.ny//2,gridInfo.nx//2]=0.
     # l2 normalization

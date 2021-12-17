@@ -10,55 +10,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
-import os
 import json
-import cosmology
-import haloSim
 import numpy as np
-from configparser import ConfigParser
-
-C_LIGHT=2.99792458e8        # m/s
-GNEWTON=6.67428e-11         # m^3/kg/s^2
-KG_PER_SUN=1.98892e30       # kg/M_solar
-M_PER_PARSEC=3.08568025e16  # m/pc
-
-def four_pi_G_over_c_squared():
-    """
-    = 1.5*H0^2/roh_0/c^2
-    We want it return 4piG/c^2 in unit of Mpc/M_solar
-    in unit of m/kg
-    """
-    fourpiGoverc2 = 4.0*np.pi*GNEWTON/(C_LIGHT**2)
-    # in unit of pc/M_solar
-    fourpiGoverc2 *= KG_PER_SUN/M_PER_PARSEC
-    # in unit of Mpc/M_solar
-    fourpiGoverc2 /= 1.e6
-    return fourpiGoverc2
+from .default import *
+from .import halosim
+from astropy.cosmology import FlatLambdaCDM as Cosmo
 
 class cartesianGrid3D():
     """
     pixlize in a TAN(Gnomonic)-prjected Cartesian Grid
+    Parameters:
+        parser: parser
     """
     def __init__(self,parser):
-        """
-        Parameters:
-        -------------
-        parser: parser
-        transplane- unit
-            unit of the parameters (arcsec/arcmin/deg)
-        transplane- scale:
-            pixel scale
-        transplane- smooth_scale
-            smoothing scale [default: -1 (no smoothing)]
-        sourceZ- zbound:
-            boundarys of z-axes [optional]
-        sourceZ- nz:
-            number of z binning
-        sourceZ- zmin:
-            lowest boundary of z
-        sourceZ- zscale:
-            z pixel scale
-        """
         # The unit of angle in the configuration
         unit    =   parser.get('transPlane','unit')
         # Rescaling to degree
@@ -127,21 +91,19 @@ class cartesianGrid3D():
             omega_m=parser.getfloat('cosmology','omega_m')
         else:
             omega_m=0.3
-        self.cosmo=cosmology.Cosmo(h=1,omega_m=omega_m)
+        self.cosmo=Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.lensKernel =   None
         self.pozPdfAve  =   None
         return
 
     def setupNaivePlane(self,nx,ny,xmin,ymin):
-        """
-        setup Tan projection plane from basic parameters
+        """setup Tan projection plane from basic parameters
         (no rotation,no flipping)
         Parameters:
-        -------------
-        nx:     number of x bins [int]
-        ny:     number of y bins [int]
-        xmin:   minimum of x [deg]
-        ymin:   minimum of y [deg]
+            nx:     number of x bins [int]
+            ny:     number of y bins [int]
+            xmin:   minimum of x [deg]
+            ymin:   minimum of y [deg]
         """
         self.nx     =   nx
         self.ny     =   ny
@@ -162,15 +124,13 @@ class cartesianGrid3D():
         return
 
     def setupTanPlane(self,ra=None,dec=None,pad=0.1,header=None):
-        """
-        setup Tan projection plane from (ra,dec) array or header
+        """setup Tan projection plane from (ra,dec) array or header
         (no rotation,no flipping)
         Parameters:
-        -------------
-        ra:     array of ra to project  [deg]
-        dec:    array of dec to project [deg]
-        pad:    padding distance [degree]
-        header: header with projection information
+            ra:     array of ra to project  [deg]
+            dec:    array of dec to project [deg]
+            pad:    padding distance [degree]
+            header: header with projection information
         """
         if (ra is not None) and (dec is not None):
             # first try
@@ -224,14 +184,12 @@ class cartesianGrid3D():
             return
 
     def project_tan(self,ra,dec,pix=False):
-        """
-        TAN(Gnomonic)-prjection of sky coordiantes
+        """TAN(Gnomonic)-prjection of sky coordiantes
         (no rotation,no flipping)
         Parameters:
-        -------------
-        ra:     array of ra to project  [deg]
-        dec:    array of dec to project [deg]
-        pix:    return in unit of pixel or not [bool]
+            ra:     array of ra to project  [deg]
+            dec:    array of dec to project [deg]
+            pix:    return in unit of pixel or not [bool]
         """
         rr      =   180.0/np.pi
         sindec  =   np.sin(dec/rr)
@@ -249,14 +207,12 @@ class cartesianGrid3D():
             return x1,x2
 
     def iproject_tan(self,x1,x2,pix=False):
-        """
-        inverse TAN(Gnomonic)-prjection of pixel coordiantes
+        """inverse TAN(Gnomonic)-prjection of pixel coordiantes
         (no rotation,no flipping)
         Parameters:
-        -------------
-        x1:     array of x1 pixel coord [deg]
-        x2:     array of x2 pixel coord [deg]
-        pix:    input in unit of pixel or not [bool]
+            x1:     array of x1 pixel coord [deg]
+            x2:     array of x2 pixel coord [deg]
+            pix:    input in unit of pixel or not [bool]
         """
 
         if pix:
@@ -288,19 +244,18 @@ class cartesianGrid3D():
     def pixelize_data(self,x,y,z,v=None,ws=None,method='FFT',ave=True):
         """pixelize catalog into the cartesian grid
         Parameters:
-        -------------
-        x:  array
-            ra of sources.
-        y:  array
-            dec of sources.
-        z:  array
-            redshifts of sources.
-        v:  array
-            measurements.
-        ws: array [defalut: None]
-            weights.
-        method: string [default: FFT]
-            method used to convolve with smoothing kernel
+            x:  array
+                ra of sources.
+            y:  array
+                dec of sources.
+            z:  array
+                redshifts of sources.
+            v:  array
+                measurements.
+            ws: array [defalut: None]
+                weights.
+            method: string [default: FFT]
+                method used to convolve with smoothing kernel
         """
         if z is None:
             # This is for 2D pixeliztion
@@ -323,7 +278,7 @@ class cartesianGrid3D():
         if self.sigma/self.delta>0.01:
             # Gaussian Kernel in Fourier space
             # (normalize to flux-1)
-            gausKer =   haloSim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
+            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel
@@ -380,21 +335,16 @@ class cartesianGrid3D():
         to an average kappa in a source redshift
 
         Parameters:
-        -------------
-        poz_grids:  array
-            poz's bin; if None, do not include any photoz uncertainty
-
-        poz_best:   array,len(galaxy)
-            galaxy's best photoz measurements, used for galaxy binning
-
-        poz_data:   array,(len(galaxy),len(poz_grids))
-            galaxy's POZ measurements, used for deriving lensing kernel
-
-        poz_ave:    array
-            average POZ in source bins
-
-        deltaIn:    bool [default: True (yes)]
-            is mapping from (yes) delta to kappa (no) or from mass to kappa
+            poz_grids:  array
+                poz's bin; if None, do not include any photoz uncertainty
+            poz_best:   array,len(galaxy)
+                galaxy's best photoz measurements, used for galaxy binning
+            poz_data:   array,(len(galaxy),len(poz_grids))
+                galaxy's POZ measurements, used for deriving lensing kernel
+            poz_ave:    array
+                average POZ in source bins
+            deltaIn:    bool [default: True]
+                is mapping from (yes) delta to kappa (no) or from mass to kappa
         """
 
         assert (poz_data is not None)==(poz_best is not None), \
@@ -409,14 +359,15 @@ class cartesianGrid3D():
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
                 mask=  (zl<self.zcgrid)
-                kl[mask] =   self.cosmo.Da(zl,self.zcgrid[mask])*self.cosmo.Da(0.,zl)\
-                        /self.cosmo.Da(0.,self.zcgrid[mask])
+                kl[mask] =   self.cosmo.angular_diameter_distance_z1z2(zl,self.zcgrid[mask]).value\
+                    *self.cosmo.angular_diameter_distance_z1z2(0.,zl).value\
+                    /self.cosmo.angular_diameter_distance_z1z2(0.,self.zcgrid[mask]).value
                 kl*=    four_pi_G_over_c_squared()
                 if deltaIn:
                     # Sigma_M_zl_bin
                     # Surface masss density in lens bin
-                    rhoM_ave=   self.cosmo.rho_m(zl)
-                    DaBin   =   self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
+                    rhoM_ave=   self.cosmo.critical_density(zl).to_value(unit=rho_unt)*self.cosmo.Om(zl)
+                    DaBin   =   self.cosmo.angular_diameter_distance_z1z2(self.zlbound[i],self.zlbound[i+1]).value
                     lensKernel[:,i]=kl*rhoM_ave*DaBin
                 else:
                     lensKernel[:,i]=kl*1e14
@@ -427,16 +378,17 @@ class cartesianGrid3D():
                 kl=np.zeros(len(poz_grids))
                 mask= (zl<poz_grids)
                 #Dsl*Dl/Ds
-                kl[mask] =   self.cosmo.Da(zl,poz_grids[mask])*self.cosmo.Da(0.,zl)/self.cosmo.Da(0.,poz_grids[mask])
+                kl[mask] =   self.cosmo.angular_diameter_distance_z1z2(zl,poz_grids[mask]).value\
+                    *self.cosmo.angular_diameter_distance_z1z2(0.,zl).value\
+                    /self.cosmo.angular_diameter_distance_z1z2(0.,poz_grids[mask]).value
                 kl*=four_pi_G_over_c_squared()
                 if deltaIn:
                     # Sigma_M_zl_bin
-                    rhoM_ave=   self.cosmo.rho_m(zl)
-                    DaBin   =   self.cosmo.Da(self.zlbound[i],self.zlbound[i+1])
+                    rhoM_ave=   self.cosmo.critical_density(zl).to_value(unit=rho_unt)*self.cosmo.Om(zl)
+                    DaBin   =   self.cosmo.angular_diameter_distance_z1z2(self.zlbound[i],self.zlbound[i+1]).value
                     lensK[:,i]= kl*rhoM_ave*DaBin
                 else:
                     lensK[:,i]= kl*1e14
-
             if poz_ave is None:
                 # Prepare the poz average
                 # if it is not an input
@@ -457,10 +409,10 @@ class cartesianGrid3D():
         """Mapping from an average delta in a lens redshfit bin
         to an average kappa in a source redshift at z=+infty
         """
-        lensKernel =   np.zeros((self.nz,self.nzl))
-        kl  =   self.cosmo.Da(0.,self.zlcgrid)*four_pi_G_over_c_squared()
+        lensKernel =np.zeros((self.nz,self.nzl))
+        kl      =   self.cosmo.angular_diameter_distance_z1z2(0.,self.zlcgrid).value*four_pi_G_over_c_squared()
         # Surface masss density in lens bin
-        rhoM_ave=self.cosmo.rho_m(self.zlcgrid)
-        DaBin=self.cosmo.Da(self.zlbound[:-1],self.zlbound[1:])
-        lensKernel=kl*rhoM_ave*DaBin
+        rhoM_ave=   self.cosmo.rho_m(self.zlcgrid)
+        DaBin   =   self.cosmo.angular_diameter_distance_z1z2(self.zlbound[:-1],self.zlbound[1:]).value
+        lensKernel= kl*rhoM_ave*DaBin
         return lensKernel

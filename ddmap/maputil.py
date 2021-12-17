@@ -11,8 +11,6 @@
 # GNU General Public License for more details.
 #
 import os
-import warnings
-import cosmology
 import numpy as np
 
 import matplotlib

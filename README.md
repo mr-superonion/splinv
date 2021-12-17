@@ -1,12 +1,11 @@
-3D dark Map ($\rm{D}^2$Map)
+3D Dark Map
+<img src="https://latex.codecogs.com/svg.latex?\scriptsize&space;(\rm{D}^2Map)" title="\rm{D}^2Map" />:
+a code to reconstruct three-demintional dark matter mass map from weak-lensing observations.
 
 # Install
 
-## Requirements
-+ numpy
-+ astropy
-
-## Alternative
-+ mayavi (to draw 3D plots)
-
+```shell
+cd ddmap
+pip install ./
+```
 

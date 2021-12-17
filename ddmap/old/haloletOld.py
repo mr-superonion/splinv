@@ -1,6 +1,6 @@
 import os
 import astropy.io.fits as pyfits
-import haloSim
+import halosim
 import numpy as np
 import cosmology
 
@@ -49,12 +49,12 @@ class nfwlet2D():
             iframe=ifr+self.minframe
             if iframe==0:
                 # The first frame is Gaussian atom accounting for the smoothing
-                self.fouaframes[ifr,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=True)
-                self.aframes[ifr,:,:]=haloSim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
+                self.fouaframes[ifr,:,:]=halosim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=True)
+                self.aframes[ifr,:,:]=halosim.GausAtom(sigma=self.smooth_scale,ngrid=self.ny,fou=False)
             else:
                 # The other frames
                 rs=iframe*self.rs_base
-                iAtomF=haloSim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=4.,smooth_scale=self.smooth_scale)
+                iAtomF=halosim.haloCS02SigmaAtom(r_s=rs,ngrid=self.ny,c=4.,smooth_scale=self.smooth_scale)
                 self.fouaframes[ifr,:,:]=iAtomF # Fourier Space
                 self.aframes[ifr,:,:]=np.real(np.fft.ifft2(iAtomF)) # Real Space
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import haloSim
+import halosim
 import numpy as np
 import astropy.table as astTab
 
@@ -19,7 +19,7 @@ def main():
 
             M_200=  10.**(log_m) # in unit of M_solar/h
             conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+z_h))**(0.16)
-            halo =  haloSim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,\
+            halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,\
                     ra=0.,dec=0.,omega_m=omega_m)
             rs_amin=halo.rs_arcsec/60.
             data.append((iz,im,z_h,log_m,conc,rs_amin))

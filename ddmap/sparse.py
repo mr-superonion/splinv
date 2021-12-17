@@ -10,12 +10,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
-import os
 import json
-import cosmology
 import numpy as np
-
 import astropy.io.fits as pyfits
+from .halolet import nfwShearlet2D
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -25,9 +23,8 @@ def soft_thresholding(dum,thresholds):
     Soft-Threshold Function
 
     Parameters:
-    ----------
-    dum:    array to panelize
-    thresholds: panelization threshold
+        dum:    array to panelize
+        thresholds: panelization threshold
     """
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
 
@@ -36,22 +33,16 @@ def soft_thresholding_nn(dum,thresholds):
     Non-negative Soft-Threshold Function
 
     Parameters:
-    ----------
-    dum:    array to panelize
-    thresholds: panelization threshold
-
+        dum:    array to panelize
+        thresholds: panelization threshold
     """
     return np.maximum(dum-thresholds,0.)
 
 def firm_thresholding(dum,thresholds):
-    """
-    Firm thresholding used by Glimpse3D-2013
-
+    """Firm thresholding used by Glimpse3D-2013
     Parameters:
-    ----------
-    dum:    array to panelize
-    thresholds: panelization threshold
-
+        dum:    array to panelize
+        thresholds: panelization threshold
     """
     mask    =   (np.abs(dum)<= thresholds)
     dum[mask]=  0.
@@ -102,7 +93,6 @@ class massmapSparsityTaskNew():
         self.shapeA     =   (self.nlp,self.nframe,self.ny,self.nx)
 
         dicname     =   parser.get('sparse','dicname')
-        from halolet import nfwShearlet2D
         self.dict2D =   nfwShearlet2D(parser)
 
         # Read pixelized noise std-map for shear

@@ -12,32 +12,9 @@
 #
 import astropy
 import numpy as np
+from .default import *
 import scipy.special as spfun
-import astropy.io.fits as pyfits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
-
-#important constant
-C_LIGHT     =   2.99792458e8    # m/s
-GNEWTON     =   6.67428e-11     # m^3/kg/s^2
-KG_PER_SUN  =   1.98892e30      # kg/M_solar
-M_PER_PARSEC=   3.08568025e16   # m/pc
-Default_OmegaM= 0.315
-Default_h0  =   1.              # set to 1
-# rho~  [h^2]
-# R~    [h^-1]
-# V~    [h^-3]
-# M~    [h^-1]
-
-def four_pi_G_over_c_squared():
-    # = 1.5*H0^2/roh_0/c^2
-    # We want it return 4piG/c^2 in unit of Mpc/M_solar
-    # in unit of m/kg
-    fourpiGoverc2 = 4.0*np.pi*GNEWTON/(C_LIGHT**2)
-    # in unit of pc/M_solar
-    fourpiGoverc2 *= KG_PER_SUN/M_PER_PARSEC
-    # in unit of Mpc/M_solar
-    fourpiGoverc2 /= 1.e6
-    return fourpiGoverc2
 
 def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
@@ -56,8 +33,7 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     # E(z)^{-1}
     ezInv   =   cosmo.inv_efunc(z)
     # critical density (in unit of M_sun h^2 / Mpc^3)
-    uu          =   astropy.units.solMass/astropy.units.Mpc**3.
-    rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=uu)
+    rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=rho_unt)
     rvir    =   1.63e-5*(mass*ezInv**2)**(1./3.) # in Mpc/h
     rs      =   rvir/conc
     A       =   1./(np.log(1+conc)-(conc)/(1+conc))
@@ -72,14 +48,14 @@ class nfwHalo(Cosmo):
     def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=Default_OmegaM):
         """
         Parameters:
-            mass:         Mass defined using a spherical overdensity of 200 times the critical density
-                            of the universe, in units of M_solar/h.
-            conc:         Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-            redshift:     Redshift of the halo.
-            ra:           ra of halo center  [arcsec].
-            dec:          dec of halo center [arcsec].
-            omega_m:      Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
-                            omega_lam is set to 1-omega_matter.
+            mass:       Mass defined using a spherical overdensity of 200 times the critical density
+                        of the universe, in units of M_solar/h.
+            conc:       Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+            redshift:   Redshift of the halo.
+            ra:         ra of halo center  [arcsec].
+            dec:        dec of halo center [arcsec].
+            omega_m:    Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
+                        omega_lam is set to 1-omega_matter.
         """
         # Redshift and Geometry
         ## ra dec
@@ -92,8 +68,7 @@ class nfwHalo(Cosmo):
         self.DaLens =   self.angular_diameter_distance_z1z2(0.,self.z).value
         # critical density
         # in unit of M_solar / Mpc^3
-        uu          =   astropy.units.solMass/astropy.units.Mpc**3.
-        rho_cZ      =   self.critical_density(self.z).to_value(unit=uu)
+        rho_cZ      =   self.critical_density(self.z).to_value(unit=rho_unt)
 
         self.M      =   float(mass)
         # First, we get the virial radius, which is defined for some spherical
