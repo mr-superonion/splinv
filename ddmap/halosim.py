@@ -572,7 +572,7 @@ class nfw_lensTJ03(nfwHalo):
 """
 The following functions are used for halolet construction
 """
-def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
+def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=None,fou=True,lnorm=2.):
     """
     Make haloTJ03 halo (l2 normalized by default) from Fourier space following
     CS02:
@@ -609,13 +609,13 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=-1,fou=True,lnorm=2.):
         r0      =   r[~mask]
         atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
 
-    if smooth_scale>0.1:
-        # Gaussian smoothing
-        atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
-    elif smooth_scale<=0:
-        # top-hat smoothing
-        atom    =   atom*TophatAtom(width=1.,ny=ny,nx=nx,fou=True)
-    # elif smooth_scale <0: pass
+    if smooth_scale is not None:
+        if smooth_scale>0.2:
+            # Gaussian smoothing
+            atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
+        else:
+            # top-hat smoothing
+            atom    =   atom*TophatAtom(width=1.,ny=ny,nx=nx,fou=True)
 
     if fou:
         # Fourier space

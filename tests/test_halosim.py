@@ -73,13 +73,14 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     haloSigma2=haloSigma2/norm
 
     rpix    =   halo.rs_arcsec/gridInfo.delta/3600.
-    haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,c=halo.c,fou=False))
+    haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
+            smooth_scale=-1,c=halo.c,fou=False))
     # The (0,0) point is unstable
+    vmax    =   haloSigma1[gridInfo.ny//2,gridInfo.nx//2]
     haloSigma1[gridInfo.ny//2,gridInfo.nx//2]=0.
     # l2 normalization
     norm    =   (np.sum(haloSigma1**2.))**0.5
     haloSigma1= haloSigma1/norm
-    vmax    =   haloSigma1.max()
     assert np.max(np.abs(haloSigma1-haloSigma2))<vmax/100.
     return
 

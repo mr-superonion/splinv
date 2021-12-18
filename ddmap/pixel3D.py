@@ -241,21 +241,21 @@ class cartesianGrid3D():
         dec     =   np.arcsin(self.sindec0*cosC+self.cosdec0*sinC*sinP)*rr
         return ra,dec
 
-    def pixelize_data(self,x,y,z,v=None,ws=None,method='FFT',ave=True):
+    def pixelize_data(self,x,y,z,v=None,ws=None,method='FFT'):
         """pixelize catalog into the cartesian grid
         Parameters:
             x:  array
-                ra of sources.
+                ra of sources. (deg)
             y:  array
-                dec of sources.
+                dec of sources. (deg)
             z:  array
                 redshifts of sources.
             v:  array
-                measurements.
+                measurements. (e.g., shear, kappa)
             ws: array [defalut: None]
                 weights.
-            method: string [default: FFT]
-                method used to convolve with smoothing kernel
+            method: string [default: 'FFT']
+                method to convolve with the Gaussian kernel
         """
         if z is None:
             # This is for 2D pixeliztion
@@ -330,21 +330,22 @@ class cartesianGrid3D():
                             dataOut[iz,iy,ix]=np.sum(wl)
         return dataOut
 
-    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,poz_ave=None,deltaIn=True):
-        """Mapping from an average delta in a lens redshfit bin
-        to an average kappa in a source redshift
+    def lensing_kernel(self,poz_grids=None,poz_data=None,poz_best=None,z_dens=None,deltaIn=True):
+        """ Lensing kernel
 
         Parameters:
             poz_grids:  array
                 poz's bin; if None, do not include any photoz uncertainty
-            poz_best:   array,len(galaxy)
+            poz_best:   array, in shape of len(galaxy)
                 galaxy's best photoz measurements, used for galaxy binning
-            poz_data:   array,(len(galaxy),len(poz_grids))
+            poz_data:   2D array, in shape of (len(galaxy), len(poz_grids))
                 galaxy's POZ measurements, used for deriving lensing kernel
-            poz_ave:    array
+            z_dens:    array
                 average POZ in source bins
             deltaIn:    bool [default: True]
-                is mapping from (yes) delta to kappa (no) or from mass to kappa
+                is mapping from delta to kappa (True) or from mass to kappa (False)
+        Returns:
+            lensing kernel
         """
 
         assert (poz_data is not None)==(poz_best is not None), \
@@ -355,7 +356,7 @@ class cartesianGrid3D():
             return np.ones((self.nz,self.nzl))
         lensKernel =   np.zeros((self.nz,self.nzl))
         if poz_grids is None:
-            # Do not use poz
+            # Without z_density or photoz posterier
             for i,zl in enumerate(self.zlcgrid):
                 kl =   np.zeros(self.nz)
                 mask=  (zl<self.zcgrid)
@@ -364,15 +365,16 @@ class cartesianGrid3D():
                     /self.cosmo.angular_diameter_distance_z1z2(0.,self.zcgrid[mask]).value
                 kl*=    four_pi_G_over_c_squared()
                 if deltaIn:
-                    # Sigma_M_zl_bin
+                    # When the input is density contrast
                     # Surface masss density in lens bin
                     rhoM_ave=   self.cosmo.critical_density(zl).to_value(unit=rho_unt)*self.cosmo.Om(zl)
                     DaBin   =   self.cosmo.angular_diameter_distance_z1z2(self.zlbound[i],self.zlbound[i+1]).value
                     lensKernel[:,i]=kl*rhoM_ave*DaBin
                 else:
+                    # When the input is M_200/1e14
                     lensKernel[:,i]=kl*1e14
         else:
-            # Use poz
+            # with z_dens or photo-z posterier
             lensK =   np.zeros((len(poz_grids),self.nzl))
             for i,zl in enumerate(self.zlcgrid):
                 kl=np.zeros(len(poz_grids))
@@ -381,7 +383,7 @@ class cartesianGrid3D():
                 kl[mask] =   self.cosmo.angular_diameter_distance_z1z2(zl,poz_grids[mask]).value\
                     *self.cosmo.angular_diameter_distance_z1z2(0.,zl).value\
                     /self.cosmo.angular_diameter_distance_z1z2(0.,poz_grids[mask]).value
-                kl*=four_pi_G_over_c_squared()
+                kl*=    four_pi_G_over_c_squared()
                 if deltaIn:
                     # Sigma_M_zl_bin
                     rhoM_ave=   self.cosmo.critical_density(zl).to_value(unit=rho_unt)*self.cosmo.Om(zl)
@@ -389,19 +391,19 @@ class cartesianGrid3D():
                     lensK[:,i]= kl*rhoM_ave*DaBin
                 else:
                     lensK[:,i]= kl*1e14
-            if poz_ave is None:
-                # Prepare the poz average
-                # if it is not an input
+            if z_dens is None:
+                # Prepare the n(z) if it is not an input.
+                # using the stacked posterier of photo-z
                 assert len(poz_data)==len(poz_best)
                 assert len(poz_data[0])==len(poz_grids)
-
-                # determine the average photo-z uncertainty
-                poz_ave=np.zeros((self.nz,len(poz_grids)))
+                # determine the average photo-z posterier
+                z_dens=np.zeros((self.nz,len(poz_grids)))
                 for iz in range(self.nz):
-                    tmp_msk=(poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
-                    poz_ave[iz,:]=np.average(poz_data[tmp_msk],axis=0)
-            self.poz_ave=poz_ave
-            lensKernel=poz_ave.dot(lensK)
+                    tmp_msk     =   (poz_best>=self.zbound[iz])&(poz_best<self.zbound[iz+1])
+                    z_dens[iz,:]=   np.average(poz_data[tmp_msk],axis=0)
+
+            self.z_dens =   z_dens
+            lensKernel  =   z_dens.dot(lensK)
             self.lensKernel=lensKernel
         return lensKernel
 
