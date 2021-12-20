@@ -20,5 +20,3 @@ datDir*
 *.fits
 *.fdb_latexmk
 *egg-info
-dev*
-notebook*

@@ -1,3 +1,3 @@
 *.ipynb merge=ours
 *.sh merge=ours
-dev*
+dev/*
