@@ -1,3 +1,4 @@
+import gc
 import numpy as np
 from ddmap import halosim
 from configparser import ConfigParser
@@ -46,7 +47,7 @@ def test_pixel_transverse(log_m=15.,zh=0.3):
     return
 
 def test_lensing_kernel():
-    '''Test cosistency in lensing kernels
+    '''Test cosistency in lensing kernels in pixel3D
     '''
     lker1=gridInfo2.lensing_kernel(deltaIn=False)
     poz_grids=np.arange(0.01,2.1,0.01)
@@ -59,8 +60,24 @@ def test_lensing_kernel():
     np.testing.assert_array_almost_equal(lker1,lker2,5)
     return
 
+def test_lensing_kernel_halosim():
+    '''Test cosistency in lensing kernels between pixel3D and halosim
+    '''
+    lker1=gridInfo2.lensing_kernel(deltaIn=False)
+    lker3=[]
+    for i in range(gridInfo2.nzl):
+        halo=halosim.nfw_lensWB00(ra=0.,dec=0.,\
+            redshift=gridInfo2.zlcgrid[i],mass=1e14,conc=0.1)
+        lker3.append(halo.lensKernel(gridInfo2.zcgrid))
+        del halo
+        gc.collect()
+    lker3=np.stack(lker3).T*1e14
+    np.testing.assert_array_almost_equal(lker3,lker1,5)
+    return
+
 
 if __name__ == '__main__':
     test_WB00_Galsim(log_m=14.2,zh=0.11)
     test_WB00_Galsim(log_m=15.0,zh=0.25)
-    test_line_of_sight()
+    test_lensing_kernel()
+    test_lensing_kernel_halosim()
