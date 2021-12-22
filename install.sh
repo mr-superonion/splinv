@@ -2,8 +2,6 @@
 
 Dir="$homeSys/code/massMap_Private/"
 
-export PYTHONPATH="$Dir/ddmap/":$PYTHONPATH
-
 export PATH="$Dir/tasks/sim/":$PATH
 export PYTHONPATH="$Dir/tasks/sim/":$PYTHONPATH
 
