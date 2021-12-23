@@ -12,12 +12,12 @@ z=np.ones(nsamp)*0.1
 
 # initialize pixel grids
 parser      =   ConfigParser()
-parser.read('test_pixel_trans.ini')
+parser.read('config_pixel_trans.ini')
 gridInfo    =   cartesianGrid3D(parser)
 
 
 parser2     =   ConfigParser()
-parser2.read('test_pixel_los.ini')
+parser2.read('config_pixel_los.ini')
 gridInfo2   =   cartesianGrid3D(parser2)
 
 def test_pixel_transverse(log_m=15.,zh=0.3):

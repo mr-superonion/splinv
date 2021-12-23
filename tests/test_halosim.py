@@ -59,7 +59,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     # initialize halo
     halo =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     # initialize pixel grids
-    configName  =   'test_halosim.ini'
+    configName  =   'config_halosim.ini'
     parser      =   ConfigParser()
     parser.read(configName)
     gridInfo    =   cartesianGrid3D(parser)
