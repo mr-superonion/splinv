@@ -51,32 +51,33 @@ def firm_thresholding(dum,thresholds):
     dum[mask]=  np.sign(dum[mask])*(2*np.abs(dum[mask])-thresholds[mask])
     return dum
 
-class massmapSparsityTaskNew():
-    def __init__(self,parser):
+class darkmapper():
+    def __init__(self,parser,g1Map,g2Map,gErr,lensKernel):
+
         # Regularization
         self.lbd        =   parser.getfloat('sparse','lbd') #   For LASSO
         self.lcd        =   parser.getfloat('sparse','lcd') #   For Elastic net
         self.tau        =   parser.getfloat('sparse','tau') #   For TSV
         # Dictionary
-        self.nframe     =   parser.getint('sparse','nframe')
+        self.nframe     =   parser.getint('sparse','nframe')#   number of frames
 
         # Transverse plane
         self.ny         =   parser.getint('transPlane','ny')
         self.nx         =   parser.getint('transPlane','nx')
         # Lens redshift axis
-        self.nlp        =   parser.getint('lensZ','nlp')
+        self.nlp        =   parser.getint('lens','nlp')
         if self.nlp<=1:
             # 2D
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
             # 3D
-            self.zlMin  =   parser.getfloat('lensZ','zlMin')
-            self.zlscale=   parser.getfloat('lensZ','zlscale')
+            self.zlMin  =   parser.getfloat('lens','zlMin')
+            self.zlscale=   parser.getfloat('lens','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nlp)
 
         # Source z axis
-        self.nz     =   parser.getint('sourceZ','nz')
+        self.nz     =   parser.getint('sources','nz')
         if self.nz<=1:
             # 2D
             assert self.nlp<=1
@@ -85,103 +86,61 @@ class massmapSparsityTaskNew():
             self.zsBin  =   zMeanBin(self.zMin,self.zscale,self.nz)
         else:
             # 3D
-            zbound      =   np.array(json.loads(parser.get('sourceZ','zbound')))
+            zbound      =   np.array(json.loads(parser.get('sources','zbound')))
             self.zsBin  =   (zbound[:-1]+zbound[1:])/2.
 
         self.shapeS     =   (self.nz,self.ny,self.nx)
         self.shapeL     =   (self.nlp,self.ny,self.nx)
         self.shapeA     =   (self.nlp,self.nframe,self.ny,self.nx)
 
-        dicname     =   parser.get('sparse','dicname')
-        self.dict2D =   nfwShearlet2D(parser)
+        if not g1Map.shape  ==   self.shapeS:
+            raise ValueError("shape of gamma1 map should be: (%d,%d,%d)" %self.shapeS)
+        if not g2Map.shape  ==   self.shapeS:
+            raise ValueError("shape of gamma2 map should be: (%d,%d,%d)" %self.shapeS)
+        if not gErr.shape  ==   self.shapeS:
+            raise ValueError("shape of error map should be: (%d,%d,%d)" %self.shapeS)
+        if not lensKernel.shape  ==   (self.nz,self.nlp):
+            raise ValueError("lensing kernel's shape should be: (%d,%d)" %(self.nz,self.nlp))
+
+        self.dict2D =   nfwShearlet2D(parser,lensKernel)
 
         # Read pixelized noise std-map for shear
-        sigfname    =   parser.get('prepare','sigmafname')
-        self.sigmaS =   pyfits.getdata(sigfname)
-        assert self.sigmaS.shape  ==   self.shapeS, \
-            'load wrong pixelized std, shape map shape: (%d,%d,%d)' %self.sigmaS.shape
+        self.sigmaS =   gErr
         # Mask in the shear observation space
-        self.maskS   =   (self.sigmaS>=1.e-4)
-        self.sigmaSInv=  np.zeros(self.shapeS)
+        self.maskS  =   (gErr>=1.e-4)
+        self.sigmaSInv  =   np.zeros(self.shapeS)
         self.sigmaSInv[self.maskS]=  1./self.sigmaS[self.maskS]
-        self.read_lens_kernel(parser)
+        self.lensKernel =   lensKernel
 
         # Estimate diagonal elements of the chi2 operator
         self.fast_chi2diagonal_est()
         # weight for normalization of effective column vectors
         self._w     =   1./np.sqrt(self.diagonal+4.*self.tau+1e-12)
 
-        self.clean_all()
+        self.clean_outcomes()
+        self.shearR     =   np.zeros(self.shapeS)   # shear
 
         # Determine Step Size: mu
         self.mu =   parser.getfloat('sparse','mu')
         if self.mu <0:
             self.determine_step_size()
 
-        # Read the pixelized shear,mask Note: this should be done after
+        # Read the pixelized shear and mask. Note: this should be done after
         # determine step size, since determine_step_size requires self.shearR
         # to be zero
-        self.read_pixel_result(parser)
+        self.shearR =   g1Map+np.complex64(1j)*g2Map # shear
         self.nonNeg =   True
         return
 
-    def clean_all(self):
-        """
-        # Clear all of the data
-        """
-        self.alphaR     =   self.maskA              # alpha
-        self.deltaR     =   np.zeros(self.shapeL)   # delta
-        self.shearRRes  =   np.zeros(self.shapeS) # shear residuals
-        self.shearR     =   np.zeros(self.shapeS)   # shear
-        self.shearProj  =   None
-        self.diff   =   []
-        return
-
-    def clean_outcome(self):
+    def clean_outcomes(self):
         """
         # Clear results
         """
-        self.alphaR =   self.maskA              # alpha
-        self.deltaR =   np.zeros(self.shapeL)   # delta
-        self.shearRRes  =   np.zeros(self.shapeS)# shear residuals
-        self.shearProj  =   None
-        self.diff   =   []
-        return
-
-    def read_pixel_result(self,parser):
-        """
-        Read the pixelized g1,g2
-
-        Parameters:
-        ----------
-        parser: config parser
-
-        """
-        g1fname     =   parser.get('prepare','g1fname')
-        g2fname     =   parser.get('prepare','g2fname')
-        g1Map       =   pyfits.getdata(g1fname)
-        g2Map       =   pyfits.getdata(g2fname)
-        assert g1Map.shape  ==   self.shapeS, \
-            'load wrong pixelized shear 1, shape should be: (%d,%d,%d)' %self.shapeS
-        assert g2Map.shape  ==   self.shapeS, \
-            'load wrong pixelized shear 2, shape should be: (%d,%d,%d)' %self.shapeS
-        self.shearR =   g1Map+np.complex64(1j)*g2Map # shear
-        return
-
-    def read_lens_kernel(self,parser):
-        """
-        Read the pixelized lensing kernel (normalization not required)
-
-        Parameters:
-        ----------
-        parser: config parser
-
-        """
-        lkfname     =   parser.get('prepare','lkfname')
-        self.lensKernel=pyfits.getdata(lkfname)
-        assert self.lensKernel.shape  ==   (self.nz,self.nlp), \
-            'load wrong lensing kernel, shape should be: (%d,%d)' \
-                %(self.nz,self.nlp)
+        self.alphaR     =   self.maskA              # alpha
+        self.deltaR     =   np.zeros(self.shapeL)   # delta
+        self.shearRRes  =   np.zeros(self.shapeS)   # shear residuals
+        #self.shearProj =   None                    # for Multiplicative updates
+        self.diff       =   []
         return
 
     def main_forward(self,alphaRIn):
@@ -189,8 +148,7 @@ class massmapSparsityTaskNew():
         Transform from dictionary space to observational space
 
         Parameters:
-        ----------
-        alphaRIn: modes in dictionary space.
+            alphaRIn: modes in dictionary space.
 
         """
         # self._w normalizes the forward operator: A
@@ -205,8 +163,7 @@ class massmapSparsityTaskNew():
         Traspose operation on observed map
 
         Parameters:
-        ----------
-        shearRIn: input observed map (e.g. opbserved shear map)
+            shearRIn: input observed map (e.g. opbserved shear map)
 
         """
         # only keep the E-mode
@@ -218,9 +175,7 @@ class massmapSparsityTaskNew():
         Gradient operation of Chi2 act on dictionary space
 
         Parameters:
-        ----------
-        alphaR: [array]
-                the alpha at which the gradient is calulated
+            alphaR: the alpha at which the gradient is calulated
 
         """
         # Eq (14) of Elastic net (Zou 2005)
@@ -240,9 +195,7 @@ class massmapSparsityTaskNew():
         finite difference operator
 
         Parameters:
-        ----------
-        alphaR: [array]
-                the point at which the gradient is calulated
+            alphaR: the point at which the gradient is calulated
 
         """
         alphaR  =   alphaR*self._w
@@ -276,9 +229,7 @@ class massmapSparsityTaskNew():
         regularization terms (e.g. TSV, Ridge).
 
         Parameters:
-        ---------
-        alphaR: [array]
-                the point at which the gradient is calulated
+            alphaR: the point at which the gradient is calulated
 
         """
         gCh2    =   self.gradient_chi2(alphaR)
@@ -339,6 +290,209 @@ class massmapSparsityTaskNew():
         self.mu =   1./norm/3.
         return
 
+
+    def reconstruct(self):
+        """
+        Reconstruct the delta field from alpha'
+        """
+        # reweight back to the real unweighted (not the weigthed) alpha
+        alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
+        # shrink 1./(1+lcd) if lbd<=0 and lcd>0.
+        alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
+        # transform from dictionary field to delta field
+        self.deltaR =   self.dict2D.itransformInter(alphaRT).real
+        self.diff   =   np.array(self.diff)
+        return
+
+    def adaptive_lasso_weight(self,gamma=1):
+        """
+        Calculate adaptive weight for adaptive lasso
+
+        Parameters:
+            gamma:  power of the root-n consistent (preliminary) estimation
+        """
+        # sm_scale=0.25
+        # if self.nframe==1 and sm_scale>1e-4:
+        #     # Smoothing scale in arcmin
+        #     rsmth0=np.zeros(self.nlp,dtype=int)
+        #     for iz,zh in enumerate(self.zlBin):
+        #         rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
+
+        #     p   =   np.zeros(self.shapeA)
+        #     for izl in range(self.nlp):
+        #         rsmth   =   rsmth0[izl]
+        #         for jsh in range(-rsmth,rsmth+1):
+        #             # only smooth the point mass frame
+        #             dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
+        #             for ish in range(-rsmth,rsmth+1):
+        #                 dif2=  np.roll(dif,ish,axis=-1)
+        #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
+        #     p   =   np.abs(p)
+        # else:
+        p       =   np.abs(self.alphaR)*self.maskA
+
+        # threshold(for value close to zero)
+        thres_adp=  1./1e12
+        mask    =   (p**gamma>thres_adp)
+
+        # weight estimation
+        w       =   np.zeros(self.shapeA)
+        w[mask] =   1./(p[mask])**(gamma)
+        w[~mask]=   1./thres_adp
+        return w
+
+    def fista_gradient_descent(self,niter,w=1.,tn0=1.):
+        """
+        FISTA gradient descent solver of loss fucntion
+        (Beck & Teboulle 2009)
+        Parameters:
+            niter:      number of iteration
+            w:          adaptive weight [default: 1.]
+
+        """
+        tn  =   tn0
+        # The thresholds
+        thresholds  =   self.lbd*self.mu*w
+        # FISTA algorithms
+        Xp0         =   self.alphaR
+        self.diff   =   []
+        for irun in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            Xp1 =   self.alphaR+dalphaR
+            if self.nonNeg:
+                Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            else:
+                Xp1 =   soft_thresholding(Xp1,thresholds)
+            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
+            ratio= (tn-1.)/tnTmp
+            diff=   Xp1-Xp0
+            error=  np.sqrt(np.sum(diff**2.)/np.sum(Xp1**2.))
+            self.alphaR=Xp1+(ratio*(diff))
+            tn  =   tnTmp
+            Xp0 =   Xp1
+            self.diff.append(error)
+            if irun>200 and error<1e-3:
+                break
+        return
+
+    def optimized_gradient_descent(self,niter,tn0=1.):
+        """
+        Optimized gradient descent solver of loss fucntion
+        (Kim & Fessier 2017)
+        Parameters:
+            niter:      number of iteration
+        """
+        tn          =   tn0
+        # OGM algorithms
+        Xp0         =   self.alphaR
+        self.diff   =   []
+        for irun in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            Xp1     =   self.alphaR+dalphaR
+            tnTmp   =   (1.+np.sqrt(1.+4.*tn**2.))/2.
+            ratio1  =   (tn-1.)/tnTmp
+            ratio2  =   tn/tnTmp
+            diff1   =   Xp1-Xp0
+            diff2   =   Xp1-self.alphaR
+            error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
+            self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
+            tn      =   tnTmp
+            Xp0     =   Xp1
+            self.diff.append(error)
+            if irun>200 and error<1e-3:
+                break
+        tnTmp   =   (1.+np.sqrt(1.+8.*tn**2.))/2.
+        ratio1  =   (tn-1.)/tnTmp
+        ratio2  =   tn/tnTmp
+        diff1   =   Xp1-Xp0
+        diff2   =   Xp1-self.alphaR
+        error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
+        self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
+        tn      =   tnTmp
+        Xp0     =   Xp1
+        self.diff.append(error)
+        return
+
+    def navie_gradient_descent(self,niter):
+        """
+        Navie gradient descent solver of loss fucntion (Slow convergence)
+        Parameters:
+            niter:      number of iteration
+        """
+        assert not self.nonNeg, \
+                'non-negative setup, please use FISTA'
+        assert not self.lbd>0., \
+                'LASSO regression, please use FISTA'
+
+        tn      =   1.
+        Xp0     =   self.alphaR
+        self.diff   =   []
+        for irun in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            self.alphaR =   soft_thresholding(self.alphaR+dalphaR,thresholds)
+            error=  np.sqrt(np.sum(dalphaR**2.))
+            self.diff.append(error)
+            if irun>200 and error<1e-3:
+                break
+        return
+
+    """
+    def multiplicative_update(self,niter,w=1.):
+        Multiplicative update solver of loss fucntion
+        (Only works for positive models and positive parameters)
+
+        Parameters:
+            niter:      number of iteration
+            w:          adaptive weight [default: 1.]
+        # The thresholds
+        thresholds  =   self.lbd*w
+        # A_{i\alpha}y_i/sigma^2_{ii}
+        if self.shearProj is None:
+            self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
+        nominator   =   soft_thresholding_nn(self.shearProj,thresholds)
+        pp          =   self.lcd/(1+self.lcd)
+        self.diff   =   []
+        for irun in range(niter):
+            # A_{ij} x_j *(1-p)        [weighted A_{ij}]
+            shearRTmp   =   self.main_forward(self.alphaR)
+            # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
+            denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
+            # Add pp*I_{\alphaj} x_j (for Ridge regression)
+            denominator =   denominator*(1-pp)+self.alphaR*pp
+            rr      =   nominator/(denominator+1e-12)
+            alphaR  =   self.alphaR*rr
+            diff    =   alphaR-self.alphaR
+            error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
+            if irun>200 and error<1e-3:
+                break
+            self.diff.append(error)
+            self.alphaR =   alphaR
+        return
+
+    def adaptive_lasso_prior_weight(self,prior):
+        Calculate adaptive weight using a given prior.
+        Based on Zou & Li, The Annuals of Statisics 2008,
+        Vol. 36 No. 4, 1509--1533
+        (unfinished)
+
+        Parameters:
+            prior:      [nlp,nframe]
+        p   =   np.abs(self.alphaR)/self.lbd
+
+        # threshold(for value close to zero)
+        thres_adp=  1./1e12
+        mask=   (p**gamma>thres_adp)
+
+        # weight estimation
+        w       =   np.zeros(self.shapeA)
+        w[mask] =   1./(p[mask])**(gamma)
+        w[~mask]=   1./thres_adp
+        return w
+    """
+
     # def prox_sigmaA(self):
     #     """
     #     Calculate stds of the paramters Note that the std should be all 1 since
@@ -380,217 +534,3 @@ class massmapSparsityTaskNew():
     #             self.sigmaA[izl,iframe][~maskLP]=1e15
     #             self.maskA[izl,iframe][~maskLP]=0.
     #     return
-
-    def reconstruct(self):
-        """
-        Reconstruct the delta field from alpha'
-        """
-        # reweight back to the real unweighted (not the weigthed) alpha
-        alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
-        # shrink 1./(1+lcd) if lbd<=0 and lcd>0.
-        alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
-        # transform from dictionary field to delta field
-        self.deltaR =   self.dict2D.itransformInter(alphaRT).real
-        self.diff   =   np.array(self.diff)
-        return
-
-    def adaptive_lasso_weight(self,gamma=1):
-        """
-        Calculate adaptive weight for adaptive lasso
-
-        Parameters:
-        -----------
-        gamma:     power of the root-n consistent (preliminary)
-                    estimation
-        """
-        # sm_scale=0.25
-        # if self.nframe==1 and sm_scale>1e-4:
-        #     # Smoothing scale in arcmin
-        #     rsmth0=np.zeros(self.nlp,dtype=int)
-        #     for iz,zh in enumerate(self.zlBin):
-        #         rsmth0[iz]=(np.round(sm_scale/self.cosmo.Dc(0.,zh)*60*180./np.pi))
-
-        #     p   =   np.zeros(self.shapeA)
-        #     for izl in range(self.nlp):
-        #         rsmth   =   rsmth0[izl]
-        #         for jsh in range(-rsmth,rsmth+1):
-        #             # only smooth the point mass frame
-        #             dif    =   np.roll(self.alphaR[izl,0],jsh,axis=-2)
-        #             for ish in range(-rsmth,rsmth+1):
-        #                 dif2=  np.roll(dif,ish,axis=-1)
-        #                 p[izl,0] += dif2/(2.*rsmth+1.)#**2.
-        #     p   =   np.abs(p)
-        # else:
-        p       =   np.abs(self.alphaR)*self.maskA
-
-        # threshold(for value close to zero)
-        thres_adp=  1./1e12
-        mask    =   (p**gamma>thres_adp)
-
-        # weight estimation
-        w       =   np.zeros(self.shapeA)
-        w[mask] =   1./(p[mask])**(gamma)
-        w[~mask]=   1./thres_adp
-        return w
-
-    """
-    def adaptive_lasso_prior_weight(self,prior):
-        Calculate adaptive weight using a given prior.
-        Based on Zou & Li, The Annuals of Statisics 2008,
-        Vol. 36 No. 4, 1509--1533
-        (unfinished)
-
-        Parameters:
-        -----------
-        prior:      [nlp,nframe]
-        p   =   np.abs(self.alphaR)/self.lbd
-
-        # threshold(for value close to zero)
-        thres_adp=  1./1e12
-        mask=   (p**gamma>thres_adp)
-
-        # weight estimation
-        w       =   np.zeros(self.shapeA)
-        w[mask] =   1./(p[mask])**(gamma)
-        w[~mask]=   1./thres_adp
-        return w
-    """
-
-    def fista_gradient_descent(self,niter,w=1.,tn0=1.):
-        """
-        FISTA gradient descent solver of loss fucntion
-        (Beck & Teboulle 2009)
-
-        Parameters:
-        -----------
-        niter:      number of iteration
-        w:          adaptive weight [default: 1.]
-        """
-        tn  =   tn0
-        # The thresholds
-        thresholds  =   self.lbd*self.mu*w
-        # FISTA algorithms
-        Xp0         =   self.alphaR
-        self.diff   =   []
-        for irun in range(niter):
-            # (.real means no B-mode)
-            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
-            Xp1 =   self.alphaR+dalphaR
-            if self.nonNeg:
-                Xp1 =   soft_thresholding_nn(Xp1,thresholds)
-            else:
-                Xp1 =   soft_thresholding(Xp1,thresholds)
-            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
-            ratio= (tn-1.)/tnTmp
-            diff=   Xp1-Xp0
-            error=  np.sqrt(np.sum(diff**2.)/np.sum(Xp1**2.))
-            self.alphaR=Xp1+(ratio*(diff))
-            tn  =   tnTmp
-            Xp0 =   Xp1
-            self.diff.append(error)
-            if irun>200 and error<1e-3:
-                break
-        return
-
-    def optimized_gradient_descent(self,niter,tn0=1.):
-        """
-        Optimized gradient descent solver of loss fucntion
-        (Kim & Fessier 2017)
-
-        Parameters:
-        -----------
-        niter:      number of iteration
-        """
-        tn          =   tn0
-        # OGM algorithms
-        Xp0         =   self.alphaR
-        self.diff   =   []
-        for irun in range(niter):
-            # (.real means no B-mode)
-            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
-            Xp1     =   self.alphaR+dalphaR
-            tnTmp   =   (1.+np.sqrt(1.+4.*tn**2.))/2.
-            ratio1  =   (tn-1.)/tnTmp
-            ratio2  =   tn/tnTmp
-            diff1   =   Xp1-Xp0
-            diff2   =   Xp1-self.alphaR
-            error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
-            self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
-            tn      =   tnTmp
-            Xp0     =   Xp1
-            self.diff.append(error)
-            if irun>200 and error<1e-3:
-                break
-        tnTmp   =   (1.+np.sqrt(1.+8.*tn**2.))/2.
-        ratio1  =   (tn-1.)/tnTmp
-        ratio2  =   tn/tnTmp
-        diff1   =   Xp1-Xp0
-        diff2   =   Xp1-self.alphaR
-        error   =   np.sqrt(np.sum(diff1**2.)/np.sum(Xp1**2.))
-        self.alphaR=Xp1+ratio1*diff1+ratio2*diff2
-        tn      =   tnTmp
-        Xp0     =   Xp1
-        self.diff.append(error)
-        return
-
-    def navie_gradient_descent(self,niter):
-        """
-        Navie gradient descent solver of loss fucntion
-        (Slow convergence)
-
-        Parameters:
-        -----------
-        niter:      number of iteration
-        """
-        assert not self.nonNeg, \
-                'non-negative setup, please use FISTA'
-        assert not self.lbd>0., \
-                'LASSO regression, please use FISTA'
-
-        tn      =   1.
-        Xp0     =   self.alphaR
-        self.diff   =   []
-        for irun in range(niter):
-            # (.real means no B-mode)
-            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
-            self.alphaR =   soft_thresholding(self.alphaR+dalphaR,thresholds)
-            error=  np.sqrt(np.sum(dalphaR**2.))
-            self.diff.append(error)
-            if irun>200 and error<1e-3:
-                break
-        return
-
-    def multiplicative_update(self,niter,w=1.):
-        """
-        Multiplicative update solver of loss fucntion
-        (Only works for positive models and positive parameters)
-
-        Parameters:
-        -----------
-        niter:      number of iteration
-        w:          adaptive weight [default: 1.]
-        """
-        # The thresholds
-        thresholds  =   self.lbd*w
-        # A_{i\alpha}y_i/sigma^2_{ii}
-        if self.shearProj is None:
-            self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
-        nominator   =   soft_thresholding_nn(self.shearProj,thresholds)
-        pp          =   self.lcd/(1+self.lcd)
-        self.diff   =   []
-        for irun in range(niter):
-            # A_{ij} x_j *(1-p)        [weighted A_{ij}]
-            shearRTmp   =   self.main_forward(self.alphaR)
-            # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
-            denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
-            # Add pp*I_{\alphaj} x_j (for Ridge regression)
-            denominator =   denominator*(1-pp)+self.alphaR*pp
-            rr      =   nominator/(denominator+1e-12)
-            alphaR  =   self.alphaR*rr
-            diff    =   alphaR-self.alphaR
-            error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
-            if irun>200 and error<1e-3:
-                break
-            self.diff.append(error)
-            self.alphaR =   alphaR
-        return

@@ -35,16 +35,16 @@ class cartesianGrid3D():
         self.delta= parser.getfloat('transPlane','scale')*self.ratio
 
         # Line-of-sight direction for background galaxies
-        if parser.has_section('sourceZ'):
-            if parser.has_option('sourceZ','zbound'):
-                zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
+        if parser.has_section('sources'):
+            if parser.has_option('sources','zbound'):
+                zbound=np.array(json.loads(parser.get('sources','zbound')))
                 nz  =   len(zbound)-1
             else:
-                nz  =   parser.getint('sourceZ','nz')
+                nz  =   parser.getint('sources','nz')
                 assert nz>=1
-                zmin=   parser.getfloat('sourceZ','zmin')
+                zmin=   parser.getfloat('sources','zmin')
                 zmax=   zmin+deltaz*(nz+0.1)
-                deltaz= parser.getfloat('sourceZ','zscale')
+                deltaz= parser.getfloat('sources','zscale')
                 zbound= np.arange(zmin,zmax,deltaz)
             zcgrid  =   (zbound[:-1]+zbound[1:])/2.
         else:
@@ -71,13 +71,13 @@ class cartesianGrid3D():
             self.sigma=-1
 
         # Foreground plane
-        if parser.has_option('lensZ','zlbound'):
-            zlbound=np.array(json.loads(parser.get('sourceZ','zlbound')))
+        if parser.has_option('lens','zlbound'):
+            zlbound=np.array(json.loads(parser.get('sources','zlbound')))
             nzl=len(zlbound)-1
         else:
-            zlmin=parser.getfloat('lensZ','zlmin')
-            deltazl=parser.getfloat('lensZ','zlscale')
-            nzl=parser.getint('lensZ','nlp')
+            zlmin=parser.getfloat('lens','zlmin')
+            deltazl=parser.getfloat('lens','zlscale')
+            nzl=parser.getint('lens','nlp')
             assert nzl>=1
             zlmax=zlmin+deltazl*(nzl+0.1)
             zlbound=np.arange(zlmin,zlmax,deltazl)

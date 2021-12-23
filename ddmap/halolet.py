@@ -110,7 +110,7 @@ class nfwShearlet2D():
         itranspose: transpose of itransform operator
 
     """
-    def __init__(self,parser):
+    def __init__(self,parser,lensKernel):
         # transverse plane
         self.nframe =   parser.getint('sparse','nframe')
         self.ny     =   parser.getint('transPlane','ny')
@@ -118,14 +118,14 @@ class nfwShearlet2D():
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
 
         # line of sight
-        self.nzl    =   parser.getint('lensZ','nlp')
-        self.nzs    =   parser.getint('sourceZ','nz')
+        self.nzl    =   parser.getint('lens','nlp')
+        self.nzs    =   parser.getint('sources','nz')
         if self.nzl <=  1:
             self.zlMin  =   0.
             self.zlscale=   1.
         else:
-            self.zlMin  =   parser.getfloat('lensZ','zlMin')
-            self.zlscale=   parser.getfloat('lensZ','zlscale')
+            self.zlMin  =   parser.getfloat('lens','zlMin')
+            self.zlscale=   parser.getfloat('lens','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nzl)
         self.smooth_scale = parser.getfloat('transPlane','smooth_scale')
 
@@ -134,8 +134,8 @@ class nfwShearlet2D():
         self.shapeL =   (self.nzl,self.ny,self.nx)          # lens plane
         self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx) # dictionary plane
         self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
-        if parser.has_option('lensZ','atomFname'):
-            atFname =   parser.get('lensZ','atomFname')
+        if parser.has_option('lens','atomFname'):
+            atFname =   parser.get('lens','atomFname')
             tmp     =   pyfits.getdata(atFname)
             tmp     =   np.fft.fftshift(tmp)
             nzl,nft,nyt,nxt =   tmp.shape
@@ -151,8 +151,7 @@ class nfwShearlet2D():
             self.aframes    =   np.fft.ifft2(self.fouaframes)
         else:
             self.prepareFrames(parser)
-        lkfname     =   parser.get('prepare','lkfname')
-        self.lensKernel=pyfits.getdata(lkfname)
+        self.lensKernel=    lensKernel
 
     def prepareFrames(self,parser):
         if parser.has_option('cosmology','omega_m'):
@@ -160,8 +159,8 @@ class nfwShearlet2D():
         else:
             omega_m =   0.3
         self.cosmo  =   cosmology.Cosmo(H0=Default_h0*100.,Om0=omega_m)
-        self.rs_base=   parser.getfloat('lensZ','rs_base')  # Mpc/h
-        self.resolve_lim  =   parser.getfloat('lensZ','resolve_lim')
+        self.rs_base=   parser.getfloat('lens','rs_base')  # Mpc/h
+        self.resolve_lim  =   parser.getfloat('lens','resolve_lim')
         # Initialize basis predictors
         # In configure Space
         self.aframes    =   np.zeros(self.shapeA,dtype=np.complex128)
