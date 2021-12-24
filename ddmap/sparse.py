@@ -290,12 +290,11 @@ class darkmapper():
         self.mu =   1./norm/3.
         return
 
-
     def reconstruct(self):
         """
         Reconstruct the delta field from alpha'
         """
-        # reweight back to the real unweighted (not the weigthed) alpha
+        # reweight back to the real unweighted alpha
         alphaRT     =   self.alphaR.copy()*self._w*self.maskA2
         # shrink 1./(1+lcd) if lbd<=0 and lcd>0.
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))

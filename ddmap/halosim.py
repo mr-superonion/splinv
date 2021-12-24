@@ -217,8 +217,9 @@ class nfw_lensWB00(nfwHalo):
         """
         # the approximation below has a maximum fractional error of 1.1e-7
         """
-        mask = np.where(x <= 0.01)[0]
-        out[mask] = 4*(0.25 + 0.125 * x[mask]**2 * (3.25 + 3.0*np.log(x[mask]/2)))*self.rs * self.rho_s
+        mask        =   np.where(x <= 0.01)[0]
+        out[mask]   =   4.*(0.25 + 0.125 * x[mask]**2 * \
+                (3.25 + 3.0*np.log(x[mask]/2)))*self.rs * self.rho_s
         return out
 
     def DeltaSigma(self,ra_s,dec_s):
@@ -610,7 +611,7 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=None,fou=True,lnorm=2.):
         atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
 
     if smooth_scale is not None:
-        if smooth_scale>0.2:
+        if smooth_scale>0.1:
             # Gaussian smoothing
             atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
         else:
