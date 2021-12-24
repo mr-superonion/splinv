@@ -372,8 +372,6 @@ class darkmapper():
             tn  =   tnTmp
             Xp0 =   Xp1
             self.diff.append(error)
-            if irun>200 and error<1e-3:
-                break
         return
 
     def optimized_gradient_descent(self,niter,tn0=1.):

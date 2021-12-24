@@ -49,7 +49,8 @@ class massmap_ks2D():
                 ix  =   (i+nx1//2)%nx1-nx1//2
                 ix  =   ix/nx1
                 if (i**2+j**2)>0:
-                    e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)/(ix**2.+jy**2.)
+                    e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)\
+                                        /(ix**2.+jy**2.)
                 else:
                     e2phiF[j,i]    =   1.
         return e2phiF*np.pi
@@ -115,6 +116,16 @@ class nfwShearlet2D():
         self.nframe =   parser.getint('sparse','nframe')
         self.ny     =   parser.getint('transPlane','ny')
         self.nx     =   parser.getint('transPlane','nx')
+        # The unit of angle in the configuration
+        unit    =   parser.get('transPlane','unit')
+        # Rescaling to degree
+        if unit ==  'degree':
+            self.ratio= 1.
+        elif unit== 'arcmin':
+            self.ratio= 1./60.
+        elif unit== 'arcsec':
+            self.ratio= 1./60./60.
+        self.scale= parser.getfloat('transPlane','scale')*self.ratio
         self.ks2D   =   massmap_ks2D(self.ny,self.nx)
 
         # line of sight
@@ -158,7 +169,7 @@ class nfwShearlet2D():
             omega_m =   parser.getfloat('cosmology','omega_m')
         else:
             omega_m =   0.3
-        self.cosmo  =   cosmology.Cosmo(H0=Default_h0*100.,Om0=omega_m)
+        self.cosmo  =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.rs_base=   parser.getfloat('lens','rs_base')  # Mpc/h
         self.resolve_lim  =   parser.getfloat('lens','resolve_lim')
         # Initialize basis predictors
@@ -171,7 +182,9 @@ class nfwShearlet2D():
         self.rs_frame   =   -1.*np.ones((self.nzl,self.nframe)) # Radius in pixel
 
         for izl in range(self.nzl):
-            rz      =   self.rs_base/self.cosmo.comoving_distance(self.zlBin[izl])*60.*180./np.pi
+            # the r_s for each redshift plane in units of pixel
+            rz      =   self.rs_base/self.cosmo.angular_diameter_distance_z1z2(0.,\
+                self.zlBin[izl]).value*180./np.pi/self.scale
             for ifr in  range(self.nframe)[::-1]:
                 # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
@@ -179,7 +192,8 @@ class nfwShearlet2D():
                 if rs<self.resolve_lim:
                     self.rs_frame[izl,ifr]= 0.
                     # l2 normalized Gaussian
-                    iAtomF=halosim.GausAtom(sigma=self.smooth_scale,ny=self.ny,nx=self.nx,fou=True)
+                    iAtomF=halosim.GausAtom(sigma=self.smooth_scale,\
+                            ny=self.ny,nx=self.nx,fou=True)
                     self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
                     iAtomF=self.ks2D.transform(iAtomF,inFou=True,outFou=True)
                     self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
