@@ -183,32 +183,30 @@ class nfwShearlet2D():
 
         for izl in range(self.nzl):
             # the r_s for each redshift plane in units of pixel
-            rz      =   self.rs_base/self.cosmo.angular_diameter_distance_z1z2(0.,\
-                self.zlBin[izl]).value*180./np.pi/self.scale
-            for ifr in  range(self.nframe)[::-1]:
+            rpix    =   self.cosmo.angular_diameter_distance(self.zlBin[izl]).value/180.*np.pi*self.scale
+            rz      =   self.rs_base/rpix
+            # nfw halo with mass normalized to 1e14
+            znorm   =   1./rpix**2.
+            # angular scale of pixel size in Mpc
+            for ifr in reversed(range(self.nframe)):
                 # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
                 rs  =   (ifr+1)*rz
                 if rs<self.resolve_lim:
-                    self.rs_frame[izl,ifr]= 0.
-                    # l2 normalized Gaussian
-                    iAtomF=halosim.GausAtom(sigma=self.smooth_scale,\
-                            ny=self.ny,nx=self.nx,fou=True)
-                    self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
-                    iAtomF=self.ks2D.transform(iAtomF,inFou=True,outFou=True)
-                    self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Configure Space
+                    # if one scale frame is less than resolution limit,
+                    # skip this frame
                     break
-                else:
-                    self.rs_frame[izl,ifr]= rs
-                    # l2 normalized
-                    iAtomF= halosim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
+                self.rs_frame[izl,ifr]= rs
+                # nfw halo with mass normalized to 1e14
+                iAtomF  =   halosim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             smooth_scale=self.smooth_scale)
-                    self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
-                    iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
-                    # KS transform
-                    self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                    self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Configure Space
+                normTmp =   iAtomF[0,0]/znorm
+                iAtomF  =   iAtomF/normTmp
+                self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
+                iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
+                # KS transform
+                self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
+                self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
         return
 
     def itransformInter(self,dataIn):

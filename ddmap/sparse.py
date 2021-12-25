@@ -102,7 +102,7 @@ class darkmapper():
         if not lensKernel.shape  ==   (self.nz,self.nlp):
             raise ValueError("lensing kernel's shape should be: (%d,%d)" %(self.nz,self.nlp))
 
-        self.dict2D =   nfwShearlet2D(parser,lensKernel)
+        self.modelDict =   nfwShearlet2D(parser,lensKernel)
 
         # Read pixelized noise std-map for shear
         self.sigmaS =   gErr
@@ -153,7 +153,7 @@ class darkmapper():
         """
         # self._w normalizes the forward operator: A
         __tmp       =   alphaRIn*self._w
-        shearOut    =   self.dict2D.itransform(__tmp)
+        shearOut    =   self.modelDict.itransform(__tmp)
         # Mask
         shearOut    =   shearOut*(self.maskS.astype(np.int))
         return shearOut
@@ -167,7 +167,7 @@ class darkmapper():
 
         """
         # only keep the E-mode
-        alphaRO     =   self.dict2D.itranspose(shearRIn).real*self._w*self.maskA
+        alphaRO     =   self.modelDict.itranspose(shearRIn).real*self._w*self.maskA
         return alphaRO
 
     def gradient_chi2(self,alphaR):
@@ -246,7 +246,7 @@ class darkmapper():
         # The space is weighted by var^{-2}
         spaceF  =   np.fft.fft2((self.sigmaSInv**2.)) #[nz,ny,nx]
         # l2-norm in weighted space
-        fun     =   np.conj(self.dict2D.aframes)*self.dict2D.aframes
+        fun     =   np.conj(self.modelDict.aframes)*self.modelDict.aframes
         fun     =   np.fft.fft2(fun) #[nlp,nframe,ny,nx]
         fun     =   fun[None,:,:,:,:]*spaceF[:,None,None,:,:]
         asquareframe=   np.fft.ifft2(fun).real
@@ -299,7 +299,7 @@ class darkmapper():
         # shrink 1./(1+lcd) if lbd<=0 and lcd>0.
         alphaRT     =   alphaRT/(1.+self.lcd*(self.lbd<=0))
         # transform from dictionary field to delta field
-        self.deltaR =   self.dict2D.itransformInter(alphaRT).real
+        self.deltaR =   self.modelDict.itransformInter(alphaRT).real
         self.diff   =   np.array(self.diff)
         return
 

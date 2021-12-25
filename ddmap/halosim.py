@@ -96,7 +96,7 @@ class nfwHalo(Cosmo):
         self.delta_nfw =200./3*self.c**3*self.A
         # convert to angular radius in unit of arcsec
         scale       =   self.rs / self.DaLens
-        arcsec2rad  =   np.pi/180./3600
+        arcsec2rad  =   np.pi/180./3600.
         self.rs_arcsec =scale/arcsec2rad
 
         # Second, derive the charateristic matter density

@@ -30,14 +30,15 @@ def test_pixel_transverse(log_m=15.,zh=0.3):
     # initialize halo
     halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     sigma=  halo.Sigma(ra*3600.,dec*3600.)
-    dr  =   halo.angular_diameter_distance(zh).value*gridInfo.delta/180*np.pi
+    # angular scale of pixel size in Mpc
+    dr  =   halo.angular_diameter_distance(zh).value*gridInfo.scale/180*np.pi
 
     pixSigma=gridInfo.pixelize_data(ra,dec,z,sigma)[0]/(M_200/dr**2.)
     # The (0,0) point is unstable
     pixSigma[gridInfo.ny//2,gridInfo.nx//2]=0.
     np.testing.assert_almost_equal(np.sum(pixSigma), 1, 2)
 
-    rpix    =   halo.rs_arcsec/gridInfo.delta/3600.
+    rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
     pixSigma2=  np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
             smooth_scale=-1,c=halo.c,fou=False,lnorm=1))
     vmax    =   pixSigma2[gridInfo.ny//2,gridInfo.nx//2]
