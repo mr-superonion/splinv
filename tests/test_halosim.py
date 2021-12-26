@@ -74,7 +74,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
 
     rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
     haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
-            smooth_scale=-1,c=halo.c,fou=False))
+            sigma_pix=-1,c=halo.c,fou=False))
     # The (0,0) point is unstable
     vmax    =   haloSigma1[gridInfo.ny//2,gridInfo.nx//2]
     haloSigma1[gridInfo.ny//2,gridInfo.nx//2]=0.

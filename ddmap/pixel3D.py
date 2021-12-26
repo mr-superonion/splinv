@@ -66,9 +66,11 @@ class cartesianGrid3D():
 
         ## Gaussian smoothing in the transverse plane
         if parser.has_option('transPlane','smooth_scale'):
-            self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+            self.sigma  =   parser.getfloat('transPlane','smooth_scale')\
+                            *self.ratio
         else:
-            self.sigma=-1
+            self.sigma  =   -1
+        self.sigma_pix  =   self.sigma/self.scale
 
         # Foreground plane
         if parser.has_option('lens','zlbound'):
@@ -88,9 +90,9 @@ class cartesianGrid3D():
 
         # For lensing kernel
         if parser.has_option('cosmology','omega_m'):
-            omega_m=parser.getfloat('cosmology','omega_m')
+            omega_m =   parser.getfloat('cosmology','omega_m')
         else:
-            omega_m=0.3
+            omega_m =   0.3
         self.cosmo=Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.lensKernel =   None
         self.pozPdfAve  =   None
@@ -168,6 +170,9 @@ class cartesianGrid3D():
             self.ny     =   int(header['NAXIS2'])
             dnx         =   self.nx//2
             dny         =   self.ny//2
+        else:
+            raise ValueError('should input (ra,dec) or header')
+
         xmin    =   self.ra0-self.scale*(dnx+0.5)
         xmax    =   xmin+self.scale*(self.nx+0.1)
         ymin    =   self.dec0-self.scale*(dny+0.5)
@@ -264,28 +269,35 @@ class cartesianGrid3D():
         if ws is None:
             # Without weight
             ws = np.ones(len(x))
-        if self.sigma>0. and method=='sample':
-            return self._pixelize_data_sample(x,y,z,v,ws)
-        else:
+        if method=='sample':
+            if self.sigma>0.:
+                return self._pixelize_data_sample(x,y,z,v,ws)
+            else:
+                raise ValueError("when method is 'sample', smooth_scale must >0")
+        elif method=='FFT':
             return self._pixelize_data_FFT(x,y,z,v,ws)
+        else:
+            raise ValueError("method must be 'FFT' or 'sample'")
 
     def _pixelize_data_FFT(self,x,y,z,v=None,ws=None):
         if v is not None:
             # pixelize value field
             dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=v*ws)[0]
+        else:
+            dataOut =   []
         # pixelize weight field
         weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=ws)[0]
-        if self.sigma/self.scale>0.01:
+        if self.sigma_pix>0.01:
             # Gaussian Kernel in Fourier space
             # (normalize to flux-1)
-            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.scale,fou=True,lnorm=2.)
+            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma_pix,fou=True)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel
             # (for both weight and value)
+            weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
             if v is not None:
                 dataOut=np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
-            weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
 
         if v is not None:
             # avoid weight is zero
@@ -304,7 +316,7 @@ class cartesianGrid3D():
         else:
             dataOut=np.zeros(self.shape)
         # sample to 3 times of sigma
-        rsig=   int(self.sigma/self.scale*3+1)
+        rsig=   int(self.sigma_pix*3+1)
         for iz in range(self.shape[0]):
             if z is not None:
                 mskz=   (z>=self.zbound[iz])&(z<self.zbound[iz+1])

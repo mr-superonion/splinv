@@ -229,3 +229,56 @@ class starlet2D():
             dataOut[iframe,:,:]=dataTmp2
         return dataOut
 
+    # def itransform(self,dataIn):
+    #     """
+    #     transform from nfw dictionary space to shear measurements
+    #     Parameters:
+    #        dataIn: arry to be transformed (in config space, e.g. alpha)
+    #     """
+    #     assert dataIn.shape==self.shapeA,\
+    #         'input should have shape (nzl,nframe,ny,nx)'
+
+    #     # Initialize the output with shape (nzs,ny,nx)'
+    #     dataOut=np.zeros(self.shapeS,dtype=np.complex128)
+    #     for izl in range(self.nzl):
+    #         # Initialize each lens plane with shape (ny,nx)'
+    #         data=np.zeros(self.shapeP,dtype=np.complex128)
+    #         for iframe in range(self.nframe)[::-1]:
+    #             dataTmp=dataIn[izl,iframe]
+    #             dataTmp=np.fft.fft2(dataTmp)
+    #             data=data+(dataTmp*self.fouaframes[izl,iframe])
+    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
+    #                 # The scale of nfw halo is below the resolution limit
+    #                 # so we do not transform the next frame
+    #                 break
+    #         data=np.fft.ifft2(data)
+    #         dataOut+=data*self.lensKernel[:,izl,None,None]
+    #     return dataOut
+
+    # def itranspose(self,dataIn):
+    #     """
+    #     transpose of the inverse transform operator
+    #     Parameters:
+    #     dataIn: arry to be operated (in config space)
+    #     """
+    #     assert dataIn.shape==self.shapeS,\
+    #         'input should have shape (nzs,ny,nx)'
+
+    #     # Initialize the output with shape (nzl,nframe,ny,nx)
+    #     dataOut =   np.zeros(self.shapeA,dtype=np.complex128)
+
+    #     # Projection with lensing kernel to an array
+    #     # with shape=(nzl,nframe,ny,nx)
+    #     dataIn  =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
+    #     for izl in range(self.nzl):
+    #         dataTmp =   np.fft.fft2(dataIn[izl])
+    #         for iframe in range(self.nframe)[::-1]:
+    #             # Project to the dictionary space
+    #             dataTmp2=   dataTmp*np.conjugate(self.fouaframes[izl,iframe])
+    #             dataTmp2=   np.fft.ifft2(dataTmp2)
+    #             dataOut[izl,iframe,:,:]=dataTmp2
+    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
+    #                 # the scale of nfw halo is below the resolution limit
+    #                 # so we do not transform the next frame
+    #                 break
+    #     return dataOut

@@ -573,27 +573,26 @@ class nfw_lensTJ03(nfwHalo):
 """
 The following functions are used for halolet construction
 """
-def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=None,fou=True,lnorm=2.):
+def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,sigma_pix=None,fou=True,lnorm=2.):
     """
     Make haloTJ03 halo (l2 normalized by default) from Fourier space following
     CS02:
     https://arxiv.org/pdf/astro-ph/0206508.pdf -- Eq.(81) and Eq.(82)
 
     Parameters:
-        r_s:    [float]
-                scale radius (in unit of pixel).
-        ny,nx:  [int]
-                number of pixel in y and x directions.
-        c:      [float]
-                truncation ratio (concentration)
-        fou:    [bool]
-                in Fourier space
+        r_s:    scale radius (iuo pixel) [float]
+        ny,nx:  number of pixel in y and x directions [int]
+        c:      truncation ratio (concentration) [float]
+        sigma_pix: sigma for Gaussian smoothing (iuo pixel) [float]
+        fou:    in Fourier space [bool]
+        lnorm:  l-norm for normalization
+
     """
     if nx is None:
         nx=ny
-    x,y=np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
-    x*=(2*np.pi);y*=(2*np.pi)
-    rT=np.sqrt(x**2+y**2)
+    x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
+    x   *=  (2*np.pi);y*=(2*np.pi)
+    rT  =   np.sqrt(x**2+y**2)
     if r_s<=0.1:
         # point mass in Fourier space
         atom=np.ones((ny,nx))
@@ -610,10 +609,10 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,smooth_scale=None,fou=True,lnorm=2.):
         r0      =   r[~mask]
         atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
 
-    if smooth_scale is not None:
-        if smooth_scale>0.1:
+    if sigma_pix is not None:
+        if sigma_pix>0.1:
             # Gaussian smoothing
-            atom    =   atom*np.exp(-(rT*smooth_scale)**2./2.)
+            atom    =   atom*np.exp(-(rT*sigma_pix)**2./2.)
         else:
             # top-hat smoothing
             atom    =   atom*TophatAtom(width=1.,ny=ny,nx=nx,fou=True)
@@ -699,32 +698,3 @@ def TophatAtom(width,ny,nx=None,fou=True,lnorm=-1):
         fun=np.zeros((ny,nx))
         fun[sy+1:sy+width,sx+1:sx+width]=1./width**2.
     return  fun/norm
-
-def ksInverse(gMap):
-    gFouMap =   np.fft.fft2(gMap)
-    e2phiF  =   e2phiFou(gFouMap.shape)
-    kFouMap =   gFouMap/e2phiF*np.pi
-    kMap    =   np.fft.ifft2(kFouMap)
-    return kMap
-
-def ksForward(kMap):
-    kFouMap =   np.fft.fft2(kMap)
-    e2phiF  =   e2phiFou(gFouMap.shape)
-    gFouMap =   kFouMap*e2phiF/np.pi
-    gMap    =   np.fft.ifft2(gFouMap)
-    return gMap
-
-def e2phiFou(shape):
-    ny1,nx1 =   shape
-    e2phiF  =   np.zeros(shape,dtype=complex)
-    for j in range(ny1):
-        jy  =   (j+ny1//2)%ny1-ny1//2
-        jy  =   jy/ny1
-        for i in range(nx1):
-            ix  =   (i+nx1//2)%nx1-nx1//2
-            ix  =   ix/nx1
-            if (i**2+j**2)>0:
-                e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)/(ix**2.+jy**2.)
-            else:
-                e2phiF[j,i]    =   1.
-    return e2phiF*np.pi

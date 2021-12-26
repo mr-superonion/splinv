@@ -23,45 +23,40 @@ def zMeanBin(zMin,dz,nz):
 class massmap_ks2D():
     """
     A Class for 2D Kaiser-Squares transform
-    --------
 
     Parameters:
-    ----------
     ny,nx: number of pixels in y and x directions
 
     Methods:
-    --------
     itransform:
 
     transform:
     """
     def __init__(self,ny,nx):
         self.shape   =   (ny,nx)
-        self.e2phiF  =   self.__e2phiFou(self.shape)
+        self.e2phiF  =   self.e2phiFou()
 
-    def __e2phiFou(self,shape):
-        ny1,nx1 =   shape
-        e2phiF  =   np.zeros(shape,dtype=complex)
-        for j in range(ny1):
-            jy  =   (j+ny1//2)%ny1-ny1//2
-            jy  =   jy/ny1
-            for i in range(nx1):
-                ix  =   (i+nx1//2)%nx1-nx1//2
-                ix  =   ix/nx1
-                if (i**2+j**2)>0:
-                    e2phiF[j,i]    =   np.complex((ix**2.-jy**2.),2.*ix*jy)\
-                                        /(ix**2.+jy**2.)
+    def e2phiFou(self):
+        ny,nx   =   self.shape
+        e2phiF  =   np.zeros(self.shape,dtype=np.complex128)
+        for j in range(ny):
+            jy  =   (j+ny//2.)%ny-ny//2.
+            jy  =   np.float64(jy/ny)
+            for i in range(nx):
+                ix  =   (i+nx//2.)%nx-nx//2.
+                ix  =   np.float64(ix/nx)
+                if i==0 and j==0:
+                    e2phiF[j,i] =   0.
                 else:
-                    e2phiF[j,i]    =   1.
+                    r2  =   ix**2.+jy**2.
+                    e2phiF[j,i] =   (ix**2.-jy**2.)/r2+(2j*ix*jy/r2)
         return e2phiF*np.pi
 
     def itransform(self,gMap,inFou=True,outFou=True):
         """
         K-S Transform from gamma map to kappa map
-        --------
 
         Parameters:
-        ----------
         gMap:   input gamma map
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
@@ -77,10 +72,8 @@ class massmap_ks2D():
     def transform(self,kMap,inFou=True,outFou=True):
         """
         K-S Transform from kappa map to gamma map
-        --------
 
         Parameters:
-        ----------
         gMap:   input kappa map
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
@@ -97,7 +90,6 @@ class nfwShearlet2D():
     """
     A Class for 2D nfwlet transform
     with different angular scale in different redshift plane
-    --------
 
     Parameters:
         nframe  :   number of frames
@@ -138,7 +130,9 @@ class nfwShearlet2D():
             self.zlMin  =   parser.getfloat('lens','zlMin')
             self.zlscale=   parser.getfloat('lens','zlscale')
         self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nzl)
-        self.smooth_scale = parser.getfloat('transPlane','smooth_scale')
+        self.scale      =   parser.getfloat('transPlane','scale')*self.ratio
+        self.sigma_pix  =   parser.getfloat('transPlane','smooth_scale')\
+                            *self.ratio/self.scale
 
         # Shape of output shapelets
         self.shapeP =   (self.ny,self.nx)                   # basic plane
@@ -199,7 +193,7 @@ class nfwShearlet2D():
                 self.rs_frame[izl,ifr]= rs
                 # nfw halo with mass normalized to 1e14
                 iAtomF  =   halosim.haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
-                            smooth_scale=self.smooth_scale)
+                            sigma_pix=self.sigma_pix)
                 normTmp =   iAtomF[0,0]/znorm
                 iAtomF  =   iAtomF/normTmp
                 self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
@@ -265,58 +259,3 @@ class nfwShearlet2D():
         # The output with shape (nzl,nframe,ny,nx)
         dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
         return dataOut
-
-    # def itransform(self,dataIn):
-    #     """
-    #     transform from nfw dictionary space to shear measurements
-    #     Parameters:
-    #        dataIn: arry to be transformed (in config space, e.g. alpha)
-    #     """
-    #     assert dataIn.shape==self.shapeA,\
-    #         'input should have shape (nzl,nframe,ny,nx)'
-
-    #     # Initialize the output with shape (nzs,ny,nx)'
-    #     dataOut=np.zeros(self.shapeS,dtype=np.complex128)
-    #     for izl in range(self.nzl):
-    #         # Initialize each lens plane with shape (ny,nx)'
-    #         data=np.zeros(self.shapeP,dtype=np.complex128)
-    #         for iframe in range(self.nframe)[::-1]:
-    #             dataTmp=dataIn[izl,iframe]
-    #             dataTmp=np.fft.fft2(dataTmp)
-    #             data=data+(dataTmp*self.fouaframes[izl,iframe])
-    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
-    #                 # The scale of nfw halo is below the resolution limit
-    #                 # so we do not transform the next frame
-    #                 break
-    #         data=np.fft.ifft2(data)
-    #         dataOut+=data*self.lensKernel[:,izl,None,None]
-    #     return dataOut
-
-    # def itranspose(self,dataIn):
-    #     """
-    #     transpose of the inverse transform operator
-    #     Parameters:
-    #     ----------
-    #     dataIn: arry to be operated (in config space)
-    #     """
-    #     assert dataIn.shape==self.shapeS,\
-    #         'input should have shape (nzs,ny,nx)'
-
-    #     # Initialize the output with shape (nzl,nframe,ny,nx)
-    #     dataOut =   np.zeros(self.shapeA,dtype=np.complex128)
-
-    #     # Projection with lensing kernel to an array
-    #     # with shape=(nzl,nframe,ny,nx)
-    #     dataIn  =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
-    #     for izl in range(self.nzl):
-    #         dataTmp =   np.fft.fft2(dataIn[izl])
-    #         for iframe in range(self.nframe)[::-1]:
-    #             # Project to the dictionary space
-    #             dataTmp2=   dataTmp*np.conjugate(self.fouaframes[izl,iframe])
-    #             dataTmp2=   np.fft.ifft2(dataTmp2)
-    #             dataOut[izl,iframe,:,:]=dataTmp2
-    #             if self.rs_frame[izl,iframe]<self.resolve_lim:
-    #                 # the scale of nfw halo is below the resolution limit
-    #                 # so we do not transform the next frame
-    #                 break
-    #     return dataOut
