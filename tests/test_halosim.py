@@ -43,8 +43,8 @@ def test_WB00_Galsim(log_m=15,zh=0.3):
         slistG[i]=haloGS.getShear(pos=(2000.*ratio,1000.*ratio),\
                             z_s=np.ones(1)*2.,units = "arcsec",reduced=False)[0]
 
-    assert np.max(np.abs(klist-klistG))/np.max(np.abs(klist))<1e-2
-    assert np.max(np.abs(slist-slistG))/np.max(np.abs(slist))<1e-2
+    assert np.max(np.abs(klist - klistG))/np.max(np.abs(klist))<1e-2
+    assert np.max(np.abs(slist - slistG))/np.max(np.abs(slist))<1e-2
     return
 
 
@@ -59,7 +59,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     # initialize halo
     halo =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     # initialize pixel grids
-    configName  =   'test_halosim.ini'
+    configName  =   'config_halosim.ini'
     parser      =   ConfigParser()
     parser.read(configName)
     gridInfo    =   cartesianGrid3D(parser)
@@ -72,9 +72,9 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     norm=   (np.sum(haloSigma2**2.))**0.5
     haloSigma2=haloSigma2/norm
 
-    rpix    =   halo.rs_arcsec/gridInfo.delta/3600.
+    rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
     haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
-            smooth_scale=-1,c=halo.c,fou=False))
+            sigma_pix=-1,c=halo.c,fou=False))
     # The (0,0) point is unstable
     vmax    =   haloSigma1[gridInfo.ny//2,gridInfo.nx//2]
     haloSigma1[gridInfo.ny//2,gridInfo.nx//2]=0.

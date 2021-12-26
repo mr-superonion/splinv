@@ -12,16 +12,20 @@ z=np.ones(nsamp)*0.1
 
 # initialize pixel grids
 parser      =   ConfigParser()
-parser.read('test_pixel_trans.ini')
+parser.read('config_pixel_trans.ini')
 gridInfo    =   cartesianGrid3D(parser)
 
+parserS     =   ConfigParser()
+parser.read('config_pixel_trans_smooth.ini')
+gridInfoS   =   cartesianGrid3D(parser)
 
 parser2     =   ConfigParser()
-parser2.read('test_pixel_los.ini')
+parser2.read('config_pixel_los.ini')
 gridInfo2   =   cartesianGrid3D(parser2)
 
 def test_pixel_transverse(log_m=15.,zh=0.3):
-    '''Test cosistency between transverse plane pixelation and Fouarier-based nfw halo simulation
+    '''Test cosistency between transverse plane pixelation and Fourier-based
+    nfw halo simulation without smoothing
     '''
 
     # halo properties
@@ -30,18 +34,47 @@ def test_pixel_transverse(log_m=15.,zh=0.3):
     # initialize halo
     halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     sigma=  halo.Sigma(ra*3600.,dec*3600.)
-    dr  =   halo.angular_diameter_distance(zh).value*gridInfo.delta/180*np.pi
+    # angular scale of pixel size in Mpc
+    dr  =   halo.DaLens*gridInfo.scale/180*np.pi
 
     pixSigma=gridInfo.pixelize_data(ra,dec,z,sigma)[0]/(M_200/dr**2.)
-    # The (0,0) point is unstable
+    # print(np.sum(pixSigma))
+    # The (0,0) point is unstable due to aliasing
     pixSigma[gridInfo.ny//2,gridInfo.nx//2]=0.
+    # print(np.sum(pixSigma))
     np.testing.assert_almost_equal(np.sum(pixSigma), 1, 2)
 
-    rpix    =   halo.rs_arcsec/gridInfo.delta/3600.
+    rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
     pixSigma2=  np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
-            smooth_scale=-1,c=halo.c,fou=False,lnorm=1))
+            sigma_pix=-1,c=halo.c,fou=False,lnorm=1))
     vmax    =   pixSigma2[gridInfo.ny//2,gridInfo.nx//2]
     pixSigma2[gridInfo.ny//2,gridInfo.nx//2]=0.
+    # print(np.max(np.abs(pixSigma2-pixSigma))/vmax)
+    assert np.max(np.abs(pixSigma2-pixSigma))/vmax<5e-2
+
+    return
+
+def test_pixel_transverse_smooth(log_m=15.,zh=0.3):
+    '''Test cosistency between transverse plane pixelation and Fourier-based
+    nfw halo simulation with smoothing
+    '''
+
+    # halo properties
+    M_200=  10.**(log_m)
+    conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
+    # initialize halo
+    halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    sigma=  halo.Sigma(ra*3600.,dec*3600.)
+    # angular scale of pixel size in Mpc
+    dr   =  halo.DaLens*gridInfoS.scale/180*np.pi
+
+    pixSigma=gridInfoS.pixelize_data(ra,dec,z,sigma)[0]/(M_200/dr**2.)
+    np.testing.assert_almost_equal(np.sum(pixSigma), 1, 2)
+
+    rpix    =   halo.rs_arcsec/gridInfoS.scale/3600.
+    pixSigma2=  np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfoS.ny,nx=gridInfoS.nx,\
+            sigma_pix=gridInfoS.sigma_pix,c=halo.c,fou=False,lnorm=1))
+    vmax    =   pixSigma2[gridInfoS.ny//2,gridInfoS.nx//2]
     assert np.max(np.abs(pixSigma2-pixSigma))/vmax<5e-2
 
     return
@@ -77,7 +110,9 @@ def test_lensing_kernel_halosim():
 
 
 if __name__ == '__main__':
-    test_WB00_Galsim(log_m=14.2,zh=0.11)
-    test_WB00_Galsim(log_m=15.0,zh=0.25)
+    test_pixel_transverse(log_m=14.2,zh=0.11)
+    test_pixel_transverse(log_m=15.0,zh=0.25)
+    test_pixel_transverse_smooth(log_m=14.2,zh=0.11)
+    test_pixel_transverse_smooth(log_m=15.0,zh=0.25)
     test_lensing_kernel()
     test_lensing_kernel_halosim()

@@ -32,19 +32,19 @@ class cartesianGrid3D():
             self.ratio= 1./60.
         elif unit== 'arcsec':
             self.ratio= 1./60./60.
-        self.delta= parser.getfloat('transPlane','scale')*self.ratio
+        self.scale= parser.getfloat('transPlane','scale')*self.ratio
 
         # Line-of-sight direction for background galaxies
-        if parser.has_section('sourceZ'):
-            if parser.has_option('sourceZ','zbound'):
-                zbound=np.array(json.loads(parser.get('sourceZ','zbound')))
+        if parser.has_section('sources'):
+            if parser.has_option('sources','zbound'):
+                zbound=np.array(json.loads(parser.get('sources','zbound')))
                 nz  =   len(zbound)-1
             else:
-                nz  =   parser.getint('sourceZ','nz')
+                nz  =   parser.getint('sources','nz')
                 assert nz>=1
-                zmin=   parser.getfloat('sourceZ','zmin')
+                zmin=   parser.getfloat('sources','zmin')
                 zmax=   zmin+deltaz*(nz+0.1)
-                deltaz= parser.getfloat('sourceZ','zscale')
+                deltaz= parser.getfloat('sources','zscale')
                 zbound= np.arange(zmin,zmax,deltaz)
             zcgrid  =   (zbound[:-1]+zbound[1:])/2.
         else:
@@ -66,18 +66,20 @@ class cartesianGrid3D():
 
         ## Gaussian smoothing in the transverse plane
         if parser.has_option('transPlane','smooth_scale'):
-            self.sigma=parser.getfloat('transPlane','smooth_scale')*self.ratio
+            self.sigma  =   parser.getfloat('transPlane','smooth_scale')\
+                            *self.ratio
         else:
-            self.sigma=-1
+            self.sigma  =   -1
+        self.sigma_pix  =   self.sigma/self.scale
 
         # Foreground plane
-        if parser.has_option('lensZ','zlbound'):
-            zlbound=np.array(json.loads(parser.get('sourceZ','zlbound')))
+        if parser.has_option('lens','zlbound'):
+            zlbound=np.array(json.loads(parser.get('sources','zlbound')))
             nzl=len(zlbound)-1
         else:
-            zlmin=parser.getfloat('lensZ','zlmin')
-            deltazl=parser.getfloat('lensZ','zlscale')
-            nzl=parser.getint('lensZ','nlp')
+            zlmin=parser.getfloat('lens','zlmin')
+            deltazl=parser.getfloat('lens','zlscale')
+            nzl=parser.getint('lens','nlp')
             assert nzl>=1
             zlmax=zlmin+deltazl*(nzl+0.1)
             zlbound=np.arange(zlmin,zlmax,deltazl)
@@ -88,9 +90,9 @@ class cartesianGrid3D():
 
         # For lensing kernel
         if parser.has_option('cosmology','omega_m'):
-            omega_m=parser.getfloat('cosmology','omega_m')
+            omega_m =   parser.getfloat('cosmology','omega_m')
         else:
-            omega_m=0.3
+            omega_m =   0.3
         self.cosmo=Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.lensKernel =   None
         self.pozPdfAve  =   None
@@ -109,16 +111,16 @@ class cartesianGrid3D():
         self.ny     =   ny
         dnx         =   self.nx//2
         dny         =   self.ny//2
-        xmax        =   xmin+self.delta*(self.nx+0.1)
-        ymax        =   ymin+self.delta*(self.ny+0.1)
-        self.ra0    =   xmin+self.delta*(dnx+0.5)
-        self.dec0   =   ymin+self.delta*(dny+0.5)
+        xmax        =   xmin+self.scale*(self.nx+0.1)
+        ymax        =   ymin+self.scale*(self.ny+0.1)
+        self.ra0    =   xmin+self.scale*(dnx+0.5)
+        self.dec0   =   ymin+self.scale*(dny+0.5)
         self.cosdec0=   np.cos(self.dec0/180.*np.pi)
         self.sindec0=   np.sin(self.dec0/180.*np.pi)
 
-        self.xbound =   np.arange(xmin,xmax,self.delta)
+        self.xbound =   np.arange(xmin,xmax,self.scale)
         self.xcgrid =   (self.xbound[:-1]+self.xbound[1:])/2.
-        self.ybound =   np.arange(ymin,ymax,self.delta)
+        self.ybound =   np.arange(ymin,ymax,self.scale)
         self.ycgrid =   (self.ybound[:-1]+self.ybound[1:])/2.
         self.shape  =   (self.nz,self.ny,self.nx)
         return
@@ -150,16 +152,16 @@ class cartesianGrid3D():
 
             dxmin   =   self.ra0-(np.min(x)-pad)
             dxmax   =   (np.max(x)+pad)-self.ra0
-            dnx     =   int(max(dxmin,dxmax)/self.delta+1.)
+            dnx     =   int(max(dxmin,dxmax)/self.scale+1.)
             dymin   =   self.dec0-(np.min(y)-pad)
             dymax   =   (np.max(y)+pad)-self.dec0
-            dny     =   int(max(dymin,dymax)/self.delta+1.)
+            dny     =   int(max(dymin,dymax)/self.scale+1.)
 
             # make sure we have even number of pixels in x and y
             self.nx =   2*dnx
             self.ny =   2*dny
         elif header is not None:
-            assert abs(self.delta-header['CDELT1'])/self.delta<1e-2
+            assert abs(self.scale-header['CDELT1'])/self.scale<1e-2
             self.ra0    =   header['CRVAL1']
             self.dec0   =   header['CRVAL2']
             self.cosdec0=   np.cos(self.dec0/180.*np.pi)
@@ -168,14 +170,17 @@ class cartesianGrid3D():
             self.ny     =   int(header['NAXIS2'])
             dnx         =   self.nx//2
             dny         =   self.ny//2
-        xmin    =   self.ra0-self.delta*(dnx+0.5)
-        xmax    =   xmin+self.delta*(self.nx+0.1)
-        ymin    =   self.dec0-self.delta*(dny+0.5)
-        ymax    =   ymin+self.delta*(self.ny+0.1)
+        else:
+            raise ValueError('should input (ra,dec) or header')
 
-        self.xbound= np.arange(xmin,xmax,self.delta)
+        xmin    =   self.ra0-self.scale*(dnx+0.5)
+        xmax    =   xmin+self.scale*(self.nx+0.1)
+        ymin    =   self.dec0-self.scale*(dny+0.5)
+        ymax    =   ymin+self.scale*(self.ny+0.1)
+
+        self.xbound= np.arange(xmin,xmax,self.scale)
         self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
-        self.ybound= np.arange(ymin,ymax,self.delta)
+        self.ybound= np.arange(ymin,ymax,self.scale)
         self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
         self.shape=(self.nz,self.ny,self.nx)
         if (ra is not None) and (dec is not None):
@@ -202,7 +207,7 @@ class cartesianGrid3D():
         x1      =   cosdec*np.sin((ra-self.ra0)/rr)/cosC*rr+self.ra0
         x2      =   (self.cosdec0*sindec-capa*self.sindec0)/cosC*rr+self.dec0
         if pix:
-            return (x1-self.xbound[0])/self.delta,(x2-self.ybound[0])/self.delta
+            return (x1-self.xbound[0])/self.scale,(x2-self.ybound[0])/self.scale
         else:
             return x1,x2
 
@@ -217,8 +222,8 @@ class cartesianGrid3D():
 
         if pix:
             # transform to in unit of degree
-            x1  =   x1*self.delta+self.xbound[0]
-            x2  =   x2*self.delta+self.ybound[0]
+            x1  =   x1*self.scale+self.xbound[0]
+            x2  =   x2*self.scale+self.ybound[0]
 
         # unit
         rr      =   180.0/np.pi
@@ -264,28 +269,35 @@ class cartesianGrid3D():
         if ws is None:
             # Without weight
             ws = np.ones(len(x))
-        if self.sigma>0. and method=='sample':
-            return self._pixelize_data_sample(x,y,z,v,ws)
-        else:
+        if method=='sample':
+            if self.sigma>0.:
+                return self._pixelize_data_sample(x,y,z,v,ws)
+            else:
+                raise ValueError("when method is 'sample', smooth_scale must >0")
+        elif method=='FFT':
             return self._pixelize_data_FFT(x,y,z,v,ws)
+        else:
+            raise ValueError("method must be 'FFT' or 'sample'")
 
     def _pixelize_data_FFT(self,x,y,z,v=None,ws=None):
         if v is not None:
             # pixelize value field
             dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=v*ws)[0]
+        else:
+            dataOut =   []
         # pixelize weight field
         weightOut=  np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=ws)[0]
-        if self.sigma/self.delta>0.01:
+        if self.sigma_pix>0.01:
             # Gaussian Kernel in Fourier space
             # (normalize to flux-1)
-            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma/self.delta,fou=True,lnorm=2.)
+            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma_pix,fou=True)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel
             # (for both weight and value)
+            weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
             if v is not None:
                 dataOut=np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
-            weightOut=  np.fft.ifft2(np.fft.fft2(weightOut)*gausKer).real
 
         if v is not None:
             # avoid weight is zero
@@ -297,14 +309,14 @@ class cartesianGrid3D():
             return weightOut
 
     def _pixelize_data_sample(self,x,y,z,v=None,ws=None):
-        xbin=   np.int_((x-self.xbound[0])/self.delta)
-        ybin=   np.int_((y-self.ybound[0])/self.delta)
+        xbin=   np.int_((x-self.xbound[0])/self.scale)
+        ybin=   np.int_((y-self.ybound[0])/self.scale)
         if v is not None:
             dataOut=np.zeros(self.shape,v.dtype)
         else:
             dataOut=np.zeros(self.shape)
         # sample to 3 times of sigma
-        rsig=   int(self.sigma/self.delta*3+1)
+        rsig=   int(self.sigma_pix*3+1)
         for iz in range(self.shape[0]):
             if z is not None:
                 mskz=   (z>=self.zbound[iz])&(z<self.zbound[iz+1])

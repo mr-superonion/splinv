@@ -17,7 +17,6 @@ __pycache__
 work*
 wrkDir*
 datDir*
-*.fits
 *.fdb_latexmk
 *egg-info
 notebook/*

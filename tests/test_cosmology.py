@@ -1,7 +1,7 @@
 Default_h0=1.
 omega_m=0.3
 
-import astropy
+import astropy.units as astunits
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
@@ -14,10 +14,10 @@ except:
 z       =   1.
 cosmo   =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
 cosmo   =   Cosmo(H0=100,Om0=0.3)
-uu=astropy.units.solMass/astropy.units.Mpc**3.
-rhoc=cosmo.critical_density0.to_value(unit=uu)
-rhoz=cosmo.critical_density(z).to_value(unit=uu)
-rhomz=cosmo.critical_density(z).to_value(unit=uu)*cosmo.Om(z)
+uu      =   astunits.solMass/(astunits.Mpc)**3.
+rhoc    =   cosmo.critical_density0.to_value(unit=uu)
+rhoz    =   cosmo.critical_density(z).to_value(unit=uu)
+rhomz   =   cosmo.critical_density(z).to_value(unit=uu)*cosmo.Om(z)
 if has_esheldon_cosmology:
     cosmo2   =   cosmology.Cosmo(h=Default_h0,omega_m=omega_m)
     rhoc2=cosmo2.rho0()
