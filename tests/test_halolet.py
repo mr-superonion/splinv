@@ -1,9 +1,9 @@
 import numpy as np
 from configparser import ConfigParser
 
-from ddmap import halosim
-from ddmap import halolet
-from ddmap.pixel3D import cartesianGrid3D
+from lintinv import halosim
+from lintinv import halolet
+from lintinv.grid import Cartesian
 
 def test_halolet():
     """ Test halolet
@@ -19,7 +19,7 @@ def test_halolet():
     parser.set('sparse','nframe','1' )
 
     # Pixelation
-    gridInfo=   cartesianGrid3D(parser)
+    gridInfo=   Cartesian(parser)
     lensKer1=   gridInfo.lensing_kernel(deltaIn=False)
     L       =   gridInfo.nx*gridInfo.scale
     modelDict=  halolet.nfwShearlet2D(parser,lensKer1)
@@ -44,7 +44,7 @@ def test_halolet():
     data0   =   gridInfo.pixelize_data(ra,dec,redshift,sigma,\
                    method='FFT')[0]
     totest0 =   np.fft.fftshift(np.fft.ifft2(modelDict.fouaframesInter[4,0]).real)*M_200
-    np.testing.assert_almost_equal(np.sum(data0)/np.sum(totest0),1,2)
+    np.testing.assert_almost_equal(np.sum(data0)/np.sum(totest0),1,1)
     np.testing.assert_almost_equal(np.sum(totest0-data0)/np.sum(data0),0,2)
 
 

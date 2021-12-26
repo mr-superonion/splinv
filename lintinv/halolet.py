@@ -1,4 +1,4 @@
-# Copyright 20200227 Xiangchong Li.
+# Copyright 20211226 Xiangchong Li.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,11 @@ from astropy.cosmology import FlatLambdaCDM as Cosmo
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
-class massmap_ks2D():
+class ksmap():
     """
-    A Class for 2D Kaiser-Squares transform
+    A Class for 2D Kaiser-Squares transform:
+    Kaiser & Squires (1993, ApJ, 404, 2)
+    https://articles.adsabs.harvard.edu/pdf/1993ApJ...404..441K
 
     Parameters:
     ny,nx: number of pixels in y and x directions
@@ -118,7 +120,7 @@ class nfwShearlet2D():
         elif unit== 'arcsec':
             self.ratio= 1./60./60.
         self.scale= parser.getfloat('transPlane','scale')*self.ratio
-        self.ks2D   =   massmap_ks2D(self.ny,self.nx)
+        self.ks2D   =   ksmap(self.ny,self.nx)
 
         # line of sight
         self.nzl    =   parser.getint('lens','nlp')

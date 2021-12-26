@@ -1,14 +1,13 @@
 import numpy as np
-from astropy.table import Table
+from lintinv import detect
+from lintinv import halosim
+from lintinv import darkmapper
+from lintinv.grid import Cartesian
+from lintinv.halolet import ksmap
 from configparser import ConfigParser
-from ddmap import halosim
-from ddmap import detect3D
-from ddmap.sparse import darkmapper
-from ddmap.halolet import massmap_ks2D
-from ddmap.pixel3D import cartesianGrid3D
 
 def test_sparse():
-    """ Test the sparse reconstruction
+    """ Test sparse reconstruction of weak lensing dark map
     """
     # configuration
     configName  =   'config_sparse.ini'
@@ -29,14 +28,14 @@ def test_sparse():
     parser.set('sparse','nframe','1' )
 
     # Pixelation
-    gridInfo=   cartesianGrid3D(parser)
+    gridInfo=   Cartesian(parser)
     Z,Y,X   =   np.meshgrid(gridInfo.zcgrid,gridInfo.ycgrid,gridInfo.xcgrid,indexing='ij')
     x,y,z   =   (X.flatten(),Y.flatten(),Z.flatten())
     lensKer1=   gridInfo.lensing_kernel(deltaIn=False)
 
     lk      =  halo.lensKernel(z)
 
-    ks2D    =   massmap_ks2D(gridInfo.ny,gridInfo.nx)
+    ks2D    =   ksmap(gridInfo.ny,gridInfo.nx)
     rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
     sigma   =   halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
                 sigma_pix=-1,c=halo.c,fou=True)
@@ -64,7 +63,7 @@ def test_sparse():
         w   =   dmapper.adaptive_lasso_weight(gamma=2.)
         dmapper.fista_gradient_descent(3000,w=w)
     dmapper.reconstruct()
-    c1  =   detect3D.local_maxima_3D(dmapper.deltaR)[0][0]
+    c1  =   detect.local_maxima_3D(dmapper.deltaR)[0][0]
     np.testing.assert_equal(c1,np.array([4,gridInfo.ny//2,gridInfo.nx//2]))
     logm_est=   np.log10((dmapper.alphaR*dmapper._w)[4,0,gridInfo.ny//2,gridInfo.nx//2])+14.
     np.testing.assert_almost_equal(logm_est,log_m,1)

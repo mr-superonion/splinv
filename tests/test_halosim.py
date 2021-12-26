@@ -1,7 +1,7 @@
-from ddmap import halosim
+from lintinv import halosim
 import numpy as np
 from configparser import ConfigParser
-from ddmap.pixel3D import cartesianGrid3D
+from lintinv.grid import Cartesian
 
 try:
     import galsim
@@ -62,7 +62,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     configName  =   'config_halosim.ini'
     parser      =   ConfigParser()
     parser.read(configName)
-    gridInfo    =   cartesianGrid3D(parser)
+    gridInfo    =   Cartesian(parser)
     yy,xx=np.meshgrid(gridInfo.ycgrid,gridInfo.xcgrid,indexing='ij')
     # get the surface density
     haloSigma2  =   halo.Sigma(xx.flatten()*3600.,yy.flatten()*3600.).reshape((gridInfo.ny,gridInfo.nx))

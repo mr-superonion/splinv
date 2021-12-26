@@ -1,4 +1,4 @@
-# Copyright 20200227 Xiangchong Li.
+# Copyright 20211226 Xiangchong Li.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -10,7 +10,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
-import astropy
 import numpy as np
 from .default import *
 import scipy.special as spfun
@@ -20,10 +19,13 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
     Get the scale radius of NFW halo from mass and redshift
     Parameters:
-        mass:        Mass defined using a spherical overdensity of 200 times the critical density
-                        of the universe, in units of M_solar/h.
-        conc:        Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-        redshift:    Redshift of the halo.
+        mass:       Mass defined using a spherical overdensity of 200 times the
+                    critical density of the universe, in units of M_solar/h.
+        conc:       Concentration parameter, i.e., ratio of virial radius to NFW
+                    scale radius.
+        redshift:   Redshift of the halo.
+    Returns:
+        scale radius in arcsec
     """
     cosmo   =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
     z       =   redshift
@@ -45,18 +47,18 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     return rs_arcmin
 
 class nfwHalo(Cosmo):
+    """
+    Parameters:
+        mass:       Mass defined using a spherical overdensity of 200 times the critical density
+                    of the universe, in units of M_solar/h.
+        conc:       Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        redshift:   Redshift of the halo.
+        ra:         ra of halo center  [arcsec].
+        dec:        dec of halo center [arcsec].
+        omega_m:    Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
+                    omega_lam is set to 1-omega_matter.
+    """
     def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=Default_OmegaM):
-        """
-        Parameters:
-            mass:       Mass defined using a spherical overdensity of 200 times the critical density
-                        of the universe, in units of M_solar/h.
-            conc:       Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-            redshift:   Redshift of the halo.
-            ra:         ra of halo center  [arcsec].
-            dec:        dec of halo center [arcsec].
-            omega_m:    Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
-                        omega_lam is set to 1-omega_matter.
-        """
         # Redshift and Geometry
         ## ra dec
         self.ra     =   ra
@@ -106,8 +108,9 @@ class nfwHalo(Cosmo):
 
 class nfw_lensWB00(nfwHalo):
     """
-    Based on the integral functions of a spherical NFW profile:
-    Wright & Brainerd(2000, ApJ, 534, 34)
+    Integral functions of an untruncated spherical NFW profile:
+    Eq. 11, Wright & Brainerd (2000, ApJ, 534, 34) --- Surface Density
+    and Eq. 13 14 15 --- Excess Surface Density
     Parameters:
 
         mass:       Mass defined using a spherical overdensity of 200 times the critical density
@@ -338,9 +341,9 @@ class nfw_lensWB00(nfwHalo):
 
 class nfw_lensTJ03(nfwHalo):
     """
-    Based on the integral functions of a spherical NFW profile:
-    Takada & Jain(2003, MNRAS, 340, 580) Eq.27 -- Surface Density,
-    and Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
+    Integral functions of an truncated spherical NFW profile:
+    Eq.27, Takada & Jain (2003, MNRAS, 340, 580) --- Surface Density,
+    and Eq.17, Takada & Jain (2003, MNRAS, 344, 857) --- Excess Surface Density
     Parameters:
         mass:         Mass defined using a spherical overdensity of 200 times the critical density
                       of the universe, in units of M_solar/h.
@@ -386,21 +389,24 @@ class nfw_lensTJ03(nfwHalo):
         return np.divide(dx*dx-dy*dy, drsq, where=(drsq != 0.))
 
     def __Sigma(self,x0):
-        c   = np.float(self.c)
+        c   = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
         mask = np.where(x0 < 0.999)[0]
         x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+\
+            1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
 
         mask = np.where((x0 > 1.001) & (x0<c))[0]
         x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-\
+            1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
         x=x0[mask]
-        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))+((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
+        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))\
+            +((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
 
         mask = np.where(x0 >= c)[0]
         out[mask]=0.
@@ -426,7 +432,7 @@ class nfw_lensTJ03(nfwHalo):
         return self.__Sigma(x)
 
     def __DeltaSigma(self,x0):
-        c   = np.float(self.c)
+        c   = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 4 cases:
@@ -438,18 +444,22 @@ class nfw_lensTJ03(nfwHalo):
 
         mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
         x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)+((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            +((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
 
         mask = np.where((x0 > 1.001) & (x0< c))[0]
         x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)-((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            -((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
         x=x0[mask]
-        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))+6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
-            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
+        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))\
+            +6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
+            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) \
+            + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
             4*np.log(c +np.sqrt(-1.+c**2)))
 
         mask = np.where(x0 >= c)[0]
@@ -575,9 +585,9 @@ The following functions are used for halolet construction
 """
 def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,sigma_pix=None,fou=True,lnorm=2.):
     """
-    Make haloTJ03 halo (l2 normalized by default) from Fourier space following
-    CS02:
-    https://arxiv.org/pdf/astro-ph/0206508.pdf -- Eq.(81) and Eq.(82)
+    Make haloTJ03 halo (normalized) from Fourier space following
+    Eq. 81 and 82, Cooray & Sheth (2002, Physics Reports, 372,1):
+    https://arxiv.org/pdf/astro-ph/0206508.pdf
 
     Parameters:
         r_s:    scale radius (iuo pixel) [float]
@@ -643,7 +653,7 @@ def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
         lnorm:  normalized by lp norm [float]
     """
     if nx is None:
-        nx=ny
+        nx  =   ny
     if sigma>0.01:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         norm=   1. # an initialization
@@ -683,14 +693,14 @@ def TophatAtom(width,ny,nx=None,fou=True,lnorm=-1):
     if nx is None:
         nx=ny
     assert width>0.9 and width<nx-4 and width<ny-4
-    width=int(width+0.5)
-    norm=1.
+    width   =   int(width+0.5)
+    norm    =   1.
     if fou:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         x  *=   (2*np.pi);y*=(2*np.pi)
-        funx = np.divide(np.sin(width*x/2),(width*x/2),out=np.ones_like(x), where=x!=0)
-        funy = np.divide(np.sin(width*y/2),(width*y/2),out=np.ones_like(y), where=y!=0)
-        fun  = funx*funy
+        funx=   np.divide(np.sin(width*x/2),(width*x/2),out=np.ones_like(x), where=x!=0)
+        funy=   np.divide(np.sin(width*y/2),(width*y/2),out=np.ones_like(y), where=y!=0)
+        fun =   funx*funy
         if lnorm>0.:
             norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
     else:

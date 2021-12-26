@@ -1,4 +1,4 @@
-# Copyright 20200227 Xiangchong Li.
+# Copyright 20211226 Xiangchong Li.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@ from .default import *
 from .import halosim
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
-class cartesianGrid3D():
+class Cartesian():
     """
     pixlize in a TAN(Gnomonic)-prjected Cartesian Grid
     Parameters:
