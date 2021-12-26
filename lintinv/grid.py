@@ -16,7 +16,7 @@ from .default import *
 from .import halosim
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
-class cartesianGrid3D():
+class Cartesian():
     """
     pixlize in a TAN(Gnomonic)-prjected Cartesian Grid
     Parameters:

@@ -1,8 +1,8 @@
 import gc
 import numpy as np
-from ddmap import halosim
+from lintinv import halosim
 from configparser import ConfigParser
-from ddmap.pixel3D import cartesianGrid3D
+from lintinv.grid import Cartesian
 
 # prepare the random sampling points
 nsamp=800000
@@ -13,15 +13,15 @@ z=np.ones(nsamp)*0.1
 # initialize pixel grids
 parser      =   ConfigParser()
 parser.read('config_pixel_trans.ini')
-gridInfo    =   cartesianGrid3D(parser)
+gridInfo    =   Cartesian(parser)
 
 parserS     =   ConfigParser()
 parser.read('config_pixel_trans_smooth.ini')
-gridInfoS   =   cartesianGrid3D(parser)
+gridInfoS   =   Cartesian(parser)
 
 parser2     =   ConfigParser()
 parser2.read('config_pixel_los.ini')
-gridInfo2   =   cartesianGrid3D(parser2)
+gridInfo2   =   Cartesian(parser2)
 
 def test_pixel_transverse(log_m=15.,zh=0.3):
     '''Test cosistency between transverse plane pixelation and Fourier-based

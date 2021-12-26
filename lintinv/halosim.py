@@ -10,7 +10,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
-import astropy
 import numpy as np
 from .default import *
 import scipy.special as spfun
@@ -20,10 +19,13 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
     Get the scale radius of NFW halo from mass and redshift
     Parameters:
-        mass:        Mass defined using a spherical overdensity of 200 times the critical density
-                        of the universe, in units of M_solar/h.
-        conc:        Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-        redshift:    Redshift of the halo.
+        mass:       Mass defined using a spherical overdensity of 200 times the
+                    critical density of the universe, in units of M_solar/h.
+        conc:       Concentration parameter, i.e., ratio of virial radius to NFW
+                    scale radius.
+        redshift:   Redshift of the halo.
+    Returns:
+        scale radius in arcsec
     """
     cosmo   =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
     z       =   redshift
@@ -45,18 +47,18 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     return rs_arcmin
 
 class nfwHalo(Cosmo):
+    """
+    Parameters:
+        mass:       Mass defined using a spherical overdensity of 200 times the critical density
+                    of the universe, in units of M_solar/h.
+        conc:       Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
+        redshift:   Redshift of the halo.
+        ra:         ra of halo center  [arcsec].
+        dec:        dec of halo center [arcsec].
+        omega_m:    Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
+                    omega_lam is set to 1-omega_matter.
+    """
     def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=Default_OmegaM):
-        """
-        Parameters:
-            mass:       Mass defined using a spherical overdensity of 200 times the critical density
-                        of the universe, in units of M_solar/h.
-            conc:       Concentration parameter, i.e., ratio of virial radius to NFW scale radius.
-            redshift:   Redshift of the halo.
-            ra:         ra of halo center  [arcsec].
-            dec:        dec of halo center [arcsec].
-            omega_m:    Omega_matter to pass to Cosmology constructor. [default: Default_OmegaM]
-                        omega_lam is set to 1-omega_matter.
-        """
         # Redshift and Geometry
         ## ra dec
         self.ra     =   ra
@@ -387,7 +389,7 @@ class nfw_lensTJ03(nfwHalo):
         return np.divide(dx*dx-dy*dy, drsq, where=(drsq != 0.))
 
     def __Sigma(self,x0):
-        c   = np.float(self.c)
+        c   = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
@@ -651,7 +653,7 @@ def GausAtom(sigma,ny,nx=None,fou=True,lnorm=2.):
         lnorm:  normalized by lp norm [float]
     """
     if nx is None:
-        nx=ny
+        nx  =   ny
     if sigma>0.01:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         norm=   1. # an initialization
@@ -691,14 +693,14 @@ def TophatAtom(width,ny,nx=None,fou=True,lnorm=-1):
     if nx is None:
         nx=ny
     assert width>0.9 and width<nx-4 and width<ny-4
-    width=int(width+0.5)
-    norm=1.
+    width   =   int(width+0.5)
+    norm    =   1.
     if fou:
         x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
         x  *=   (2*np.pi);y*=(2*np.pi)
-        funx = np.divide(np.sin(width*x/2),(width*x/2),out=np.ones_like(x), where=x!=0)
-        funy = np.divide(np.sin(width*y/2),(width*y/2),out=np.ones_like(y), where=y!=0)
-        fun  = funx*funy
+        funx=   np.divide(np.sin(width*x/2),(width*x/2),out=np.ones_like(x), where=x!=0)
+        funy=   np.divide(np.sin(width*y/2),(width*y/2),out=np.ones_like(y), where=y!=0)
+        fun =   funx*funy
         if lnorm>0.:
             norm=   (np.sum(fun**lnorm)/(nx*ny))**(1./lnorm)
     else:

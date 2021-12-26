@@ -1,8 +1,8 @@
-from setuptools import setup, find_packages
 import numpy
+from setuptools import setup, find_packages
 
 setup(
-    name='ddmap',
+    name='lintinv',
     version='0.0.1',
     description='3D Dark Map',
     author='Xiangchong Li et al.',
