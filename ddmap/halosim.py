@@ -1,4 +1,4 @@
-# Copyright 20200227 Xiangchong Li.
+# Copyright 20211226 Xiangchong Li.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -106,8 +106,9 @@ class nfwHalo(Cosmo):
 
 class nfw_lensWB00(nfwHalo):
     """
-    Based on the integral functions of a spherical NFW profile:
-    Wright & Brainerd(2000, ApJ, 534, 34)
+    Integral functions of an untruncated spherical NFW profile:
+    Eq. 11, Wright & Brainerd (2000, ApJ, 534, 34) --- Surface Density
+    and Eq. 13 14 15 --- Excess Surface Density
     Parameters:
 
         mass:       Mass defined using a spherical overdensity of 200 times the critical density
@@ -338,9 +339,9 @@ class nfw_lensWB00(nfwHalo):
 
 class nfw_lensTJ03(nfwHalo):
     """
-    Based on the integral functions of a spherical NFW profile:
-    Takada & Jain(2003, MNRAS, 340, 580) Eq.27 -- Surface Density,
-    and Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
+    Integral functions of an truncated spherical NFW profile:
+    Eq.27, Takada & Jain (2003, MNRAS, 340, 580) --- Surface Density,
+    and Eq.17, Takada & Jain (2003, MNRAS, 344, 857) --- Excess Surface Density
     Parameters:
         mass:         Mass defined using a spherical overdensity of 200 times the critical density
                       of the universe, in units of M_solar/h.
@@ -392,15 +393,18 @@ class nfw_lensTJ03(nfwHalo):
         # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
         mask = np.where(x0 < 0.999)[0]
         x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+\
+            1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
 
         mask = np.where((x0 > 1.001) & (x0<c))[0]
         x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-\
+            1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
         x=x0[mask]
-        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))+((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
+        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))\
+            +((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
 
         mask = np.where(x0 >= c)[0]
         out[mask]=0.
@@ -426,7 +430,7 @@ class nfw_lensTJ03(nfwHalo):
         return self.__Sigma(x)
 
     def __DeltaSigma(self,x0):
-        c   = np.float(self.c)
+        c   = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 4 cases:
@@ -438,18 +442,22 @@ class nfw_lensTJ03(nfwHalo):
 
         mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
         x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)+((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            +((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
 
         mask = np.where((x0 > 1.001) & (x0< c))[0]
         x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)-((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            -((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
             +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
         x=x0[mask]
-        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))+6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
-            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
+        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))\
+            +6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
+            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) \
+            + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
             4*np.log(c +np.sqrt(-1.+c**2)))
 
         mask = np.where(x0 >= c)[0]
@@ -575,9 +583,9 @@ The following functions are used for halolet construction
 """
 def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,sigma_pix=None,fou=True,lnorm=2.):
     """
-    Make haloTJ03 halo (l2 normalized by default) from Fourier space following
-    CS02:
-    https://arxiv.org/pdf/astro-ph/0206508.pdf -- Eq.(81) and Eq.(82)
+    Make haloTJ03 halo (normalized) from Fourier space following
+    Eq. 81 and 82, Cooray & Sheth (2002, Physics Reports, 372,1):
+    https://arxiv.org/pdf/astro-ph/0206508.pdf
 
     Parameters:
         r_s:    scale radius (iuo pixel) [float]
