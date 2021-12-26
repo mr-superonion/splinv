@@ -27,17 +27,17 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     """
     cosmo   =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
     z       =   redshift
-    a       =   1./(1.+z)
+    #a       =   1./(1.+z)
     # angular distance in Mpc/h
     DaLens  =   cosmo.angular_diameter_distance_z1z2(0.,z).value
     # E(z)^{-1}
     ezInv   =   cosmo.inv_efunc(z)
     # critical density (in unit of M_sun h^2 / Mpc^3)
-    rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=rho_unt)
+    #rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=rho_unt)
     rvir    =   1.63e-5*(mass*ezInv**2)**(1./3.) # in Mpc/h
     rs      =   rvir/conc
-    A       =   1./(np.log(1+conc)-(conc)/(1+conc))
-    delta_nfw   =   200./3*conc**3*A
+    #A       =   1./(np.log(1+conc)-(conc)/(1+conc))
+    #delta_nfw   =   200./3*conc**3*A
     # convert to angular radius in unit of arcsec
     scale       =   rs / DaLens
     arcmin2rad  =   np.pi/180./60.

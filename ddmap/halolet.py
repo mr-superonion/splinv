@@ -64,7 +64,7 @@ class massmap_ks2D():
         assert gMap.shape[-2:]==self.shape
         if not inFou:
             gMap =   np.fft.fft2(gMap)
-        kOMap    =   gMap/self.e2phiF*np.pi
+        kOMap    =   gMap*np.conjugate(self.e2phiF*np.pi)
         if not outFou:
             kOMap    =   np.fft.ifft2(kOMap)
         return kOMap
