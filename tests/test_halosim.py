@@ -1,6 +1,6 @@
 import numpy as np
-from lintinv import hmod
-from lintinv.grid import Cartesian
+from splinv import hmod
+from splinv.grid import Cartesian
 from configparser import ConfigParser
 
 try:

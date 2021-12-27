@@ -2,8 +2,8 @@ import numpy
 from setuptools import setup, find_packages
 
 setup(
-    name='lintinv',
-    version='0.0.1',
+    name='splinv',
+    version='1.0.1',
     description='3D Dark Map',
     author='Xiangchong Li et al.',
     author_email='mr.superonion@hotmail.com',

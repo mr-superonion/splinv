@@ -1,8 +1,8 @@
 Default_h0=1.
 omega_m=0.3
 
-import astropy.units as astunits
 import numpy as np
+import astropy.units as astunits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
 try:
