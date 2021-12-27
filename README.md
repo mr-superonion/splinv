@@ -6,7 +6,7 @@ A code to inverse linear transform using sparse regularization.
 # Install
 
 ```shell
-cd lintinv
+cd splinv
 pip install .
 ```
 
