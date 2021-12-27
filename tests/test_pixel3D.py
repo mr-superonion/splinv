@@ -1,8 +1,8 @@
 import gc
 import numpy as np
-from lintinv import hmod
+from splinv import hmod
 from configparser import ConfigParser
-from lintinv.grid import Cartesian
+from splinv.grid import Cartesian
 
 # prepare the random sampling points
 nsamp=800000

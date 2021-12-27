@@ -1,9 +1,9 @@
 import numpy as np
-from lintinv import detect
-from lintinv import hmod
-from lintinv import darkmapper
-from lintinv.grid import Cartesian
-from lintinv.hmod import ksmap
+from splinv import detect
+from splinv import hmod
+from splinv import darkmapper
+from splinv.grid import Cartesian
+from splinv.hmod import ksmap
 from configparser import ConfigParser
 
 def test_darkmapper():

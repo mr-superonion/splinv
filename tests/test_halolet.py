@@ -1,8 +1,8 @@
 import numpy as np
 from configparser import ConfigParser
 
-from lintinv import hmod
-from lintinv.grid import Cartesian
+from splinv import hmod
+from splinv.grid import Cartesian
 
 def test_halolet():
     """ Test halolet with one frame
