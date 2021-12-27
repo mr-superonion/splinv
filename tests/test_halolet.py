@@ -1,38 +1,37 @@
 import numpy as np
 from configparser import ConfigParser
 
-from lintinv import halosim
-from lintinv import halolet
+from lintinv import hmod
 from lintinv.grid import Cartesian
 
 def test_halolet():
-    """ Test halolet
+    """ Test halolet with one frame
     """
 
     configName  =   'config_halolet.ini'
     parser      =   ConfigParser()
     parser.read(configName)
 
-    # Reconstruction Init
+    # init sparse
     parser.set('lens','resolve_lim','0.1')  #pix
     parser.set('lens','rs_base','0.5955')    #Mpc/h
     parser.set('sparse','nframe','1' )
 
-    # Pixelation
+    # init grid
     gridInfo=   Cartesian(parser)
     lensKer1=   gridInfo.lensing_kernel(deltaIn=False)
     L       =   gridInfo.nx*gridInfo.scale
-    modelDict=  halolet.nfwShearlet2D(parser,lensKer1)
+    modelDict=  hmod.nfwShearlet2D(parser,lensKer1)
 
     xx=np.fft.fftshift(np.fft.fftfreq(gridInfo.nx,1./gridInfo.nx))
     yy=np.fft.fftshift(np.fft.fftfreq(gridInfo.ny,1./gridInfo.ny))
     XX,YY=np.meshgrid(xx,yy)
 
-    z_h     =  0.2425
-    log_m   =  15.6
-    M_200   =  10.**(log_m)
-    conc    =  4.#6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+z_h))**(0.16)
-    halo    =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
+    z_h     =   0.2425
+    log_m   =   15.6
+    M_200   =   10.**(log_m)
+    conc    =   4.#6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+z_h))**(0.16)
+    halo    =   hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
 
     np.testing.assert_almost_equal(modelDict.rs_frame[4],halo.rs_arcsec/gridInfo.scale/3600.,3)
 

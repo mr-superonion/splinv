@@ -13,7 +13,7 @@
 import json
 import numpy as np
 import astropy.io.fits as pyfits
-from .halolet import nfwShearlet2D
+from .hmod import nfwShearlet2D
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
