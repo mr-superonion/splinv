@@ -1,9 +1,8 @@
-from . import halolet
-from . import halosim
+from . import hmod
 from . import grid
 from . import detect
 from .sparse import darkmapper
 
-__version__="0.0.1"
+__version__="1.0.1"
 
-__all__=["sparse", "halolet", "halosim", "grid", "detect", "darkmapper"]
+__all__=["hmod", "grid", "detect", "darkmapper"]

@@ -1,7 +1,7 @@
-from lintinv import halosim
 import numpy as np
-from configparser import ConfigParser
+from lintinv import hmod
 from lintinv.grid import Cartesian
+from configparser import ConfigParser
 
 try:
     import galsim
@@ -20,7 +20,7 @@ def test_WB00_Galsim(log_m=15,zh=0.3):
     M_200   =   10**log_m
     conc    =   6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
     # create an WB00 halo
-    halo=halosim.nfw_lensWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
+    halo    =   hmod.nfw_lensWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
     # create an galsim halo
     pos_cl  =   galsim.PositionD(0.,0.)
     haloGS  =   galsim.nfw_halo.NFWHalo(mass= M_200,
@@ -57,7 +57,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
 
     # initialize halo
-    halo =   halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    halo =   hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     # initialize pixel grids
     configName  =   'config_halosim.ini'
     parser      =   ConfigParser()
@@ -73,7 +73,7 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     haloSigma2=haloSigma2/norm
 
     rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
-    haloSigma1= np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
+    haloSigma1= np.fft.fftshift(hmod.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
             sigma_pix=-1,c=halo.c,fou=False))
     # The (0,0) point is unstable
     vmax    =   haloSigma1[gridInfo.ny//2,gridInfo.nx//2]

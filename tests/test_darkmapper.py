@@ -1,16 +1,16 @@
 import numpy as np
 from lintinv import detect
-from lintinv import halosim
+from lintinv import hmod
 from lintinv import darkmapper
 from lintinv.grid import Cartesian
-from lintinv.halolet import ksmap
+from lintinv.hmod import ksmap
 from configparser import ConfigParser
 
-def test_sparse():
+def test_darkmapper():
     """ Test sparse reconstruction of weak lensing dark map
     """
     # configuration
-    configName  =   'config_sparse.ini'
+    configName  =   'config_darkmapper.ini'
     parser      =   ConfigParser()
     parser.read(configName)
 
@@ -19,7 +19,7 @@ def test_sparse():
     log_m   =  14.745
     M_200   =  10.**(log_m)
     conc    =  4.
-    halo    =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
+    halo    =  hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
 
     # Reconstruction Init
     parser.set('sparse','mu','3e-4')
@@ -37,7 +37,7 @@ def test_sparse():
 
     ks2D    =   ksmap(gridInfo.ny,gridInfo.nx)
     rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
-    sigma   =   halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
+    sigma   =   hmod.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
                 sigma_pix=-1,c=halo.c,fou=True)
     snorm   =   sigma[0,0]
     dr      =   halo.DaLens*gridInfo.scale/180*np.pi

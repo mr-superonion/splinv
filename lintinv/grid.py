@@ -13,7 +13,7 @@
 import json
 import numpy as np
 from .default import *
-from .import halosim
+from .hmod import GausAtom
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
 class Cartesian():
@@ -43,8 +43,8 @@ class Cartesian():
                 nz  =   parser.getint('sources','nz')
                 assert nz>=1
                 zmin=   parser.getfloat('sources','zmin')
-                zmax=   zmin+deltaz*(nz+0.1)
                 deltaz= parser.getfloat('sources','zscale')
+                zmax=   zmin+deltaz*(nz+0.1)
                 zbound= np.arange(zmin,zmax,deltaz)
             zcgrid  =   (zbound[:-1]+zbound[1:])/2.
         else:
@@ -160,6 +160,7 @@ class Cartesian():
             # make sure we have even number of pixels in x and y
             self.nx =   2*dnx
             self.ny =   2*dny
+            outcome =   (x,y)
         elif header is not None:
             assert abs(self.scale-header['CDELT1'])/self.scale<1e-2
             self.ra0    =   header['CRVAL1']
@@ -170,6 +171,7 @@ class Cartesian():
             self.ny     =   int(header['NAXIS2'])
             dnx         =   self.nx//2
             dny         =   self.ny//2
+            outcome     =   None
         else:
             raise ValueError('should input (ra,dec) or header')
 
@@ -183,10 +185,7 @@ class Cartesian():
         self.ybound= np.arange(ymin,ymax,self.scale)
         self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
         self.shape=(self.nz,self.ny,self.nx)
-        if (ra is not None) and (dec is not None):
-            return x,y
-        else:
-            return
+        return outcome
 
     def project_tan(self,ra,dec,pix=False):
         """TAN(Gnomonic)-prjection of sky coordiantes
@@ -290,7 +289,7 @@ class Cartesian():
         if self.sigma_pix>0.01:
             # Gaussian Kernel in Fourier space
             # (normalize to flux-1)
-            gausKer =   halosim.GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma_pix,fou=True)
+            gausKer =   GausAtom(ny=self.ny,nx=self.nx,sigma=self.sigma_pix,fou=True)
             norm    =   gausKer[0,0]
             gausKer /=  norm
             # smothing with Gausian Kernel

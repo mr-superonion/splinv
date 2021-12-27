@@ -1,6 +1,6 @@
 import gc
 import numpy as np
-from lintinv import halosim
+from lintinv import hmod
 from configparser import ConfigParser
 from lintinv.grid import Cartesian
 
@@ -32,7 +32,7 @@ def test_pixel_transverse(log_m=15.,zh=0.3):
     M_200=  10.**(log_m)
     conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
     # initialize halo
-    halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    halo =  hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     sigma=  halo.Sigma(ra*3600.,dec*3600.)
     # angular scale of pixel size in Mpc
     dr  =   halo.DaLens*gridInfo.scale/180*np.pi
@@ -45,7 +45,7 @@ def test_pixel_transverse(log_m=15.,zh=0.3):
     np.testing.assert_almost_equal(np.sum(pixSigma), 1, 2)
 
     rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
-    pixSigma2=  np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
+    pixSigma2=  np.fft.fftshift(hmod.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
             sigma_pix=-1,c=halo.c,fou=False,lnorm=1))
     vmax    =   pixSigma2[gridInfo.ny//2,gridInfo.nx//2]
     pixSigma2[gridInfo.ny//2,gridInfo.nx//2]=0.
@@ -63,7 +63,7 @@ def test_pixel_transverse_smooth(log_m=15.,zh=0.3):
     M_200=  10.**(log_m)
     conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
     # initialize halo
-    halo =  halosim.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    halo =  hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     sigma=  halo.Sigma(ra*3600.,dec*3600.)
     # angular scale of pixel size in Mpc
     dr   =  halo.DaLens*gridInfoS.scale/180*np.pi
@@ -72,7 +72,7 @@ def test_pixel_transverse_smooth(log_m=15.,zh=0.3):
     np.testing.assert_almost_equal(np.sum(pixSigma), 1, 2)
 
     rpix    =   halo.rs_arcsec/gridInfoS.scale/3600.
-    pixSigma2=  np.fft.fftshift(halosim.haloCS02SigmaAtom(rpix,ny=gridInfoS.ny,nx=gridInfoS.nx,\
+    pixSigma2=  np.fft.fftshift(hmod.haloCS02SigmaAtom(rpix,ny=gridInfoS.ny,nx=gridInfoS.nx,\
             sigma_pix=gridInfoS.sigma_pix,c=halo.c,fou=False,lnorm=1))
     vmax    =   pixSigma2[gridInfoS.ny//2,gridInfoS.nx//2]
     assert np.max(np.abs(pixSigma2-pixSigma))/vmax<5e-2
@@ -99,7 +99,7 @@ def test_lensing_kernel_halosim():
     lker1=gridInfo2.lensing_kernel(deltaIn=False)
     lker3=[]
     for i in range(gridInfo2.nzl):
-        halo=halosim.nfw_lensWB00(ra=0.,dec=0.,\
+        halo=hmod.nfw_lensWB00(ra=0.,dec=0.,\
             redshift=gridInfo2.zlcgrid[i],mass=1e14,conc=0.1)
         lker3.append(halo.lensKernel(gridInfo2.zcgrid))
         del halo
