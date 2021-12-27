@@ -1,6 +1,6 @@
-Linear Transform Inversion (lintinv)
+SParse LINear INVersion (splinv)
 
-A code to inverse linear transform using l-p regularization.
+A code to inverse linear transform using sparse regularization.
 
 ---
 # Install
