@@ -13,7 +13,7 @@
 import json
 import numpy as np
 from .default import *
-from .hmod import GausAtom
+from .maputil import GausAtom
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 
 class Cartesian():
@@ -92,7 +92,7 @@ class Cartesian():
         if parser.has_option('cosmology','omega_m'):
             omega_m =   parser.getfloat('cosmology','omega_m')
         else:
-            omega_m =   0.3
+            omega_m =   Default_OmegaM
         self.cosmo=Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.lensKernel =   None
         self.pozPdfAve  =   None

@@ -1,3 +1,15 @@
+# Copyright 20211226 Xiangchong Li.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# GNU General Public License for more details.
+#
 import numpy as np
 from splinv import hmod
 from splinv.grid import Cartesian
@@ -14,13 +26,13 @@ def test_WB00_Galsim(log_m=15,zh=0.3):
     '''Test cosistency between WB00 and Galsim.nfw_halo
     '''
     if not has_galsim:
-        print("do not have Galsim; therefore, we skip checking WB00 profile with galsim")
+        print("Do not have Galsim: skip checking WB00 profile with galsim")
         return
 
     M_200   =   10**log_m
     conc    =   6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
     # create an WB00 halo
-    halo    =   hmod.nfw_lensWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
+    halo    =   hmod.nfwWB00(ra=0.,dec=0.,redshift=zh,mass=M_200,conc=conc)
     # create an galsim halo
     pos_cl  =   galsim.PositionD(0.,0.)
     haloGS  =   galsim.nfw_halo.NFWHalo(mass= M_200,
@@ -57,27 +69,28 @@ def test_TJ03_Fourier(log_m=15.,zh=0.3):
     conc =  6.02*(M_200/1.E13)**(-0.12)*(1.47/(1.+zh))**(0.16)
 
     # initialize halo
-    halo =   hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
+    halo =   hmod.nfwTJ03(mass=M_200,conc=conc,redshift=zh,ra=0.,dec=0.)
     # initialize pixel grids
     configName  =   'config_halosim.ini'
     parser      =   ConfigParser()
     parser.read(configName)
-    gridInfo    =   Cartesian(parser)
-    yy,xx=np.meshgrid(gridInfo.ycgrid,gridInfo.xcgrid,indexing='ij')
+    Grid        =   Cartesian(parser)
+    yy,xx=np.meshgrid(Grid.ycgrid,Grid.xcgrid,indexing='ij')
     # get the surface density
-    haloSigma2  =   halo.Sigma(xx.flatten()*3600.,yy.flatten()*3600.).reshape((gridInfo.ny,gridInfo.nx))
+    haloSigma2  =   halo.Sigma(xx.flatten()*3600.,yy.flatten()\
+            *3600.).reshape((Grid.ny,Grid.nx))
     # The (0,0) point is unstable
-    haloSigma2[gridInfo.ny//2,gridInfo.nx//2]=0.
+    haloSigma2[Grid.ny//2,Grid.nx//2]=0.
     # l2 normalization
     norm=   (np.sum(haloSigma2**2.))**0.5
     haloSigma2=haloSigma2/norm
 
-    rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
-    haloSigma1= np.fft.fftshift(hmod.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
+    rpix    =   halo.rs_arcsec/Grid.scale/3600.
+    haloSigma1= np.fft.fftshift(hmod.haloCS02SigmaAtom(rpix,ny=Grid.ny,nx=Grid.nx,\
             sigma_pix=-1,c=halo.c,fou=False))
     # The (0,0) point is unstable
-    vmax    =   haloSigma1[gridInfo.ny//2,gridInfo.nx//2]
-    haloSigma1[gridInfo.ny//2,gridInfo.nx//2]=0.
+    vmax    =   haloSigma1[Grid.ny//2,Grid.nx//2]
+    haloSigma1[Grid.ny//2,Grid.nx//2]=0.
     # l2 normalization
     norm    =   (np.sum(haloSigma1**2.))**0.5
     haloSigma1= haloSigma1/norm
