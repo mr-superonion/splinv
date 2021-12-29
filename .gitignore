@@ -19,3 +19,4 @@ wrkDir*
 datDir*
 *.fdb_latexmk
 *egg-info
+*.fits
