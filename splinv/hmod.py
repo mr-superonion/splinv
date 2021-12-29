@@ -643,9 +643,10 @@ class nfwCS02_grid(Cartesian):
         snorm   =   sigma[0,0]
         dr      =   halo.DaLens*self.scale/180*np.pi
         snorm   =   halo.M/dr**2./snorm
-        sigma   =   np.fft.fftshift(sigma*snorm)
-        dsigma  =   self.ks2D.transform(sigma,\
-                    inFou=True,outFou=False)
+        sigma   =   sigma*snorm
+        dsigma  =   np.fft.fftshift(self.ks2D.transform(sigma,\
+                    inFou=True,outFou=False))
+        sigma   =   np.fft.fftshift(np.fft.ifft2(sigma)).real
         shear   =   dsigma[None,:,:]*lk[:,None,None]
         kappa   =   sigma[None,:,:]*lk[:,None,None]
         return kappa,shear

@@ -21,3 +21,4 @@ datDir*
 *egg-info
 notebooks/*
 *.ipynb
+*.fits

@@ -16,7 +16,9 @@ from splinv import hmod
 from configparser import ConfigParser
 
 def main():
-    """ Test sparse reconstruction of weak lensing dark map
+    """ This is a simplified version of halo simulation described in
+    Li et. al (2021, ApJ 916 67), which does not include photo-z
+    uncertainties, pixelation effect due to sampling.
     """
     # configuration
     configName  =   'config_darkmapper.ini'
@@ -26,7 +28,7 @@ def main():
     # halo simulation
     CS02    =   hmod.nfwCS02_grid(parser)
     z_h     =   0.2425
-    log_m   =   14.00
+    log_m   =   14.6
     M_200   =   10.**(log_m)
     conc    =   4.
     halo    =   hmod.nfwTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
