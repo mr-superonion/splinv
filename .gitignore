@@ -19,5 +19,5 @@ wrkDir*
 datDir*
 *.fdb_latexmk
 *egg-info
-notebook/*
+notebooks/*
 *.ipynb

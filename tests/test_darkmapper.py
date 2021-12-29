@@ -1,9 +1,20 @@
+# Copyright 20211226 Xiangchong Li.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+# GNU General Public License for more details.
+#
 import numpy as np
 from splinv import detect
 from splinv import hmod
 from splinv import darkmapper
 from splinv.grid import Cartesian
-from splinv.hmod import ksmap
 from configparser import ConfigParser
 
 def test_darkmapper():
@@ -19,7 +30,7 @@ def test_darkmapper():
     log_m   =  14.745
     M_200   =  10.**(log_m)
     conc    =  4.
-    halo    =  hmod.nfw_lensTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
+    halo    =  hmod.nfwTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
 
     # Reconstruction Init
     parser.set('sparse','mu','3e-4')
@@ -28,25 +39,13 @@ def test_darkmapper():
     parser.set('sparse','nframe','1' )
 
     # Pixelation
-    gridInfo=   Cartesian(parser)
-    Z,Y,X   =   np.meshgrid(gridInfo.zcgrid,gridInfo.ycgrid,gridInfo.xcgrid,indexing='ij')
-    x,y,z   =   (X.flatten(),Y.flatten(),Z.flatten())
-    lensKer1=   gridInfo.lensing_kernel(deltaIn=False)
+    Grid    =   Cartesian(parser)
+    lensKer1=   Grid.lensing_kernel(deltaIn=False)
 
-    lk      =  halo.lensKernel(z)
 
-    ks2D    =   ksmap(gridInfo.ny,gridInfo.nx)
-    rpix    =   halo.rs_arcsec/gridInfo.scale/3600.
-    sigma   =   hmod.haloCS02SigmaAtom(rpix,ny=gridInfo.ny,nx=gridInfo.nx,\
-                sigma_pix=-1,c=halo.c,fou=True)
-    snorm   =   sigma[0,0]
-    dr      =   halo.DaLens*gridInfo.scale/180*np.pi
-    snorm   =   M_200/dr**2./snorm
-    sigma   =   sigma*snorm
-    shear   =   np.fft.fftshift(ks2D.transform(sigma,inFou=True,outFou=False))
-    lk2     =   lk.reshape(gridInfo.shape)
-    data2   =   shear[None,:,:]*lk2
-    gErr    =   np.ones(gridInfo.shape)*0.05
+    CS02    =   hmod.nfwCS02_grid(parser)
+    data2   =   CS02.add_halo(halo)[1]
+    gErr    =   np.ones(Grid.shape)*0.05
 
     dmapper =   darkmapper(parser,data2.real,data2.imag,gErr,lensKer1)
 
@@ -59,15 +58,15 @@ def test_darkmapper():
     dmapper.fista_gradient_descent(3000,w=w)
 
     dmapper.mu=3e-3
-    for i in range(3):
+    for _ in range(3):
         w   =   dmapper.adaptive_lasso_weight(gamma=2.)
         dmapper.fista_gradient_descent(3000,w=w)
     dmapper.reconstruct()
     c1  =   detect.local_maxima_3D(dmapper.deltaR)[0][0]
-    np.testing.assert_equal(c1,np.array([4,gridInfo.ny//2,gridInfo.nx//2]))
-    logm_est=   np.log10((dmapper.alphaR*dmapper._w)[4,0,gridInfo.ny//2,gridInfo.nx//2])+14.
+    np.testing.assert_equal(c1,np.array([4,Grid.ny//2,Grid.nx//2]))
+    logm_est=   np.log10((dmapper.alphaR*dmapper._w)[4,0,Grid.ny//2,Grid.nx//2])+14.
     np.testing.assert_almost_equal(logm_est,log_m,1)
     return
 
 if __name__ == '__main__':
-    test_sparse()
+    test_darkmapper()
