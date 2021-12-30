@@ -396,7 +396,7 @@ class nfwWB00(nfwHalo):
 
     def DeltaSigmaComplex(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
-        return a complex array \Delta \Sigma_1+ i \Delta \Sigma_2
+        return a complex array Delta Sigma_1+ i Delta Sigma_2
         Parameters:
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
@@ -567,7 +567,7 @@ class nfwTJ03(nfwHalo):
 
     def DeltaSigmaComplex(self,ra_s,dec_s):
         """Calculate excess surface density of halo.
-        return a complex array \Delta \Sigma_1+ i \Delta \Sigma_2
+        return a complex array Delta Sigma_1+ i Delta Sigma_2
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """

@@ -12,7 +12,6 @@
 #
 import json
 import numpy as np
-import astropy.io.fits as pyfits
 from .hmod import nfwShearlet2D
 
 def zMeanBin(zMin,dz,nz):
@@ -155,7 +154,7 @@ class darkmapper():
         __tmp       =   alphaRIn*self._w
         shearOut    =   self.modelDict.itransform(__tmp)
         # Mask
-        shearOut    =   shearOut*(self.maskS.astype(np.int))
+        shearOut    =   shearOut*(self.maskS.astype(int))
         return shearOut
 
     def chi2_transpose(self,shearRIn):
@@ -355,7 +354,7 @@ class darkmapper():
         # FISTA algorithms
         Xp0         =   self.alphaR
         self.diff   =   []
-        for irun in range(niter):
+        for _ in range(niter):
             # (.real means no B-mode)
             dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
             Xp1 =   self.alphaR+dalphaR
@@ -412,83 +411,57 @@ class darkmapper():
         self.diff.append(error)
         return
 
-    def navie_gradient_descent(self,niter):
-        """
-        Navie gradient descent solver of loss fucntion (Slow convergence)
-        Parameters:
-            niter:      number of iteration
-        """
-        assert not self.nonNeg, \
-                'non-negative setup, please use FISTA'
-        assert not self.lbd>0., \
-                'LASSO regression, please use FISTA'
+    # def multiplicative_update(self,niter,w=1.):
+    #     Multiplicative update solver of loss fucntion
+    #     (Only works for positive models and positive parameters)
 
-        tn      =   1.
-        Xp0     =   self.alphaR
-        self.diff   =   []
-        for irun in range(niter):
-            # (.real means no B-mode)
-            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
-            self.alphaR =   soft_thresholding(self.alphaR+dalphaR,thresholds)
-            error=  np.sqrt(np.sum(dalphaR**2.))
-            self.diff.append(error)
-            if irun>200 and error<1e-3:
-                break
-        return
+    #     Parameters:
+    #         niter:      number of iteration
+    #         w:          adaptive weight [default: 1.]
+    #     # The thresholds
+    #     thresholds  =   self.lbd*w
+    #     # A_{i\alpha}y_i/sigma^2_{ii}
+    #     if self.shearProj is None:
+    #         self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
+    #     nominator   =   soft_thresholding_nn(self.shearProj,thresholds)
+    #     pp          =   self.lcd/(1+self.lcd)
+    #     self.diff   =   []
+    #     for irun in range(niter):
+    #         # A_{ij} x_j *(1-p)        [weighted A_{ij}]
+    #         shearRTmp   =   self.main_forward(self.alphaR)
+    #         # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
+    #         denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
+    #         # Add pp*I_{\alphaj} x_j (for Ridge regression)
+    #         denominator =   denominator*(1-pp)+self.alphaR*pp
+    #         rr      =   nominator/(denominator+1e-12)
+    #         alphaR  =   self.alphaR*rr
+    #         diff    =   alphaR-self.alphaR
+    #         error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
+    #         if irun>200 and error<1e-3:
+    #             break
+    #         self.diff.append(error)
+    #         self.alphaR =   alphaR
+    #     return
 
-    """
-    def multiplicative_update(self,niter,w=1.):
-        Multiplicative update solver of loss fucntion
-        (Only works for positive models and positive parameters)
+    # def adaptive_lasso_prior_weight(self,prior):
+    #     Calculate adaptive weight using a given prior.
+    #     Based on Zou & Li, The Annuals of Statisics 2008,
+    #     Vol. 36 No. 4, 1509--1533
+    #     (unfinished)
 
-        Parameters:
-            niter:      number of iteration
-            w:          adaptive weight [default: 1.]
-        # The thresholds
-        thresholds  =   self.lbd*w
-        # A_{i\alpha}y_i/sigma^2_{ii}
-        if self.shearProj is None:
-            self.shearProj   =   self.chi2_transpose(self.shearR*self.sigmaSInv**2.)
-        nominator   =   soft_thresholding_nn(self.shearProj,thresholds)
-        pp          =   self.lcd/(1+self.lcd)
-        self.diff   =   []
-        for irun in range(niter):
-            # A_{ij} x_j *(1-p)        [weighted A_{ij}]
-            shearRTmp   =   self.main_forward(self.alphaR)
-            # ((1-p)A_{i\alpha}A_{ij}x_j)/sigma^2_{ii}
-            denominator =   self.chi2_transpose(shearRTmp*self.sigmaSInv**2.)
-            # Add pp*I_{\alphaj} x_j (for Ridge regression)
-            denominator =   denominator*(1-pp)+self.alphaR*pp
-            rr      =   nominator/(denominator+1e-12)
-            alphaR  =   self.alphaR*rr
-            diff    =   alphaR-self.alphaR
-            error   =   np.sqrt(np.sum(diff**2.)/np.sum(alphaR**2.))
-            if irun>200 and error<1e-3:
-                break
-            self.diff.append(error)
-            self.alphaR =   alphaR
-        return
+    #     Parameters:
+    #         prior:      [nlp,nframe]
+    #     p   =   np.abs(self.alphaR)/self.lbd
 
-    def adaptive_lasso_prior_weight(self,prior):
-        Calculate adaptive weight using a given prior.
-        Based on Zou & Li, The Annuals of Statisics 2008,
-        Vol. 36 No. 4, 1509--1533
-        (unfinished)
+    #     # threshold(for value close to zero)
+    #     thres_adp=  1./1e12
+    #     mask=   (p**gamma>thres_adp)
 
-        Parameters:
-            prior:      [nlp,nframe]
-        p   =   np.abs(self.alphaR)/self.lbd
-
-        # threshold(for value close to zero)
-        thres_adp=  1./1e12
-        mask=   (p**gamma>thres_adp)
-
-        # weight estimation
-        w       =   np.zeros(self.shapeA)
-        w[mask] =   1./(p[mask])**(gamma)
-        w[~mask]=   1./thres_adp
-        return w
-    """
+    #     # weight estimation
+    #     w       =   np.zeros(self.shapeA)
+    #     w[mask] =   1./(p[mask])**(gamma)
+    #     w[~mask]=   1./thres_adp
+    #     return w
 
     # def prox_sigmaA(self):
     #     """

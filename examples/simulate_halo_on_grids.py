@@ -10,7 +10,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
-import numpy as np
 import astropy.io.fits as pyfits
 from splinv import hmod
 from configparser import ConfigParser

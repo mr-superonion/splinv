@@ -48,9 +48,9 @@ class Cartesian():
                 zbound= np.arange(zmin,zmax,deltaz)
             zcgrid  =   (zbound[:-1]+zbound[1:])/2.
         else:
-            nz  =   1
+            nz      =   1
             zbound  =   np.array([0.,100.])
-            zcgrid  =   None
+            zcgrid  =   np.array([])
         self.zbound =   zbound
         self.zcgrid =   zcgrid
         self.nz =   nz
@@ -425,7 +425,7 @@ class Cartesian():
         lensKernel =np.zeros((self.nz,self.nzl))
         kl      =   self.cosmo.angular_diameter_distance_z1z2(0.,self.zlcgrid).value*four_pi_G_over_c_squared()
         # Surface masss density in lens bin
-        rhoM_ave=   self.cosmo.rho_m(self.zlcgrid)
+        rhoM_ave=   self.cosmo.critical_density(self.zlcgrid).to_value(unit=rho_unt)*self.cosmo.Om(self.zlcgrid)
         DaBin   =   self.cosmo.angular_diameter_distance_z1z2(self.zlbound[:-1],self.zlbound[1:]).value
         lensKernel= kl*rhoM_ave*DaBin
         return lensKernel
