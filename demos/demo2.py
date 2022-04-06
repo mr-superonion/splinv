@@ -17,9 +17,7 @@ from splinv import darkmapper
 from splinv.grid import Cartesian
 from configparser import ConfigParser
 
-def test_darkmapper():
-    """ Test sparse reconstruction of weak lensing dark map
-    """
+def main():
     # configuration
     configName  =   'config_darkmapper.ini'
     parser      =   ConfigParser()
@@ -42,9 +40,10 @@ def test_darkmapper():
     Grid    =   Cartesian(parser)
     lensKer1=   Grid.lensing_kernel(deltaIn=False)
 
-
     CS02    =   hmod.nfwCS02_grid(parser)
     data2   =   CS02.add_halo(halo)[1]
+    # I give a random error map. It doesnot matter since our data is
+    # noiseless
     gErr    =   np.ones(Grid.shape)*0.05
 
     dmapper =   darkmapper(parser,data2.real,data2.imag,gErr,lensKer1)
@@ -69,4 +68,4 @@ def test_darkmapper():
     return
 
 if __name__ == '__main__':
-    test_darkmapper()
+    main()
