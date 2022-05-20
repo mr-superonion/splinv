@@ -20,5 +20,4 @@ datDir*
 *.fdb_latexmk
 *egg-info
 notebooks/*
-*.ipynb
 *.fits
