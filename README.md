@@ -7,20 +7,16 @@ A code to inverse linear transform using sparse regularization.
 
 ```shell
 git clone https://github.com/mr-superonion/splinv.git
-cd splinv
-pip install .
+pip install -e .
 ```
 
 # darkmapper
 
-+ [Li et. al (2021, ApJ 916 67)](https://ui.adsabs.harvard.edu/abs/2021ApJ...916...67L/abstract)
-
 Reconstruct dark matter mass map from weak gravitational lensing shear
-measurements from background galaxies. See
-[example 1](./examples/simulate_halo_on_grids.py) to simulate lensing shear from
-halo on a postage stamp. See [example 2]() to reconstruct halo mass field from
-the shear field.
+measurements from background galaxies.
 
-+ [TBD]()
-
-#
++ [paper 1](https://ui.adsabs.harvard.edu/abs/2021ApJ...916...67L/abstract):
+    + [demo1](demos/demo1.py) simulates shear distortion field on pixel grids
+      caused by a NFW halo.
+    + [demo2](demos/demo2.py) reconstruct mass map from noiseless shear field
+      caused by NFW halo.
