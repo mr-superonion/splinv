@@ -863,7 +863,7 @@ class nfwTJ03(nfwHalo):
         for i in range(len(ra_s)):
             temp = 1 / np.sqrt(f[i]) * quad(self.J_n_integrand, 0, 1, args=(ra_s[i], dec_s[i], n))[0]
             out = np.append(out, temp)
-            print("integrating Jn")
+            #print("integrating Jn")
         return out
     def phi_xx(self, ra_s, dec_s):
         '''A13 in CK'''
