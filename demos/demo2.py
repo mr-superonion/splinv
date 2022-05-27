@@ -23,34 +23,41 @@ def main():
     parser      =   ConfigParser()
     parser.read(configName)
 
-    # halo simulation
-    z_h     =  0.2425
-    log_m   =  14.745
-    M_200   =  10.**(log_m)
-    conc    =  4.
+    # Define halo
+    z_h     =  0.2425           # halo redshift
+    log_m   =  14.745           # halo mass (log10)
+    M_200   =  10.**(log_m)     # halo mass
+    conc    =  4.               # halo concentration
     halo    =  hmod.nfwTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
 
     # Reconstruction Init
-    parser.set('sparse','mu','3e-4')
-    parser.set('lens','resolve_lim','0.02')     #pix
-    parser.set('lens','rs_base','%s' %halo.rs)  #Mpc/h
-    parser.set('sparse','nframe','1' )
+    parser.set('sparse','mu','3e-4')            # learning rate
+    parser.set('lens','resolve_lim','0.02')     # pix
+    parser.set('lens','rs_base','%s' %halo.rs)  # Mpc/h
+    parser.set('sparse','nframe','1' )          # number of NFW frame
 
-    # Pixelation
+    # Define the pixel grids
+    # initialize the 3D Grids (z, dec, ra)
+    # z is the index of redshift planes, dec and ra tell the position on the
+    # transverse plane
     Grid    =   Cartesian(parser)
-    lensKer1=   Grid.lensing_kernel(deltaIn=False)
+    # determine the lensing kernel for different redshfit planes of the grids
+    lensKer =   Grid.lensing_kernel(deltaIn=False)
 
+    # Simulation
+    # assign each pixel in the grid with a shear distortion according to the
+    # ra, dec and redshift of the pixel
     CS02    =   hmod.nfwCS02_grid(parser)
     data2   =   CS02.add_halo(halo)[1]
-    # I give a random error map. It doesnot matter since our data is
-    # noiseless
+    # I use a simple error map here.
+    # It doesnot matter since our data is noiseless
     gErr    =   np.ones(Grid.shape)*0.05
 
-    dmapper =   darkmapper(parser,data2.real,data2.imag,gErr,lensKer1)
+    dmapper =   darkmapper(parser,data2.real,data2.imag,gErr,lensKer)
 
-    dmapper.lbd=8.
-    dmapper.lcd=0.
-    dmapper.nonNeg=True
+    dmapper.lbd   =  8.     # lasso regularization parameter
+    dmapper.lcd   =  0.     # ridge regularization parameter
+    dmapper.nonNeg=  True   # using non-negative regularization
     dmapper.clean_outcomes()
     dmapper.fista_gradient_descent(3000)
     w   =   dmapper.adaptive_lasso_weight(gamma=2.)

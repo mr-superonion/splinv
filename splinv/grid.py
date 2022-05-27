@@ -72,21 +72,22 @@ class Cartesian():
             self.sigma  =   -1
         self.sigma_pix  =   self.sigma/self.scale
 
-        # Foreground plane
-        if parser.has_option('lens','zlbound'):
-            zlbound=np.array(json.loads(parser.get('sources','zlbound')))
-            nzl=len(zlbound)-1
-        else:
-            zlmin=parser.getfloat('lens','zlmin')
-            deltazl=parser.getfloat('lens','zlscale')
-            nzl=parser.getint('lens','nlp')
-            assert nzl>=1
-            zlmax=zlmin+deltazl*(nzl+0.1)
-            zlbound=np.arange(zlmin,zlmax,deltazl)
-        zlcgrid=(zlbound[:-1]+zlbound[1:])/2.
-        self.zlbound=   zlbound
-        self.zlcgrid=   zlcgrid
-        self.nzl    =   nzl
+        if parser.has_section('lens'):
+            # Foreground plane
+            if parser.has_option('lens','zlbound'):
+                zlbound=np.array(json.loads(parser.get('sources','zlbound')))
+                nzl=len(zlbound)-1
+            else:
+                zlmin=parser.getfloat('lens','zlmin')
+                deltazl=parser.getfloat('lens','zlscale')
+                nzl=parser.getint('lens','nlp')
+                assert nzl>=1
+                zlmax=zlmin+deltazl*(nzl+0.1)
+                zlbound=np.arange(zlmin,zlmax,deltazl)
+            zlcgrid=(zlbound[:-1]+zlbound[1:])/2.
+            self.zlbound=   zlbound
+            self.zlcgrid=   zlcgrid
+            self.nzl    =   nzl
 
         # For lensing kernel
         if parser.has_option('cosmology','omega_m'):
@@ -95,7 +96,6 @@ class Cartesian():
             omega_m =   Default_OmegaM
         self.cosmo=Cosmo(H0=Default_h0*100.,Om0=omega_m)
         self.lensKernel =   None
-        self.pozPdfAve  =   None
         return
 
     def setupNaivePlane(self,nx,ny,xmin,ymin):
@@ -278,7 +278,7 @@ class Cartesian():
         else:
             raise ValueError("method must be 'FFT' or 'sample'")
 
-    def _pixelize_data_FFT(self,x,y,z,v=None,ws=None):
+    def _pixelize_data_FFT(self,x,y,z,v=None,ws=np.empty(0)):
         if v is not None:
             # pixelize value field
             dataOut =   np.histogramdd((z,y,x),bins=(self.zbound,self.ybound,self.xbound),weights=v*ws)[0]
@@ -307,7 +307,7 @@ class Cartesian():
         else:
             return weightOut
 
-    def _pixelize_data_sample(self,x,y,z,v=None,ws=None):
+    def _pixelize_data_sample(self,x,y,z,v=None,ws=np.empty(0)):
         xbin=   np.int_((x-self.xbound[0])/self.scale)
         ybin=   np.int_((y-self.ybound[0])/self.scale)
         if v is not None:

@@ -33,7 +33,7 @@ def test_darkmapper():
     halo    =  hmod.nfwTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
 
     # Reconstruction Init
-    parser.set('sparse','mu','3e-4')
+    parser.set('sparse','mu','3e-4')            #step size for gradient descent
     parser.set('lens','resolve_lim','0.02')     #pix
     parser.set('lens','rs_base','%s' %halo.rs)  #Mpc/h
     parser.set('sparse','nframe','1' )
@@ -49,16 +49,16 @@ def test_darkmapper():
 
     dmapper =   darkmapper(parser,data2.real,data2.imag,gErr,lensKer1)
 
-    dmapper.lbd=8.
-    dmapper.lcd=0.
-    dmapper.nonNeg=True
+    dmapper.lbd=8.      # Lasso penalty
+    dmapper.lcd=0.      # Ridge penalty in Elastic net
+    dmapper.nonNeg=True # using non-negative Lasso
     dmapper.clean_outcomes()
-    dmapper.fista_gradient_descent(3000)
-    w   =   dmapper.adaptive_lasso_weight(gamma=2.)
-    dmapper.fista_gradient_descent(3000,w=w)
+    dmapper.fista_gradient_descent(3000) # run 3000 steps
+    w   =   dmapper.adaptive_lasso_weight(gamma=2.) # determine the apaptive weight
+    dmapper.fista_gradient_descent(3000,w=w)        # run adaptive lasso
 
-    dmapper.mu=3e-3
-    for _ in range(3):
+    dmapper.mu=3e-3     # step size for gradient descent
+    for _ in range(3):  # redo apaptive lasso
         w   =   dmapper.adaptive_lasso_weight(gamma=2.)
         dmapper.fista_gradient_descent(3000,w=w)
     dmapper.reconstruct()

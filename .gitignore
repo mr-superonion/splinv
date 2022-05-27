@@ -19,4 +19,5 @@ wrkDir*
 datDir*
 *.fdb_latexmk
 *egg-info
+notebooks/*
 *.fits

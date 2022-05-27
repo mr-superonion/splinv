@@ -26,10 +26,11 @@ def main():
 
     # halo simulation
     CS02    =   hmod.nfwCS02_grid(parser)
-    z_h     =   0.2425
-    log_m   =   14.6
-    M_200   =   10.**(log_m)
-    conc    =   4.
+    z_h     =   0.2425           # halo redshift
+    log_m   =   14.745           # halo mass (log10)
+    M_200   =   10.**(log_m)     # halo mass
+    conc    =   4.               # halo concentration
+    # initial an nfw halo
     halo    =   hmod.nfwTJ03(mass=M_200,conc=conc,redshift=z_h,ra=0.,dec=0.)
     kappa,shear =   CS02.add_halo(halo)
     pyfits.writeto('k0_stamp.fits',kappa,overwrite=True)

@@ -150,7 +150,7 @@ class ksmap():
         K-S Transform from gamma map to kappa map
 
         Parameters:
-        gMap:   input gamma map
+        kMap:   input gamma map
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
         """

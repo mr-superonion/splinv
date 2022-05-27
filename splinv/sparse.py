@@ -302,12 +302,13 @@ class darkmapper():
         self.diff   =   np.array(self.diff)
         return
 
-    def adaptive_lasso_weight(self,gamma=1):
+    def adaptive_lasso_weight(self,gamma=1.):
         """
         Calculate adaptive weight for adaptive lasso
 
         Parameters:
-            gamma:  power of the root-n consistent (preliminary) estimation
+            gamma (float):  power of the root-n consistent (preliminary)
+                            estimation [default 1.]
         """
         # sm_scale=0.25
         # if self.nframe==1 and sm_scale>1e-4:
@@ -344,8 +345,8 @@ class darkmapper():
         FISTA gradient descent solver of loss fucntion
         (Beck & Teboulle 2009)
         Parameters:
-            niter:      number of iteration
-            w:          adaptive weight [default: 1.]
+            niter (int):      number of iteration
+            w (float):        adaptive weight [default: 1.]
 
         """
         tn  =   tn0
