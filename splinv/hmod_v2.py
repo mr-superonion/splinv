@@ -1258,6 +1258,28 @@ class triaxialJS02(triaxialHalo):
         g = self.g(theta,phi,xp,yp)
         zeta = self.zeta(h,g,f)
         return zeta/zeta_second
+    def zeta_compare_23_32(self,ra_s, dec_s):
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        u = 1
+        theta = self.cal_theta(ra_s, dec_s)
+        phi = self.cal_phi(ra_s, dec_s)
+        f = self.f(theta, phi)
+        A = self.A(theta, phi)
+        B = self.B(theta, phi)
+        C = self.C(theta, phi)
+        qx = self.qx(f, A, B, C)
+        qy = self.qy(f, A, B, C)
+        q = self.q(qx, qy)
+        #print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1/f * (A*xp**2 + B * xp * yp + C * yp ** 2)) ## eqn 27
+        zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
+        zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
+        #print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta,phi,xp,yp)
+        g = self.g(theta,phi,xp,yp)
+        zeta = self.zeta(h,g,f)
+        return zeta/zeta_fourth
 
 
 class nfwCS02_grid(Cartesian):
