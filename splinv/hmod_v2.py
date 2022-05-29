@@ -779,8 +779,9 @@ class nfwTJ03(nfwHalo):
 
 class triaxialJS02(triaxialHalo):
     """
-    Following derivation of OLS03 and JS02
-    Also from the appendix of  V. L Corless and L. J. King 2008 MNRAS 390. Hereafter CK
+    Integral functions of a triaxial density profile:
+    Eq.27, Takada & Jain (2003, MNRAS, 340, 580) --- Surface Density,
+    and Eq.17, Takada & Jain (2003, MNRAS, 344, 857) --- Excess Surface Density
     Parameters:
         mass:       Mass defined using a spherical overdensity of 200 times the
                     critical density of the universe, in units of M_solar/h.
@@ -792,9 +793,11 @@ class triaxialJS02(triaxialHalo):
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
 
-    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None, omega_m=Default_OmegaM):
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, rs=None, omega_m=0.315):
         triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None,
-                              omega_m=Default_OmegaM)
+                              omega_m=0.315)
+        self.c2_a2 = self.a_over_c ** (-2)
+        self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
 
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
@@ -819,29 +822,29 @@ class triaxialJS02(triaxialHalo):
 
     def zeta(self, h, g, f):
         '''Eqn 21, OLS'''
-        return h - g ** 2 / 4 / f
+        return h - g ** 2 / (4 * f)
 
     def f(self, theta, phi):
         '''eqn 17 in OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi)) + np.cos(theta) ** 2
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
+        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi)**2) + np.cos(theta) ** 2
 
     def g(self, theta, phi, xp, yp):
         '''eqn 18, OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
         firstline = np.sin(theta) * np.sin(2 * phi) * (c2_b2 - c2_a2) * xp
         secondline = np.sin(2 * theta) * (1 - c2_a2 * np.cos(phi) ** 2 - c2_b2 * np.sin(phi) ** 2) * yp
         return firstline + secondline
 
     def h_ols(self, theta, phi, xp, yp):
         '''eqn 19, OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
         firstline = (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) * xp ** 2 + np.sin(2 * phi) * np.cos(
             theta) * (c2_a2 - c2_b2) * xp * yp
-        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi) + c2_b2 * np.sin(theta)) + np.sin(theta) ** 2) * yp ** 2
+        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi)**2 + c2_b2 * np.sin(phi)**2) + np.sin(theta) ** 2) * yp ** 2
         return firstline + secondline
 
     def cal_phi(self, ra, dec):
@@ -872,10 +875,10 @@ class triaxialJS02(triaxialHalo):
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         g = self.g(theta, phi, xp, yp)
-        #print("g is ", g)
+        # print("g is ",g)
         h = self.h_ols(theta, phi, xp, yp)
-        #print("h is", h)
-        #print("xp is", xp)
+        # print("h is", h)
+        # print("xp is", xp)
         zeta = self.zeta(h, g, f)
         bTNFW = self.b_TNFW_over_sigma_crit(f)
         f_GNFW = self.f_GNFW(zeta)
@@ -946,7 +949,7 @@ class triaxialJS02(triaxialHalo):
         # before, qx is not squared. I believe if u = 1 in A18, you should be able to get A1, which you don't if qx is not squared.
         return u / (qx ** 2) * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
 
-    def sigmathehardway(self, ra_s, dec_s):
+    def sigma_secondway(self, ra_s, dec_s):
         theta = self.cal_theta(ra_s, dec_s)
         # print(theta)
         phi = self.cal_phi(ra_s, dec_s)
@@ -968,13 +971,33 @@ class triaxialJS02(triaxialHalo):
         f = self.f(theta, phi)
         btnfw = self.b_TNFW_over_sigma_crit(f)
         fGNFW = self.f_GNFW(zeta)
-        return f * btnfw * fGNFW
+        return btnfw * fGNFW / 2
+        #should be this: btnfw *fGNFW/2
+        #return f * btnfw * fGNFW #this is older version where I made a mistake
 
     def kappa_prime(self, zeta_0, theta, phi):
         '''kappa prime at some point, needed for later. zeta_0 is the place you want to take derivative with respect to'''
         d_zeta = 1e-6
         return derivative(self.kappa, zeta_0, dx=d_zeta, args=(theta, phi))
+    def f_gnfw_prime_compare(self,r):
+        d_r = 0.00001
+        zeta = r
+        first_top = - 2.614 * (1.38709 / (zeta ** 0.4167) + 3.9255 * zeta ** 0.5)
+        first_bottom = zeta ** 0.5 * (1 + 2.378 * zeta ** 0.5833 + 2.617 * zeta ** 1.5) ** 2
+        second_top = -1.307
+        second_bototm = zeta ** 1.5 * (1 + 2.378 * zeta ** 0.5833 + 2.617 * zeta ** 1.5)
+        return derivative(self.f_GNFW,r,dx = d_r) - (first_top/first_bottom + second_top/second_bototm)
 
+    def kappa_prime_analytic(self,zeta, theta, phi):
+        '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. The analytic way is MUCH faster'''
+        f = self.f(theta, phi)
+        btnfw = self.b_TNFW_over_sigma_crit(f)
+        first_top = - 2.614 * (1.38709/(zeta ** 0.4167) + 3.9255 * zeta**0.5)
+        first_bottom = zeta**0.5*(1 + 2.378 * zeta**0.5833 + 2.617 * zeta**1.5)**2
+        second_top = -1.307
+        second_bototm = zeta**1.5*(1 + 2.378 * zeta**0.5833 + 2.617 * zeta ** 1.5)
+        #print(f)
+        return btnfw * (first_top/first_bottom + second_top/second_bototm) / 2
     def K_n_integrand1(self, u, ra_s, dec_s, n):
         '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
         '''
@@ -991,14 +1014,14 @@ class triaxialJS02(triaxialHalo):
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa_prime = self.kappa_prime(zeta, theta, phi)
+        kappa_prime = self.kappa_prime_analytic(zeta, theta, phi)
         return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
     def K_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
         '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
         '''
         zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa_prime = self.kappa_prime(zeta, theta, phi)
+        kappa_prime = self.kappa_prime_analytic(zeta, theta, phi)
         return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
     def J_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
@@ -1027,7 +1050,7 @@ class triaxialJS02(triaxialHalo):
             temp = 1 / np.sqrt(f[i]) * \
                    quad(self.K_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
             out = np.append(out, temp)
-            # print("integrating kn")
+            #print("integrating kn")
         return out
 
     def K_n1(self, ra_s, dec_s, n):
@@ -1064,7 +1087,7 @@ class triaxialJS02(triaxialHalo):
             temp = 1 / np.sqrt(f[i]) * \
                    quad(self.J_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
             out = np.append(out, temp)
-            print("integrating Jn")
+            #print("integrating Jn")
         return out
 
     def J_n1(self, ra_s, dec_s, n):
@@ -1162,6 +1185,8 @@ class triaxialJS02(triaxialHalo):
         K_1 = self.K_n(ra_s, dec_s, 1)
         K_1 = np.reshape(K_1, np.shape(q))
         return 2 * q * yp * xp * K_1
+    def sigma_hard_way(self, ra_s, dec_s):
+        return 1 / 2 * (self.phi_xx(ra_s, dec_s) + self.phi_yy(ra_s, dec_s))
 
     def __DeltaSigmaComplex(self, x0, ra_s0, dec_s0):
         '''A10 in CK'''
@@ -1190,7 +1215,6 @@ class triaxialJS02(triaxialHalo):
             'input ra and dec have different length '
         x = self.DdRs(ra_s, dec_s)
         print("here!!!")
-        print("sb!!!!")
         return self.__DeltaSigmaComplex(x, ra_s, dec_s)
 
     def DeltaSigma(self, ra_s, dec_s):
@@ -1210,8 +1234,30 @@ class triaxialJS02(triaxialHalo):
         assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
         x = self.DdRs(ra_s, dec_s)
-        print("here!")
+        print("if you see this , you are one the newer version")
         return np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s))
+    def zeta_compare(self,ra_s, dec_s):
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        u = 1
+        theta = self.cal_theta(ra_s, dec_s)
+        phi = self.cal_phi(ra_s, dec_s)
+        f = self.f(theta, phi)
+        A = self.A(theta, phi)
+        B = self.B(theta, phi)
+        C = self.C(theta, phi)
+        qx = self.qx(f, A, B, C)
+        qy = self.qy(f, A, B, C)
+        q = self.q(qx, qy)
+        #print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1/f * (A*xp**2 + B * xp * yp + C * yp ** 2)) ## eqn 27
+        zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
+        zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
+        #print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta,phi,xp,yp)
+        g = self.g(theta,phi,xp,yp)
+        zeta = np.sqrt(self.zeta(h,g,f))
+        return zeta/zeta_fourth
 
 
 class nfwCS02_grid(Cartesian):
