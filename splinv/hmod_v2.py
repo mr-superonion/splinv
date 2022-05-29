@@ -621,9 +621,180 @@ class nfwTJ03(nfwHalo):
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
+    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=Default_OmegaM):
+        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=omega_m)
 
-    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM):
-        nfwHalo.__init__(self, ra, dec, redshift, mass=mass, conc=conc, rs=rs, omega_m=omega_m)
+    def __Sigma(self,x0):
+        c   = float(self.c)
+        out = np.zeros_like(x0, dtype=float)
+
+        # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
+        mask = np.where(x0 < 0.999)[0]
+        x=x0[mask]
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+\
+            1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
+
+        mask = np.where((x0 > 1.001) & (x0<c))[0]
+        x=x0[mask]
+        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-\
+            1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
+
+        mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
+        x=x0[mask]
+        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))\
+            +((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
+
+        mask = np.where(x0 >= c)[0]
+        out[mask]=0.
+        return out* self.rs * self.rho_s*2.
+
+    def Sigma(self,ra_s,dec_s):
+        """Calculate Surface Density (Sigma) of halo.
+        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+
+        # convenience: call with single number
+        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s,np.ndarray):
+            ra_sA=np.array([ra_s], dtype='float')
+            dec_sA=np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA,dec_sA)[0]
+        assert len(ra_s)==len(dec_s),\
+            'input ra and dec have different length '
+        x=self.DdRs(ra_s,dec_s)
+        return self.__Sigma(x)
+
+    def __DeltaSigma(self,x0):
+        c   = float(self.c)
+        out = np.zeros_like(x0, dtype=float)
+
+        # 4 cases:
+        # x < 1-0.001,|x-1| <= 0.001
+        # 1.001<x<=c, x>c
+
+        mask = np.where(x0 < 0.0001)[0]
+        out[mask]=1./2.
+
+        mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
+        x=x0[mask]
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            +((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
+            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+
+        mask = np.where((x0 > 1.001) & (x0< c))[0]
+        x=x0[mask]
+        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
+            -((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
+            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+
+        mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
+        x=x0[mask]
+        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))\
+            +6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
+            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) \
+            + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
+            4*np.log(c +np.sqrt(-1.+c**2)))
+
+        mask = np.where(x0 >= c)[0]
+        x=x0[mask]
+        out[mask] = 2./self.A/x**2.
+        return out*self.rs * self.rho_s*2.
+
+    def DeltaSigma(self,ra_s,dec_s):
+        """Calculate excess surface density of halo according to
+        Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        # convenience: call with single number
+        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s,np.ndarray):
+            ra_sA=np.array([ra_s], dtype='float')
+            dec_sA=np.array([dec_s], dtype='float')
+            return self.DeltaSigma(ra_sA,dec_sA)[0]
+        assert len(ra_s)==len(dec_s),\
+            'input ra and dec have different length '
+        x=self.DdRs(ra_s,dec_s)
+        return self.__DeltaSigma(x)
+
+    def DeltaSigmaComplex(self,ra_s,dec_s):
+        """Calculate excess surface density of halo.
+        return a complex array Delta Sigma_1+ i Delta Sigma_2
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        # convenience: call with single number
+        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s,np.ndarray):
+            ra_sA=np.array([ra_s], dtype='float')
+            dec_sA=np.array([dec_s], dtype='float')
+            return self.DeltaSigmaComplex(ra_sA,dec_sA)[0]
+        assert len(ra_s)==len(dec_s),\
+            'input ra and dec have different length '
+        x=self.DdRs(ra_s,dec_s)
+        DeltaSigma=self.__DeltaSigma(x)
+        DeltaSigma1 = -DeltaSigma*self.cos2phi(ra_s,dec_s)
+        DeltaSigma2 = -DeltaSigma*self.sin2phi(ra_s,dec_s)
+        return DeltaSigma1+1j*DeltaSigma2
+
+    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+        """NFW Sigma on Grid
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
+        """
+        if xc is None:
+            xc  =   self.ra
+        if yc is None:
+            yc  =   self.dec
+
+        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
+        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
+        x,y =   np.meshgrid(X,Y)
+        atomReal=self.Sigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        return atomReal
+
+    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+        """NFW Delta Sigma on Grid
+        Parameters:
+            pix_scale:    pixel sacle [arcsec]
+            ngrid:        number of pixels on x and y axis
+        """
+        if xc is None:
+            xc  =   self.ra
+        if yc is None:
+            yc  =   self.dec
+
+        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
+        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
+        x,y =   np.meshgrid(X,Y)
+        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        return atomReal
+
+
+class triaxialJS02(triaxialHalo):
+    """
+    Following derivation of OLS03 and JS02
+    Also from the appendix of  V. L Corless and L. J. King 2008 MNRAS 390. Hereafter CK
+    Parameters:
+        mass:       Mass defined using a spherical overdensity of 200 times the
+                    critical density of the universe, in units of M_solar/h.
+        conc:       Concentration parameter virial radius / scale radius.
+        redshift:   Redshift of the halo.
+        ra:         ra of halo center  [arcsec].
+        dec:        dec of halo center [arcsec].
+        omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
+                    set to 1-omega_matter. (default: Default_OmegaM)
+    """
+
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None, omega_m=Default_OmegaM):
+        triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None,
+                              omega_m=Default_OmegaM)
 
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
@@ -701,10 +872,10 @@ class nfwTJ03(nfwHalo):
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         g = self.g(theta, phi, xp, yp)
-        print("g is ",g)
+        #print("g is ", g)
         h = self.h_ols(theta, phi, xp, yp)
-        print("h is", h)
-        print("xp is", xp)
+        #print("h is", h)
+        #print("xp is", xp)
         zeta = self.zeta(h, g, f)
         bTNFW = self.b_TNFW_over_sigma_crit(f)
         f_GNFW = self.f_GNFW(zeta)
@@ -760,7 +931,7 @@ class nfwTJ03(nfwHalo):
         c2_a2 = self.a_over_c ** (-2)
         c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
         B = np.cos(theta) * np.sin(2 * phi) * (c2_a2 - c2_b2)
-        #print("B is", B)
+        # print("B is", B)
         return B
 
     def C(self, theta, phi):
@@ -772,8 +943,9 @@ class nfwTJ03(nfwHalo):
     def zeta2(self, u, xp, yp, qx, q):
         '''unlike the other zeta, this takes different arguments. This also returns ZETA SQUARED!!!
         A18 in CK'''
-        #before, qx is not squared. I believe if u = 1 in A18, you should be able to get A1, which you don't if qx is not squared.
-        return u / (qx**2) * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
+        # before, qx is not squared. I believe if u = 1 in A18, you should be able to get A1, which you don't if qx is not squared.
+        return u / (qx ** 2) * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
+
     def sigmathehardway(self, ra_s, dec_s):
         theta = self.cal_theta(ra_s, dec_s)
         # print(theta)
@@ -786,9 +958,10 @@ class nfwTJ03(nfwHalo):
         C = self.C(theta, phi)
         qx = self.qx(f, A, B, C)
         qy = self.qy(f, A, B, C)
-        q = self.q(qx,qy)
-        zeta = np.sqrt(self.zeta2(1,xp,yp,qx,q))
-        return self.kappa(zeta,theta,phi)
+        q = self.q(qx, qy)
+        zeta = np.sqrt(self.zeta2(1, xp, yp, qx, q))
+        return self.kappa(zeta, theta, phi)
+
     def kappa(self, zeta, theta, phi):
         '''23 in OLS... again, but but with different input options. Also notice that I didn't include Sigma_crit here.
         THE PROGRAM WILL GIVE THE CORRECT SHEAR AFTER BEING MULTIPLIED BY LENSING KERNEL'''
@@ -802,7 +975,7 @@ class nfwTJ03(nfwHalo):
         d_zeta = 1e-6
         return derivative(self.kappa, zeta_0, dx=d_zeta, args=(theta, phi))
 
-    def K_n_integrand(self, u, ra_s, dec_s, n):
+    def K_n_integrand1(self, u, ra_s, dec_s, n):
         '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
         '''
         theta = self.cal_theta(ra_s, dec_s)
@@ -821,24 +994,43 @@ class nfwTJ03(nfwHalo):
         kappa_prime = self.kappa_prime(zeta, theta, phi)
         return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
-    def J_n_integrand(self, u, ra_s, dec_s, n):
+    def K_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
+        '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
+        '''
+        zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
+        kappa_prime = self.kappa_prime(zeta, theta, phi)
+        return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
+
+    def J_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
         '''A17 in Ck'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_yp(ra_s, dec_s)
         zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
         kappa = self.kappa(zeta, theta, phi)
         return kappa / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
     def K_n(self, ra_s, dec_s, n):
+        '''A16 in CK'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        theta = np.ravel(self.cal_theta(ra_s, dec_s))
+        phi = np.ravel(self.cal_phi(ra_s, dec_s))
+        f = np.ravel(self.f(theta, phi))
+        out = np.array([])
+        ra_s = np.ravel(ra_s)
+        dec_s = np.ravel(dec_s)
+        A = np.ravel(self.A(theta, phi))
+        B = np.ravel(self.B(theta, phi))
+        C = np.ravel(self.C(theta, phi))
+        qx = np.ravel(self.qx(f, A, B, C))
+        qy = np.ravel(self.qy(f, A, B, C))
+        q = np.ravel(self.q(qx, qy))
+        for i in range(len(ra_s)):
+            temp = 1 / np.sqrt(f[i]) * \
+                   quad(self.K_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
+            out = np.append(out, temp)
+            # print("integrating kn")
+        return out
+
+    def K_n1(self, ra_s, dec_s, n):
         '''A16 in CK'''
         theta = self.cal_theta(ra_s, dec_s)
         phi = self.cal_phi(ra_s, dec_s)
@@ -849,10 +1041,33 @@ class nfwTJ03(nfwHalo):
         for i in range(len(ra_s)):
             temp = 1 / np.sqrt(f[i]) * quad(self.K_n_integrand, 0, 1, args=(ra_s[i], dec_s[i], n))[0]
             out = np.append(out, temp)
-            #print("integrating kn")
+            # print("integrating kn")
         return out
 
     def J_n(self, ra_s, dec_s, n):
+        '''A17 in CK'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        theta = np.ravel(self.cal_theta(ra_s, dec_s))
+        phi = np.ravel(self.cal_phi(ra_s, dec_s))
+        f = np.ravel(self.f(theta, phi))
+        out = np.array([])
+        ra_s = np.ravel(ra_s)
+        dec_s = np.ravel(dec_s)
+        A = np.ravel(self.A(theta, phi))
+        B = np.ravel(self.B(theta, phi))
+        C = np.ravel(self.C(theta, phi))
+        qx = np.ravel(self.qx(f, A, B, C))
+        qy = np.ravel(self.qy(f, A, B, C))
+        q = np.ravel(self.q(qx, qy))
+        for i in range(len(ra_s)):
+            temp = 1 / np.sqrt(f[i]) * \
+                   quad(self.J_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
+            out = np.append(out, temp)
+            print("integrating Jn")
+        return out
+
+    def J_n1(self, ra_s, dec_s, n):
         '''A17 in CK'''
         theta = self.cal_theta(ra_s, dec_s)
         phi = self.cal_phi(ra_s, dec_s)
@@ -863,8 +1078,9 @@ class nfwTJ03(nfwHalo):
         for i in range(len(ra_s)):
             temp = 1 / np.sqrt(f[i]) * quad(self.J_n_integrand, 0, 1, args=(ra_s[i], dec_s[i], n))[0]
             out = np.append(out, temp)
-            #print("integrating Jn")
+            print("integrating Jn")
         return out
+
     def phi_xx(self, ra_s, dec_s):
         '''A13 in CK'''
         theta = self.cal_theta(ra_s, dec_s)
@@ -877,12 +1093,12 @@ class nfwTJ03(nfwHalo):
         qy = self.qy(f, A, B, C)
         q = self.q(qx, qy)
         xp = self.cal_xp(ra_s, dec_s)
-        #yp = self.cal_xp(ra_s, dec_s)
+        # yp = self.cal_xp(ra_s, dec_s)
         K_0 = self.K_n(ra_s, dec_s, 0)
         J_0 = self.J_n(ra_s, dec_s, 0)
         K_0 = np.reshape(K_0, np.shape(q))
         J_0 = np.reshape(J_0, np.shape(q))
-        return 2*q*xp**2 * K_0 + q*J_0
+        return 2 * q * xp ** 2 * K_0 + q * J_0
 
     def phi_yy(self, ra_s, dec_s):
         '''A14 in CK'''
@@ -895,16 +1111,17 @@ class nfwTJ03(nfwHalo):
         qx = self.qx(f, A, B, C)
         qy = self.qy(f, A, B, C)
         q = self.q(qx, qy)
-        #xp = self.cal_xp(ra_s, dec_s)
+        # xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         K_2 = self.K_n(ra_s, dec_s, 2)
         J_1 = self.J_n(ra_s, dec_s, 1)
         K_2 = np.reshape(K_2, np.shape(q))
         J_1 = np.reshape(J_1, np.shape(q))
         return 2 * q * yp ** 2 * K_2 + q * J_1
-    def plot_q(self,ra_s, dec_s):
+
+    def plot_q(self, ra_s, dec_s):
         theta = self.cal_theta(ra_s, dec_s)
-        #print("theta is", theta)
+        # print("theta is", theta)
         phi = self.cal_phi(ra_s, dec_s)
         f = self.f(theta, phi)
         A = self.A(theta, phi)
@@ -914,20 +1131,24 @@ class nfwTJ03(nfwHalo):
         qy = self.qy(f, A, B, C)
         q = self.q(qx, qy)
         return q
-    def plot_x2(self,ra_s, dec_s):
+
+    def plot_x2(self, ra_s, dec_s):
         xp = self.cal_xp(ra_s, dec_s)
-        return xp**2
-    def plot_y2(self,ra_s, dec_s):
+        return xp ** 2
+
+    def plot_y2(self, ra_s, dec_s):
         yp = self.cal_yp(ra_s, dec_s)
-        return yp**2
-    def plot_xy(self,ra_s, dec_s):
+        return yp ** 2
+
+    def plot_xy(self, ra_s, dec_s):
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
-        return xp*yp
-    def phi_xy(self,ra_s, dec_s):
+        return xp * yp
+
+    def phi_xy(self, ra_s, dec_s):
         '''A15 in CK'''
         theta = self.cal_theta(ra_s, dec_s)
-        print("theta is", theta)
+        # print("theta is", theta)
         phi = self.cal_phi(ra_s, dec_s)
         f = self.f(theta, phi)
         A = self.A(theta, phi)
@@ -941,14 +1162,16 @@ class nfwTJ03(nfwHalo):
         K_1 = self.K_n(ra_s, dec_s, 1)
         K_1 = np.reshape(K_1, np.shape(q))
         return 2 * q * yp * xp * K_1
-    def __DeltaSigmaComplex(self,x0, ra_s0, dec_s0):
+
+    def __DeltaSigmaComplex(self, x0, ra_s0, dec_s0):
         '''A10 in CK'''
-        #no cutoff needed.
+        # no cutoff needed.
         ra_s = ra_s0
         dec_s = dec_s0
         gamma1 = 1 / 2 * (self.phi_xx(ra_s, dec_s) - self.phi_yy(ra_s, dec_s))
         gamma2 = self.phi_xy(ra_s, dec_s)
         return gamma1 + 1j * gamma2
+
     def DeltaSigmaComplex(self, ra_s, dec_s):
         """Calculate Surface Density (Sigma) of halo.
                 Takada & Jain(2003, MNRAS, 340, 580) Eq.27
@@ -967,9 +1190,10 @@ class nfwTJ03(nfwHalo):
             'input ra and dec have different length '
         x = self.DdRs(ra_s, dec_s)
         print("here!!!")
+        print("sb!!!!")
         return self.__DeltaSigmaComplex(x, ra_s, dec_s)
 
-    def DeltaSigma(self,ra_s, dec_s):
+    def DeltaSigma(self, ra_s, dec_s):
         """Calculate Surface Density (Sigma) of halo.
                         Takada & Jain(2003, MNRAS, 340, 580) Eq.27
                             ra_s:       ra of sources [arcsec].
@@ -986,369 +1210,8 @@ class nfwTJ03(nfwHalo):
         assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
         x = self.DdRs(ra_s, dec_s)
+        print("here!")
         return np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s))
-
-
-class triaxialJS02(triaxialHalo):
-    """
-    Following derivation of OLS03 and JS02
-    Also from the appendix of  V. L Corless and L. J. King 2008 MNRAS 390. Hereafter CK
-    Parameters:
-        mass:       Mass defined using a spherical overdensity of 200 times the
-                    critical density of the universe, in units of M_solar/h.
-        conc:       Concentration parameter virial radius / scale radius.
-        redshift:   Redshift of the halo.
-        ra:         ra of halo center  [arcsec].
-        dec:        dec of halo center [arcsec].
-        omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
-                    set to 1-omega_matter. (default: Default_OmegaM)
-    """
-
-    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None, omega_m=Default_OmegaM):
-        triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None,
-                              omega_m=Default_OmegaM)
-
-    def f_GNFW(self, r):
-        ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
-        top = 2.614
-        bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
-        f_GNFW_val = np.divide(top, bottom)
-        return f_GNFW_val
-
-    def b_TNFW_over_sigma_crit(self, f):
-        '''eqn 24 in OLS, without the sigma_crit, because we need to multiply that to the expressionwhen we find
-        density anyways '''
-        return 4 * self.rho_s * self.R0 * 1 / np.sqrt(f)
-
-    def cal_xp(self, ra_s, dec_s):
-        '''We divide by rs_arcsec because every x,y,z is scaled by R0'''
-        x = (ra_s - self.ra) / self.rs_arcsec  # normalized (-) xp in Fig 1 OLS. We are cool b/c sign doesn't matter
-        return x
-
-    def cal_yp(self, ra_s, dec_s):
-        y = (dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter
-        return y
-
-    def zeta(self, h, g, f):
-        '''Eqn 21, OLS'''
-        return h - g ** 2 / 4 / f
-
-    def f(self, theta, phi):
-        '''eqn 17 in OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi)) + np.cos(theta) ** 2
-
-    def g(self, theta, phi, xp, yp):
-        '''eqn 18, OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        firstline = np.sin(theta) * np.sin(2 * phi) * (c2_b2 - c2_a2) * xp
-        secondline = np.sin(2 * theta) * (1 - c2_a2 * np.cos(phi) ** 2 - c2_b2 * np.sin(phi) ** 2) * yp
-        return firstline + secondline
-
-    def h_ols(self, theta, phi, xp, yp):
-        '''eqn 19, OLS'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        firstline = (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) * xp ** 2 + np.sin(2 * phi) * np.cos(
-            theta) * (c2_a2 - c2_b2) * xp * yp
-        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi) + c2_b2 * np.sin(theta)) + np.sin(theta) ** 2) * yp ** 2
-        return firstline + secondline
-
-    def cal_phi(self, ra, dec):
-        '''ra_s : right ascension of line of sight, which I take as the source?
-        dec: declination of line of sight. Fig 1 of OLS'''
-        arcsec2rad = np.pi / 180. / 3600
-        theta = ra * arcsec2rad
-        return theta
-
-    def cal_theta(self, ra, dec):
-        '''ra_s : right ascension of line of sight, which I take as the source?
-                dec: declination of line of sight
-                refer to euler angle or Fig 1 of OLS'''
-        arcsec2rad = np.pi / 180. / 3600
-        phi = np.pi / 2. - dec * arcsec2rad
-        return phi
-
-    def __Sigma(self, x0, ra_s0, dec_s0):
-        c = np.float128(self.c)
-        out = np.zeros_like(x0, dtype=float)
-        mask = np.where((x0 >= 0) & (x0 <= c / 0.45))[0]
-        x = x0[mask]
-        ra_s = ra_s0[mask]
-        dec_s = dec_s0[mask]
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_yp(ra_s, dec_s)
-        g = self.g(theta, phi, xp, yp)
-        h = self.h_ols(theta, phi, xp, yp)
-        zeta = self.zeta(h, g, f)
-        bTNFW = self.b_TNFW_over_sigma_crit(f)
-        f_GNFW = self.f_GNFW(zeta)
-        out[mask] = bTNFW * f_GNFW / 2
-        # the undefined are just zero
-        return out
-
-    def Sigma(self, ra_s, dec_s):
-        """Calculate Surface Density (Sigma) of halo.
-        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
-            ra_s:       ra of sources [arcsec].
-            dec_s:      dec of sources [arcsec].
-        """
-
-        # convenience: call with single number
-        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
-            'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s, np.ndarray):
-            ra_sA = np.array([ra_s], dtype='float')
-            dec_sA = np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA, dec_sA)[0]
-        assert len(ra_s) == len(dec_s), \
-            'input ra and dec have different length '
-        x = self.DdRs(ra_s, dec_s)
-        return self.__Sigma(x, ra_s, dec_s)
-
-    def qx(self, f, A, B, C):
-        '''A2 in CK'''
-        return 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
-
-    def qy(self, f, A, B, C):
-        '''A3 in CK'''
-        return 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
-
-    def q(self, qx, qy):
-        return qy / qx
-
-    def A(self, theta, phi):
-        '''A5 in CK'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        return np.cos(theta) ** 2 * (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) + c2_a2 * c2_b2 * np.sin(
-            theta) ** 2
-
-    def B(self, theta, phi):
-        '''A6 in CK'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        return np.cos(theta) * np.sin(2 * phi) * (c2_a2 - c2_b2)
-
-    def C(self, theta, phi):
-        '''A7 in CK'''
-        c2_a2 = self.a_over_c ** (-2)
-        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-        return c2_b2 * np.sin(phi) ** 2 + c2_a2 * np.cos(phi) ** 2
-
-    def zeta2(self, u, xp, yp, qx, q):
-        '''unlike the other zeta, this takes different arguments. This also returns ZETA SQUARED!!!
-        A18 in CK'''
-        return u / qx * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
-
-    def kappa(self, zeta, theta, phi):
-        '''23 in OLS... again, but but with different input options. Also notice that I didn't include Sigma_crit here.
-        THE PROGRAM WILL GIVE THE CORRECT SHEAR AFTER BEING MULTIPLIED BY LENSING KERNEL'''
-        f = self.f(theta, phi)
-        btnfw = self.b_TNFW_over_sigma_crit(f)
-        fGNFW = self.f_GNFW(zeta)
-        return f * btnfw * fGNFW
-
-    def kappa_prime(self, zeta_0, theta, phi):
-        '''kappa prime at some point, needed for later. zeta_0 is the place you want to take derivative with respect to'''
-        d_zeta = 1e-6
-        return derivative(self.kappa, zeta_0, dx=d_zeta, args=(theta, phi))
-
-    def K_n_integrand(self, u, ra_s, dec_s, n):
-        '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
-        '''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_xp(ra_s, dec_s)
-        zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa_prime = self.kappa_prime(zeta, theta, phi)
-        return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
-
-    def J_n_integrand(self, u, ra_s, dec_s, n):
-        '''A17 in Ck'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_xp(ra_s, dec_s)
-        zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa = self.kappa(zeta, theta, phi)
-        return kappa / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
-
-    def K_n(self, ra_s, dec_s, n):
-        '''A16 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        out = np.array([])
-        for i in range(len(ra_s)):
-            temp = 1 / np.sqrt(f[i]) * quad(self.K_n_integrand, 0, 1, args=(ra_s[i], dec_s[i], n))[0]
-            out = np.append(out, temp)
-        return out
-
-    def J_n(self, ra_s, dec_s, n):
-        '''A17 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        out = np.array([])
-        for i in range(len(ra_s)):
-            temp = 1 / np.sqrt(f[i]) * quad(self.J_n_integrand, 0, 1, args=(ra_s[i], dec_s[i], n))[0]
-            out = np.append(out, temp)
-        return out
-
-    def phi_xx(self, ra_s, dec_s):
-        '''A13 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        xp = self.cal_xp(ra_s, dec_s)
-        #yp = self.cal_xp(ra_s, dec_s)
-        K_0 = self.K_n(ra_s, dec_s, 0)
-        J_0 = self.J_n(ra_s, dec_s, 0)
-        return 2*q*xp**2 * K_0 + q*J_0
-
-    def phi_yy(self, ra_s, dec_s):
-        '''A14 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        #xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_xp(ra_s, dec_s)
-        K_2 = self.K_n(ra_s, dec_s, 2)
-        J_1 = self.J_n(ra_s, dec_s, 1)
-        return 2 * q * yp ** 2 * K_2 + q * J_1
-
-    def phi_xy(self,ra_s, dec_s):
-        '''A15 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_xp(ra_s, dec_s)
-        K_1 = self.K_n(ra_s, dec_s, 1)
-        return 2 * q * yp * xp * K_1
-    def __DeltaSigmaComplex(self,x0, ra_s0, dec_s0):
-        '''A10 in CK'''
-        c = np.float128(self.c)
-        out1 = np.zeros_like(x0, dtype=float)
-        out2 = np.zeros_like(x0, dtype=float)
-        mask = np.where((x0 >= 0) & (x0 <= c / 0.45))[0]
-        x = x0
-        ra_s = ra_s0
-        dec_s = dec_s0
-        DeltaSigma1 = 1 / 2 * (self.phi_xx(ra_s, dec_s) - self.phi_yy(ra_s, dec_s))
-        DeltaSigma2 = self.phi_xy(ra_s, dec_s)
-        out1[mask] = DeltaSigma1
-        out2[mask] = DeltaSigma2
-        return out1 + 1j * out2
-    def DeltaSigmaComplex(self, ra_s, dec_s):
-        """Calculate Surface Density (Sigma) of halo.
-                Takada & Jain(2003, MNRAS, 340, 580) Eq.27
-                    ra_s:       ra of sources [arcsec].
-                    dec_s:      dec of sources [arcsec].
-                """
-
-        # convenience: call with single number
-        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
-            'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s, np.ndarray):
-            ra_sA = np.array([ra_s], dtype='float')
-            dec_sA = np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA, dec_sA)[0]
-        assert len(ra_s) == len(dec_s), \
-            'input ra and dec have different length '
-        x = self.DdRs(ra_s, dec_s)
-        return self.__DeltaSigmaComplex(x, ra_s, dec_s)
-
-    def DeltaSigma(self,ra_s, dec_s):
-        """Calculate Surface Density (Sigma) of halo.
-                        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
-                            ra_s:       ra of sources [arcsec].
-                            dec_s:      dec of sources [arcsec].
-                        """
-
-        # convenience: call with single number
-        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
-            'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s, np.ndarray):
-            ra_sA = np.array([ra_s], dtype='float')
-            dec_sA = np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA, dec_sA)[0]
-        assert len(ra_s) == len(dec_s), \
-            'input ra and dec have different length '
-        x = self.DdRs(ra_s, dec_s)
-        return np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s))
-    def SigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
-        """NFW Sigma on Grid
-        Parameters:
-            pix_scale:    pixel sacle [arcsec]
-            ngrid:        number of pixels on x and y axis
-        """
-        if xc is None:
-            xc = self.ra
-        if yc is None:
-            yc = self.dec
-
-        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
-        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
-        x, y = np.meshgrid(X, Y)
-        atomReal = self.Sigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
-        return atomReal
-    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
-        """NFW Atom on Grid
-        Parameters:
-            pix_scale:    pixel sacle [arcsec]
-            ngrid:        number of pixels on x and y axis
-            :param xc:
-        """
-        if xc is None:
-            xc  =   self.ra
-        if yc is None:
-            yc  =   self.dec
-
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
-        return atomReal
 
 
 class nfwCS02_grid(Cartesian):
