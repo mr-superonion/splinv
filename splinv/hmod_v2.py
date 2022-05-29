@@ -821,8 +821,8 @@ class triaxialJS02(triaxialHalo):
         return y
 
     def zeta(self, h, g, f):
-        '''Eqn 21, OLS'''
-        return h - g ** 2 / (4 * f)
+        '''Eqn 21, OLS Typo in the expression. It should be zeta^2 on the LHS'''
+        return np.sqrt(np.abs(h - g ** 2 / (4 * f)))
 
     def f(self, theta, phi):
         '''eqn 17 in OLS'''
