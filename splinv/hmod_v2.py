@@ -325,15 +325,18 @@ class triaxialHalo(Cosmo):
         IMPORTANT: SINCE IT IS SEEN THAT ALPHA=1.5 REPRODUCES ARC STAT CORRECTLY, WE DO THINGS WITH ALPHA = 1.5
     """
 
-    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None, omega_m=Default_OmegaM):
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=0, theta_prime=0, rs=None,
+                 omega_m=Default_OmegaM):
         # Redshift and Geometry
         # ra dec
         # self in here seems to be the Cosmo object
-        self.ra = ra  # what are these?
-        self.dec = dec  # what are these?
+        self.ra = ra  # right ascension in celestial coordinates
+        self.dec = dec  # declination in celestial coordinates
         self.a_over_b = a_over_b  # not if should have
         self.a_over_c = a_over_c  # not_if_should_have
         self.c = np.float128(conc)  # the concentration parameter
+        self.phi_prime = phi_prime  # the intrinsic halo alignment with respect to earth's coordinate. In radians
+        self.theta_prime = theta_prime  # the intrisic halo aignment with respect to earth's coordinate. In radians
         Cosmo.__init__(self, H0=Default_h0 * 100., Om0=omega_m)
         self.z = float(redshift)
         self.a = 1. / (1. + self.z)  # scale factor
@@ -621,34 +624,36 @@ class nfwTJ03(nfwHalo):
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
-    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=Default_OmegaM):
-        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=omega_m)
 
-    def __Sigma(self,x0):
-        c   = float(self.c)
+    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM):
+        nfwHalo.__init__(self, ra, dec, redshift, mass=mass, conc=conc, rs=rs, omega_m=omega_m)
+
+    def __Sigma(self, x0):
+        c = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
         mask = np.where(x0 < 0.999)[0]
-        x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+\
-            1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
+        x = x0[mask]
+        out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) + \
+                    1. / (1 - x ** 2.) ** 1.5 * np.arccosh((x ** 2. + c) / x / (1. + c))
 
-        mask = np.where((x0 > 1.001) & (x0<c))[0]
-        x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-\
-            1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
+        mask = np.where((x0 > 1.001) & (x0 < c))[0]
+        x = x0[mask]
+        out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) - \
+                    1. / (x ** 2. - 1) ** 1.5 * np.arccos((x ** 2. + c) / x / (1. + c))
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
-        x=x0[mask]
-        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))\
-            +((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
+        x = x0[mask]
+        out[mask] = (-2. + c + c ** 2.) / (3. * np.sqrt(-1. + c) * (1 + c) ** (3. / 2)) \
+                    + ((2. - c - 4. * c ** 2. - 2. * c ** 3.) * (x - 1.)) / (
+                            5. * np.sqrt(-1. + c) * (1 + c) ** (5 / 2.))
 
         mask = np.where(x0 >= c)[0]
-        out[mask]=0.
-        return out* self.rs * self.rho_s*2.
+        out[mask] = 0.
+        return out * self.rs * self.rho_s * 2.
 
-    def Sigma(self,ra_s,dec_s):
+    def Sigma(self, ra_s, dec_s):
         """Calculate Surface Density (Sigma) of halo.
         Takada & Jain(2003, MNRAS, 340, 580) Eq.27
             ra_s:       ra of sources [arcsec].
@@ -656,19 +661,19 @@ class nfwTJ03(nfwHalo):
         """
 
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__Sigma(x)
 
-    def __DeltaSigma(self,x0):
-        c   = float(self.c)
+    def __DeltaSigma(self, x0):
+        c = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 4 cases:
@@ -676,104 +681,106 @@ class nfwTJ03(nfwHalo):
         # 1.001<x<=c, x>c
 
         mask = np.where(x0 < 0.0001)[0]
-        out[mask]=1./2.
+        out[mask] = 1. / 2.
 
-        mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
-        x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
-            +((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
-            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+        mask = np.where((x0 < 0.999) & (x0 > 0.0001))[0]
+        x = x0[mask]
+        out[mask] = (-2. * c + ((2. - x ** 2.) * np.sqrt(c ** 2. - x ** 2.)) / (1 - x ** 2)) / ((1 + c) * x ** 2.) \
+                    + ((2 - 3 * x ** 2) * np.arccosh((c + x ** 2) / ((1. + c) * x))) / (x ** 2 * (1 - x ** 2.) ** 1.5) \
+                    + (2 * np.log(((1. + c) * x) / (c + np.sqrt(c ** 2 - x ** 2)))) / x ** 2
 
-        mask = np.where((x0 > 1.001) & (x0< c))[0]
-        x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
-            -((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
-            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+        mask = np.where((x0 > 1.001) & (x0 < c))[0]
+        x = x0[mask]
+        out[mask] = (-2. * c + ((2. - x ** 2.) * np.sqrt(c ** 2. - x ** 2.)) / (1 - x ** 2)) / ((1 + c) * x ** 2.) \
+                    - ((2 - 3 * x ** 2) * np.arccos((c + x ** 2) / ((1. + c) * x))) / (x ** 2 * (-1 + x ** 2.) ** 1.5) \
+                    + (2 * np.log(((1. + c) * x) / (c + np.sqrt(c ** 2 - x ** 2)))) / x ** 2
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
-        x=x0[mask]
-        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))\
-            +6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
-            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) \
-            + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
-            4*np.log(c +np.sqrt(-1.+c**2)))
+        x = x0[mask]
+        out[mask] = (10 * np.sqrt(-1. + c ** 2) + c * (-6 - 6 * c + 11 * np.sqrt(-1. + c ** 2)) \
+                     + 6 * (1 + c) ** 2 * np.log((1. + c) / (c + np.sqrt(-1. + c ** 2)))) / (3. * (1 + c) ** 2) - \
+                    (-1. + x) * ((94 + c * (
+                113 + 60 * np.sqrt((-1. + c) / (1 + c)) + 4 * c * (-22 + 30 * np.sqrt((-1 + c) / (1 + c)) \
+                                                                   + c * (-26 + 15 * np.sqrt(
+                    (-1 + c) / (1 + c)))))) / (15. * (1. + c) ** 2 * np.sqrt(-1. + c ** 2)) - 4 * np.log(1. + c) + \
+                                 4 * np.log(c + np.sqrt(-1. + c ** 2)))
 
         mask = np.where(x0 >= c)[0]
-        x=x0[mask]
-        out[mask] = 2./self.A/x**2.
-        return out*self.rs * self.rho_s*2.
+        x = x0[mask]
+        out[mask] = 2. / self.A / x ** 2.
+        return out * self.rs * self.rho_s * 2.
 
-    def DeltaSigma(self,ra_s,dec_s):
+    def DeltaSigma(self, ra_s, dec_s):
         """Calculate excess surface density of halo according to
         Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__DeltaSigma(x)
 
-    def DeltaSigmaComplex(self,ra_s,dec_s):
+    def DeltaSigmaComplex(self, ra_s, dec_s):
         """Calculate excess surface density of halo.
         return a complex array Delta Sigma_1+ i Delta Sigma_2
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigmaComplex(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigmaComplex(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
-        DeltaSigma=self.__DeltaSigma(x)
-        DeltaSigma1 = -DeltaSigma*self.cos2phi(ra_s,dec_s)
-        DeltaSigma2 = -DeltaSigma*self.sin2phi(ra_s,dec_s)
-        return DeltaSigma1+1j*DeltaSigma2
+        x = self.DdRs(ra_s, dec_s)
+        DeltaSigma = self.__DeltaSigma(x)
+        DeltaSigma1 = -DeltaSigma * self.cos2phi(ra_s, dec_s)
+        DeltaSigma2 = -DeltaSigma * self.sin2phi(ra_s, dec_s)
+        return DeltaSigma1 + 1j * DeltaSigma2
 
-    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def SigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Sigma on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.Sigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.Sigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
 
-    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def DeltaSigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Delta Sigma on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.DeltaSigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
 
 
@@ -793,19 +800,34 @@ class triaxialJS02(triaxialHalo):
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
 
-    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, rs=None, omega_m=0.315):
-        triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, rs=None,
-                              omega_m=0.315)
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, phi_prime=0, theta_prime=0, rs=None,
+                 omega_m=Default_OmegaM):
+        triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=phi_prime,
+                              theta_prime=theta_prime, rs=None,
+                              omega_m=omega_m)
         self.c2_a2 = self.a_over_c ** (-2)
         self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
-
+        self.phi = self.cal_phi()
+        self.theta = self.cal_theta()
+        self.f = self.f(self.theta,self.phi)
+        self.b_TNFW = self.b_TNFW_over_sigma_crit(self.f)
+        self.A = self.A(self.theta,self.phi)
+        self.B = self.B(self.theta,self.phi)
+        self.C = self.C(self.theta,self.phi)
+        self.qx = self.qx(self.f,self.A,self.B,self.C) ####qx, NOT QX SQUARED!!!
+        self.qy = self.qy(self.f,self.A,self.B,self.C) #### qy NOT QY SQUARED!!!
+        self.q = self.q(self.qx,self.qy)
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
         top = 2.614
         bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
         f_GNFW_val = np.divide(top, bottom)
         return f_GNFW_val
-
+    def f_GNFW_xi(self,xi,qx):
+        top = 2.614
+        bottom = (xi/qx) ** 0.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** (3 / 2))
+        f_GNFW_val = np.divide(top, bottom)
+        return f_GNFW_val
     def b_TNFW_over_sigma_crit(self, f):
         '''eqn 24 in OLS, without the sigma_crit, because we need to multiply that to the expressionwhen we find
         density anyways '''
@@ -817,7 +839,7 @@ class triaxialJS02(triaxialHalo):
         return x
 
     def cal_yp(self, ra_s, dec_s):
-        y = (dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter
+        y = (dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter (AND ELLIPSOID SYMMETRY)
         return y
 
     def zeta(self, h, g, f):
@@ -828,7 +850,7 @@ class triaxialJS02(triaxialHalo):
         '''eqn 17 in OLS'''
         c2_a2 = self.c2_a2
         c2_b2 = self.c2_b2
-        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi)**2) + np.cos(theta) ** 2
+        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi) ** 2) + np.cos(theta) ** 2
 
     def g(self, theta, phi, xp, yp):
         '''eqn 18, OLS'''
@@ -844,23 +866,25 @@ class triaxialJS02(triaxialHalo):
         c2_b2 = self.c2_b2
         firstline = (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) * xp ** 2 + np.sin(2 * phi) * np.cos(
             theta) * (c2_a2 - c2_b2) * xp * yp
-        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi)**2 + c2_b2 * np.sin(phi)**2) + np.sin(theta) ** 2) * yp ** 2
+        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi) ** 2) + np.sin(
+            theta) ** 2) * yp ** 2
         return firstline + secondline
 
-    def cal_phi(self, ra, dec):
+    def cal_phi(self):
         '''ra_s : right ascension of line of sight, which I take as the source?
         dec: declination of line of sight. Fig 1 of OLS'''
         arcsec2rad = np.pi / 180. / 3600
-        phi = ra * arcsec2rad
-        return phi
+        phi = self.ra * arcsec2rad
+        return phi - self.phi_prime
 
-    def cal_theta(self, ra, dec):
+    def cal_theta(self):
         '''ra_s : right ascension of line of sight, which I take as the source?
                 dec: declination of line of sight
                 refer to euler angle or Fig 1 of OLS'''
-        arcsec2rad = np.pi / 180. / 3600
-        theta = np.pi / 2. - dec * arcsec2rad
-        return theta
+        arcsec2rad = np.pi / 180. / 3600.
+        theta = np.pi / 2. - self.dec * arcsec2rad
+        # after considering intrinsic alignment of halo
+        return theta - self.theta_prime
 
     def __Sigma(self, x0, ra_s0, dec_s0):
         c = np.float128(self.c)
@@ -869,9 +893,9 @@ class triaxialJS02(triaxialHalo):
         x = x0[mask]
         ra_s = ra_s0[mask]
         dec_s = dec_s0[mask]
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
+        theta = self.theta
+        phi = self.phi
+        f = self.f
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         g = self.g(theta, phi, xp, yp)
@@ -907,12 +931,26 @@ class triaxialJS02(triaxialHalo):
 
     def qx(self, f, A, B, C):
         '''A2 in CK'''
-        qx2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
+        if A>= C:
+            qx2 = 2*f / (A + C + np.sqrt((A- C) ** 2 + B ** 2))
+        else:
+            qx2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
+        # mask = np.where(A >= C)
+        # qx2 = np.zeros_like(f, dtype=float)
+        # qx2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
+        # qx2[mask] = 2 * f[mask] / (A[mask] + C[mask] + np.sqrt((A[mask] - C[mask]) ** 2 + B[mask] ** 2))
         return np.sqrt(np.abs(qx2))
 
     def qy(self, f, A, B, C):
         '''A3 in CK'''
-        qy2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
+        if A>= C:
+            qy2 = 2*f / (A + C - np.sqrt((A- C) ** 2 + B ** 2))
+        else:
+            qy2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
+        # mask = np.where(A >= C)
+        # qy2 = np.zeros_like(f, dtype=float)
+        # qy2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
+        # qy2[mask] = 2 * f[mask] / (A[mask] + C[mask] - np.sqrt((A[mask] - C[mask]) ** 2 + B[mask] ** 2))
         return np.sqrt(np.abs(qy2))
 
     def q(self, qx, qy):
@@ -945,14 +983,19 @@ class triaxialJS02(triaxialHalo):
 
     def zeta2(self, u, xp, yp, qx, q):
         '''unlike the other zeta, this takes different arguments. This also returns ZETA SQUARED!!!
-        A18 in CK'''
+        A18 in CK
+        Most likely gonna be obsolete.'''
         # before, qx is not squared. I believe if u = 1 in A18, you should be able to get A1, which you don't if qx is not squared.
         return u / (qx ** 2) * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
 
+    def xi2(self, u, xpp, ypp, q):
+        '''xi defined right after eqn 35 in OLS03. This returns xi SQUARED!!!!. Eqn 39 of OLS03'''
+        return u * (xpp ** 2 + ypp ** 2 / (1 - (1 - q ** 2) * u))
+
     def sigma_secondway(self, ra_s, dec_s):
-        theta = self.cal_theta(ra_s, dec_s)
+        theta = self.theta
         # print(theta)
-        phi = self.cal_phi(ra_s, dec_s)
+        phi = self.phi
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         f = self.f(theta, phi)
@@ -968,48 +1011,58 @@ class triaxialJS02(triaxialHalo):
     def kappa(self, zeta, theta, phi):
         '''23 in OLS... again, but but with different input options. Also notice that I didn't include Sigma_crit here.
         THE PROGRAM WILL GIVE THE CORRECT SHEAR AFTER BEING MULTIPLIED BY LENSING KERNEL'''
-        f = self.f(theta, phi)
+        f = self.f
         btnfw = self.b_TNFW_over_sigma_crit(f)
         fGNFW = self.f_GNFW(zeta)
         return btnfw * fGNFW / 2
-        #should be this: btnfw *fGNFW/2
-        #return f * btnfw * fGNFW #this is older version where I made a mistake
+        # should be this: btnfw *fGNFW/2
+        # return f * btnfw * fGNFW #this is older version where I made a mistake
 
     def kappa_prime(self, zeta_0, theta, phi):
         '''kappa prime at some point, needed for later. zeta_0 is the place you want to take derivative with respect to'''
         d_zeta = 1e-6
         return derivative(self.kappa, zeta_0, dx=d_zeta, args=(theta, phi))
-    def f_gnfw_prime_compare(self,r):
+
+    def f_gnfw_prime_compare(self, r):
+        '''Comparison between analytic and numerical differentiation of f with respect to xi'''
         d_r = 0.00001
         zeta = r
-        first_top = - 2.614 * (1.38709 / (zeta ** 0.4167) + 3.9255 * zeta ** 0.5)
-        first_bottom = zeta ** 0.5 * (1 + 2.378 * zeta ** 0.5833 + 2.617 * zeta ** 1.5) ** 2
+        qx = 1.7
+        xi = zeta/qx
+        first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
+        first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
         second_top = -1.307
-        second_bototm = zeta ** 1.5 * (1 + 2.378 * zeta ** 0.5833 + 2.617 * zeta ** 1.5)
-        return derivative(self.f_GNFW,r,dx = d_r) - (first_top/first_bottom + second_top/second_bototm)
+        second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
+        return derivative(self.f_GNFW_xi, r, dx=d_r,args=(qx,))/qx - (first_top / first_bottom + second_top / second_bototm)
 
-    def kappa_prime_analytic(self,zeta, theta, phi):
-        '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. The analytic way is MUCH faster'''
-        f = self.f(theta, phi)
-        btnfw = self.b_TNFW_over_sigma_crit(f)
-        first_top = - 2.614 * (1.38709/(zeta ** 0.4167) + 3.9255 * zeta**0.5)
-        first_bottom = zeta**0.5*(1 + 2.378 * zeta**0.5833 + 2.617 * zeta**1.5)**2
+    def kappa_prime_analytic(self, xi, theta, phi):
+        '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. This should be with respect to xi.'''
+        f = self.f
+        btnfw = self.b_TNFW
+        A = self.A
+        B = self.B
+        C = self.C
+        qx = self.qx(f,A,B,C)
+        first_top = - 2.614 * (1.38709 / (qx * (xi/qx) ** 0.4167) + 3.9255 * (xi/qx) ** 0.5/ qx)
+        first_bottom = (xi/qx) ** 0.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** 1.5) ** 2
         second_top = -1.307
-        second_bototm = zeta**1.5*(1 + 2.378 * zeta**0.5833 + 2.617 * zeta ** 1.5)
-        #print(f)
-        return btnfw * (first_top/first_bottom + second_top/second_bototm) / 2
+        second_bototm = qx * (xi/qx) ** 1.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** 1.5)
+        # print(f)
+        return btnfw * (first_top / first_bottom + second_top / second_bototm) / 2
+
     def K_n_integrand1(self, u, ra_s, dec_s, n):
         '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
+        An older version if K_n_integrand that SHOULD NOT BE USED ANYMORE
         '''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        A = self.A
+        B = self.B
+        C = self.C
+        qx = self.qx
+        qy = self.qy
+        q = self.q
         print(q)
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
@@ -1017,46 +1070,57 @@ class triaxialJS02(triaxialHalo):
         kappa_prime = self.kappa_prime_analytic(zeta, theta, phi)
         return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
-    def K_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
-        '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the prime should be about zeta.
+    def K_n_integrand(self, u, theta, phi, xpp, ypp, qx, q, n):
+        '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the derivative should be about xi.
         '''
-        zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa_prime = self.kappa_prime_analytic(zeta, theta, phi)
+        xi = np.sqrt(np.abs(self.xi2(u, xpp, ypp, q)))
+        kappa_prime = self.kappa_prime_analytic(xi, theta, phi)
         return u * kappa_prime / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
-    def J_n_integrand(self, u, theta, phi, xp, yp, qx, q, n):
+    def J_n_integrand(self, u, theta, phi, xpp, ypp, qx, q, n):
         '''A17 in Ck'''
-        zeta = np.sqrt(np.abs(self.zeta2(u, xp, yp, qx, q)))
-        kappa = self.kappa(zeta, theta, phi)
+        xi = np.sqrt(np.abs(self.xi2(u, xpp, ypp, q)))
+        kappa = self.kappa(xi / np.abs(qx), theta, phi)
         return kappa / ((1 - (1 - q ** 2) * u) ** (n + 1 / 2))
 
+    def prime_to_double_prime(self, xp, yp, A, B, C):
+        '''Goes from x',y' in eqn 21 to x'', y'' in equation 32 in OLS.
+        There's just a rotation, but in the oppositive direction.
+        It is better to verify this numerically rather than analyticially.'''
+        psi = 1 / 2 * np.arctan(B / (A - C))
+        xpp = xp * np.cos(psi) + yp * np.sin(psi)
+        ypp = yp * np.cos(psi) - xp * np.sin(psi)
+        ##### if A>C, it would seem that qx, qy are switched. But if you go ahead to calculate the exact value of
+        ##### zeta, in order for it to stay the same (preserve the quadratic form), you don't have to switch them.
+        return xpp, ypp
+
     def K_n(self, ra_s, dec_s, n):
-        '''A16 in CK'''
+        '''A16 in CK. I transformed to double prime realm here.'''
         xp = np.ravel(self.cal_xp(ra_s, dec_s))
         yp = np.ravel(self.cal_yp(ra_s, dec_s))
-        theta = np.ravel(self.cal_theta(ra_s, dec_s))
-        phi = np.ravel(self.cal_phi(ra_s, dec_s))
-        f = np.ravel(self.f(theta, phi))
+        theta = self.theta
+        phi = self.phi
+        f = self.f
         out = np.array([])
         ra_s = np.ravel(ra_s)
         dec_s = np.ravel(dec_s)
-        A = np.ravel(self.A(theta, phi))
-        B = np.ravel(self.B(theta, phi))
-        C = np.ravel(self.C(theta, phi))
-        qx = np.ravel(self.qx(f, A, B, C))
-        qy = np.ravel(self.qy(f, A, B, C))
-        q = np.ravel(self.q(qx, qy))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        qx = self.qx
+        q = self.q
         for i in range(len(ra_s)):
             temp = 1 / np.sqrt(f[i]) * \
-                   quad(self.K_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
+                   quad(self.K_n_integrand, 0, 1, args=(theta, phi, xpp[i], ypp[i], qx, q, n))[0]
             out = np.append(out, temp)
-            #print("integrating kn")
+            # print("integrating kn")
         return out
 
     def K_n1(self, ra_s, dec_s, n):
-        '''A16 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
+        '''A16 in CK. An older verison that SHOULD NOT BE USED'''
+        theta = self.theta
+        phi = self.phi
         f = np.ravel(self.f(theta, phi))
         out = np.array([])
         ra_s = np.ravel(ra_s)
@@ -1071,29 +1135,28 @@ class triaxialJS02(triaxialHalo):
         '''A17 in CK'''
         xp = np.ravel(self.cal_xp(ra_s, dec_s))
         yp = np.ravel(self.cal_yp(ra_s, dec_s))
-        theta = np.ravel(self.cal_theta(ra_s, dec_s))
-        phi = np.ravel(self.cal_phi(ra_s, dec_s))
-        f = np.ravel(self.f(theta, phi))
+        theta = self.theta
+        phi = self.phi
+        f = self.f
         out = np.array([])
         ra_s = np.ravel(ra_s)
         dec_s = np.ravel(dec_s)
-        A = np.ravel(self.A(theta, phi))
-        B = np.ravel(self.B(theta, phi))
-        C = np.ravel(self.C(theta, phi))
-        qx = np.ravel(self.qx(f, A, B, C))
-        qy = np.ravel(self.qy(f, A, B, C))
-        q = np.ravel(self.q(qx, qy))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        qx = self.qx
+        q = self.q
         for i in range(len(ra_s)):
-            temp = 1 / np.sqrt(f[i]) * \
-                   quad(self.J_n_integrand, 0, 1, args=(theta[i], phi[i], xp[i], yp[i], qx[i], q[i], n))[0]
+            temp = quad(self.J_n_integrand, 0, 1, args=(theta, phi, xpp[i], ypp[i], qx, q, n))[0]
             out = np.append(out, temp)
-            #print("integrating Jn")
+            # print("integrating Jn")
         return out
 
     def J_n1(self, ra_s, dec_s, n):
         '''A17 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
+        theta = self.theta
+        phi = self.phi
         f = np.ravel(self.f(theta, phi))
         out = np.array([])
         ra_s = np.ravel(ra_s)
@@ -1106,46 +1169,30 @@ class triaxialJS02(triaxialHalo):
 
     def phi_xx(self, ra_s, dec_s):
         '''A13 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
+        q = self.q
         xp = self.cal_xp(ra_s, dec_s)
         # yp = self.cal_xp(ra_s, dec_s)
         K_0 = self.K_n(ra_s, dec_s, 0)
         J_0 = self.J_n(ra_s, dec_s, 0)
-        K_0 = np.reshape(K_0, np.shape(q))
-        J_0 = np.reshape(J_0, np.shape(q))
+        K_0 = np.reshape(K_0, np.shape(ra_s))
+        J_0 = np.reshape(J_0, np.shape(ra_s))
         return 2 * q * xp ** 2 * K_0 + q * J_0
 
     def phi_yy(self, ra_s, dec_s):
         '''A14 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
+        q = self.q
         # xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         K_2 = self.K_n(ra_s, dec_s, 2)
         J_1 = self.J_n(ra_s, dec_s, 1)
-        K_2 = np.reshape(K_2, np.shape(q))
-        J_1 = np.reshape(J_1, np.shape(q))
+        K_2 = np.reshape(K_2, np.shape(ra_s))
+        J_1 = np.reshape(J_1, np.shape(ra_s))
         return 2 * q * yp ** 2 * K_2 + q * J_1
 
     def plot_q(self, ra_s, dec_s):
-        theta = self.cal_theta(ra_s, dec_s)
+        theta = self.theta
         # print("theta is", theta)
-        phi = self.cal_phi(ra_s, dec_s)
+        phi = self.phi
         f = self.f(theta, phi)
         A = self.A(theta, phi)
         B = self.B(theta, phi)
@@ -1155,36 +1202,47 @@ class triaxialJS02(triaxialHalo):
         q = self.q(qx, qy)
         return q
 
-    def plot_x2(self, ra_s, dec_s):
-        xp = self.cal_xp(ra_s, dec_s)
-        return xp ** 2
+    def phi_xpp(self, ra_s, dec_s):
+        '''(7) in keeton, arxiv: astro-ph/0102341v2'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        ra_s = np.ravel(ra_s)
+        dec_s = np.ravel(dec_s)
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        q = self.q
+        J_0 = self.J_n(ra_s, dec_s, 0)
+        J_0 = np.reshape(J_0, np.shape(ra_s))
+        return q * J_0 * xpp
 
-    def plot_y2(self, ra_s, dec_s):
-        yp = self.cal_yp(ra_s, dec_s)
-        return yp ** 2
-
-    def plot_xy(self, ra_s, dec_s):
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_yp(ra_s, dec_s)
-        return xp * yp
+    def phi_ypp(self, ra_s, dec_s):
+        '''(8) in keeton, arxiv: astro-ph/0102341v2'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        ra_s = np.ravel(ra_s)
+        dec_s = np.ravel(dec_s)
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        q = self.q
+        J_1 = self.J_n(ra_s, dec_s, 1)
+        J_1 = np.reshape(J_1, np.shape(ra_s))
+        return q * J_1 * ypp
 
     def phi_xy(self, ra_s, dec_s):
         '''A15 in CK'''
-        theta = self.cal_theta(ra_s, dec_s)
+        theta = self.theta
         # print("theta is", theta)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
+        q = self.q
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         K_1 = self.K_n(ra_s, dec_s, 1)
-        K_1 = np.reshape(K_1, np.shape(q))
+        K_1 = np.reshape(K_1, np.shape(xp))
         return 2 * q * yp * xp * K_1
+
     def sigma_hard_way(self, ra_s, dec_s):
         return 1 / 2 * (self.phi_xx(ra_s, dec_s) + self.phi_yy(ra_s, dec_s))
 
@@ -1236,50 +1294,63 @@ class triaxialJS02(triaxialHalo):
         x = self.DdRs(ra_s, dec_s)
         print("if you see this , you are one the newer version")
         return np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s))
-    def zeta_compare_23_27(self,ra_s, dec_s):
+
+    def zeta_compare_23_27(self, ra_s, dec_s):
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        # u = 1
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        A = self.A
+        B = self.B
+        C = self.C
+        # qx = self.qx(f, A, B, C)
+        # qy = self.qy(f, A, B, C)
+        # q = self.q(qx, qy)
+        # print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1 / f * (A * xp ** 2 + B * xp * yp + C * yp ** 2))  ## eqn 27
+        # zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
+        # zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
+        # print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta, phi, xp, yp)
+        g = self.g(theta, phi, xp, yp)
+        zeta = self.zeta(h, g, f)
+        return zeta / zeta_second
+
+    def zeta_compare_23_32(self, ra_s, dec_s):
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
         u = 1
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        #print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
-        zeta_second = np.sqrt(1/f * (A*xp**2 + B * xp * yp + C * yp ** 2)) ## eqn 27
-        zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
-        #zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
-        #print(zeta_second/zeta_thrid)
-        h = self.h_ols(theta,phi,xp,yp)
-        g = self.g(theta,phi,xp,yp)
-        zeta = self.zeta(h,g,f)
-        return zeta/zeta_second
-    def zeta_compare_23_32(self,ra_s, dec_s):
-        xp = self.cal_xp(ra_s, dec_s)
-        yp = self.cal_yp(ra_s, dec_s)
-        u = 1
-        theta = self.cal_theta(ra_s, dec_s)
-        phi = self.cal_phi(ra_s, dec_s)
-        f = self.f(theta, phi)
-        A = self.A(theta, phi)
-        B = self.B(theta, phi)
-        C = self.C(theta, phi)
-        qx = self.qx(f, A, B, C)
-        qy = self.qy(f, A, B, C)
-        q = self.q(qx, qy)
-        #print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
-        zeta_second = np.sqrt(1/f * (A*xp**2 + B * xp * yp + C * yp ** 2)) ## eqn 27
-        zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
-        zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
-        #print(zeta_second/zeta_thrid)
-        h = self.h_ols(theta,phi,xp,yp)
-        g = self.g(theta,phi,xp,yp)
-        zeta = self.zeta(h,g,f)
-        return zeta/zeta_fourth
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        A = self.A
+        B = self.B
+        C = self.C
+        qx = self.qx
+        qy = self.qy
+        q = self.q
+        # print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1 / f * (A * xp ** 2 + B * xp * yp + C * yp ** 2))  ## eqn 27
+        zeta_thrid = np.sqrt(self.zeta2(u, xp, yp, qx, q))  ## eqn 32
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        zeta_fourth = np.sqrt(xpp ** 2 / (qx ** 2) + ypp ** 2 / (qy ** 2))
+        # print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta, phi, xp, yp)
+        g = self.g(theta, phi, xp, yp)
+        zeta = self.zeta(h, g, f)
+        return zeta / zeta_fourth
+
+    def convert_phi_doubleprime_prime(self, phi_xx, phi_xy, phi_yy, psi):
+        '''Essentially multivariable calculus chain rule. Detailed can be found in section 3.6 of Gary's notes
+        we will return the respective '''
+        cospsi = np.cos(psi)
+        sinpsi = np.sin(psi)
+        true_phi_xx = phi_xx * cospsi ** 2 - 2 * sinpsi * cospsi * phi_xy + sinpsi ** 2 * phi_yy
+        true_phi_xy = phi_xy * (cospsi ** 2 - sinpsi ** 2) + phi_xx * sinpsi * cospsi - phi_yy * sinpsi * cospsi
+        true_phi_yy = phi_xx * sinpsi ** 2 + 2 * sinpsi * cospsi * phi_xy + cospsi ** 2 * phi_yy
+        return true_phi_xx, true_phi_xy, true_phi_yy
 
 
 class nfwCS02_grid(Cartesian):
