@@ -1233,8 +1233,7 @@ class triaxialJS02(triaxialHalo):
         assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
         x = self.DdRs(ra_s, dec_s)
-        print("if you see this , you are one the newer version")
-        return np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s))
+        return np.sqrt(np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s)))
 
     def zeta_compare_23_27(self, ra_s, dec_s):
         xp = self.cal_xp(ra_s, dec_s)
