@@ -809,27 +809,36 @@ class triaxialJS02(triaxialHalo):
         self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
         self.phi = self.cal_phi()
         self.theta = self.cal_theta()
-        self.f = self.f(self.theta,self.phi)
+        self.f = self.f(self.theta, self.phi)
         self.b_TNFW = self.b_TNFW_over_sigma_crit(self.f)
-        self.A = self.A(self.theta,self.phi)
-        self.B = self.B(self.theta,self.phi)
-        self.C = self.C(self.theta,self.phi)
-        self.qx = self.qx(self.f,self.A,self.B,self.C) ####qx, NOT QX SQUARED!!!
-        self.qy = self.qy(self.f,self.A,self.B,self.C) #### qy NOT QY SQUARED!!!
-        self.q = self.q(self.qx,self.qy)
+        self.A = self.A(self.theta, self.phi)
+        self.B = self.B(self.theta, self.phi)
+        self.C = self.C(self.theta, self.phi)
+        self.qx = self.qx(self.f, self.A, self.B, self.C)  ####qx, NOT QX SQUARED!!!
+        self.qy = self.qy(self.f, self.A, self.B, self.C)  #### qy NOT QY SQUARED!!!
+        self.q = self.q(self.qx, self.qy)
         self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
+        self.u_array = np.logspace(np.log10(1e-8), 0, 1000)
+        #self.u_array = np.logspace(np.log10(1e-8), 0, 2000)
+        self.u_val = np.array([])
+        for i in range(len(self.u_array) - 1):
+            self.u_val = np.append(self.u_val, (self.u_array[i + 1] + self.u_array[i]) / 2)
+        self.dlogu = np.log(self.u_array[1] / self.u_array[0])
+
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
         top = 2.614
         bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
         f_GNFW_val = np.divide(top, bottom)
         return f_GNFW_val
-    def f_GNFW_xi(self,xi):
+
+    def f_GNFW_xi(self, xi):
         top = 2.614
         qx = self.qx
-        bottom = (xi/qx) ** 0.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** (3 / 2))
+        bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** (3 / 2))
         f_GNFW_val = np.divide(top, bottom)
         return f_GNFW_val
+
     def b_TNFW_over_sigma_crit(self, f):
         '''eqn 24 in OLS, without the sigma_crit, because we need to multiply that to the expressionwhen we find
         density anyways '''
@@ -841,7 +850,8 @@ class triaxialJS02(triaxialHalo):
         return x
 
     def cal_yp(self, ra_s, dec_s):
-        y = (dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter (AND ELLIPSOID SYMMETRY)
+        y = (
+                    dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter (AND ELLIPSOID SYMMETRY)
         return y
 
     def zeta(self, h, g, f):
@@ -930,17 +940,17 @@ class triaxialJS02(triaxialHalo):
 
     def qx(self, f, A, B, C):
         '''A2 in CK'''
-        if A>= C:
-            qx2 = 2*f / (A + C + np.sqrt((A- C) ** 2 + B ** 2))
+        if A >= C:
+            qx2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
         else:
             qx2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
-        #when C>A, the positions should be swtiched
+        # when C>A, the positions should be swtiched
         return np.sqrt(np.abs(qx2))
 
     def qy(self, f, A, B, C):
         '''A3 in CK'''
-        if A>= C:
-            qy2 = 2*f / (A + C - np.sqrt((A- C) ** 2 + B ** 2))
+        if A >= C:
+            qy2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
         else:
             qy2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
         # when C>A, the positions should be swtiched
@@ -986,58 +996,59 @@ class triaxialJS02(triaxialHalo):
         q = self.q
         return u * (xpp ** 2 + ypp ** 2 / (1 - (1 - q ** 2) * u))
 
-
     def kappa_without_factor(self, zeta):
         '''23 in OLS... again, but but with different input options. Also notice that I didn't include Sigma_crit here.
         THE PROGRAM WILL GIVE THE CORRECT SHEAR AFTER BEING MULTIPLIED BY LENSING KERNEL'''
         f = self.f
         btnfw = self.b_TNFW_over_sigma_crit(f)
         fGNFW = self.f_GNFW(zeta)
-        #return btnfw * fGNFW / 2
+        # return btnfw * fGNFW / 2
         return fGNFW
 
-    def sigma_multipleways(self,ra_s, dec_s):
+    def sigma_multipleways(self, ra_s, dec_s):
         '''Use different eqn for zeta'''
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
-        zeta = np.sqrt((self.A*xp**2 + self.B*xp*yp + self.C * yp * yp) /self.f)
-        xpp, ypp = self.prime_to_double_prime(xp,yp, self.A, self.B, self.C)
-        xi = np.sqrt(self.xi2(1,xpp,ypp))
-        zeta_another = np.sqrt(xpp**2 / self.qx**2 + ypp**2 / self.qy**2)
+        zeta = np.sqrt((self.A * xp ** 2 + self.B * xp * yp + self.C * yp * yp) / self.f)
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        xi = np.sqrt(self.xi2(1, xpp, ypp))
+        zeta_another = np.sqrt(xpp ** 2 / self.qx ** 2 + ypp ** 2 / self.qy ** 2)
         h = self.h_ols(self.theta, self.phi, xp, yp)
         g = self.g(self.theta, self.phi, xp, yp)
-        return self.kappa_without_factor(zeta) * self.b_TNFW/2, self.f_GNFW_xi(xi) * self.b_TNFW/2, \
-               self.kappa_without_factor(zeta_another) * self.b_TNFW/2, zeta_another/zeta
+        return self.kappa_without_factor(zeta) * self.b_TNFW / 2, self.f_GNFW_xi(xi) * self.b_TNFW / 2, \
+               self.kappa_without_factor(zeta_another) * self.b_TNFW / 2, zeta_another / zeta
 
     def kappa_prime(self, zeta_0, theta, phi):
         '''kappa prime at some point, needed for later. zeta_0 is the place you want to take derivative with respect to'''
         d_zeta = 1e-6
         return derivative(self.kappa_without_factor, zeta_0, dx=d_zeta)
 
-    def f_GNFW_xi_prime_numerical(self,xi_0):
+    def f_GNFW_xi_prime_numerical(self, xi_0):
         d_xi = 1e-6
-        return derivative(self.f_GNFW_xi, xi_0, dx=d_xi,)
+        return derivative(self.f_GNFW_xi, xi_0, dx=d_xi, )
+
     def f_gnfw_prime_compare(self, r):
         '''Comparison between analytic and numerical differentiation of f with respect to xi'''
         d_r = 0.00001
         zeta = r
         qx = 1.7
-        xi = zeta/qx
+        xi = zeta / qx
         first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
         first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
         second_top = -1.307
         second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
-        return derivative(self.f_GNFW_xi, r, dx=d_r,args=(qx,))/qx - (first_top / first_bottom + second_top / second_bototm)
+        return derivative(self.f_GNFW_xi, r, dx=d_r, args=(qx,)) / qx - (
+                first_top / first_bottom + second_top / second_bototm)
 
     def f_GNFW_xi_prime_analytic(self, xi):
         '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. This should be with respect to xi.'''
         qx = self.qx
-        first_top = - 2.614 * (1.38709 / (qx * (xi/qx) ** 0.4167) + 3.9255 * (xi/qx) ** 0.5/ qx)
-        first_bottom = (xi/qx) ** 0.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** 1.5) ** 2
+        first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
+        first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
         second_top = -1.307
-        second_bototm = qx * (xi/qx) ** 1.5 * (1 + 2.378 * (xi/qx) ** 0.5833 + 2.617 * (xi/qx) ** 1.5)
+        second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
         # print(f)
-        #return btnfw * (first_top / first_bottom + second_top / second_bototm) / 2
+        # return btnfw * (first_top / first_bottom + second_top / second_bototm) / 2
         return first_top / first_bottom + second_top / second_bototm
 
     def K_n_integrand(self, u, xpp, ypp, n):
@@ -1046,9 +1057,9 @@ class triaxialJS02(triaxialHalo):
         '''
         xi = np.sqrt(np.abs(self.xi2(u, xpp, ypp)))
         f_prime = self.f_GNFW_xi_prime_analytic(xi)
-        #f_prime = self.f_GNFW_xi_prime_numerical(xi)
-        return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2)) * 1/2 / xi
-        #return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2))
+        # f_prime = self.f_GNFW_xi_prime_numerical(xi)
+        return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2)) * 1 / 2 / xi
+        # return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2))
 
     def J_n_integrand(self, u, xpp, ypp, n):
         '''A17 in Ck'''
@@ -1071,58 +1082,93 @@ class triaxialJS02(triaxialHalo):
         '''A16 in CK. I transformed to double prime realm here.'''
         xp = np.ravel(self.cal_xp(ra_s, dec_s))
         yp = np.ravel(self.cal_yp(ra_s, dec_s))
-        theta = self.theta
-        phi = self.phi
-        f = self.f
-        out = np.array([])
-        ra_s = np.ravel(ra_s)
-        dec_s = np.ravel(dec_s)
         A = self.A
         B = self.B
         C = self.C
         xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
-        for i in range(len(ra_s)):
-            temp = 1 / np.sqrt(f) * \
-                   quad(self.K_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
-            out = np.append(out, temp)
-            # print("integrating kn")
-        return out * self.b_TNFW/2 #* 1/np.sqrt(self.f) ##actuall b_TNFW / lensing kernel
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = quad(self.K_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
+        return out * self.b_TNFW / 2
 
     def J_n(self, ra_s, dec_s, n):
         '''A17 in CK'''
         xp = np.ravel(self.cal_xp(ra_s, dec_s))
         yp = np.ravel(self.cal_yp(ra_s, dec_s))
-        out = np.array([])
-        ra_s = np.ravel(ra_s)
         A = self.A
         B = self.B
         C = self.C
         xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
-        for i in range(len(ra_s)):
-            temp = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i],n))[0]
-            out = np.append(out, temp)
-            # print("integrating Jn")
-        return out * self.b_TNFW/2 #* 1/np.sqrt(self.f) ##actuall b_TNFW / lensing kernel
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
+        return out * self.b_TNFW / 2  # * 1/np.sqrt(self.f) ##actuall b_TNFW / lensing kernel
 
-    def phi_xx(self, ra_s, dec_s):
+    def log_integral_Jn(self, xpp, ypp, n):
+        '''A regime for logrithmically integrate. Note that this only applies to Jn, Kn
+        Also note only 1 value should be brought into this function because the integrand
+        function cannot handle inputs with various dimensions'''
+        return np.sum(self.J_n_integrand(self.u_val, xpp, ypp, n) * self.u_val) * self.dlogu
+
+    def log_integral_Kn(self, xpp, ypp, n):
+        '''A regime for logrithmically integrate. Note that this only applies to Jn, Kn'''
+        return np.sum(self.K_n_integrand(self.u_val, xpp, ypp, n) * self.u_val) * self.dlogu
+
+    def K_n_fast(self, ra_s, dec_s, n):
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = self.log_integral_Kn(xpp[i], ypp[i], n)
+        return out * self.b_TNFW / 2
+
+    def J_n_fast(self, ra_s, dec_s, n):
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = self.log_integral_Jn(xpp[i], ypp[i], n)
+        return out * self.b_TNFW / 2
+
+    def phi_xx(self, ra_s, dec_s, fast=True):
         '''A13 in CK'''
         q = self.q
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_xp(ra_s, dec_s)
-        xpp, ypp = self.prime_to_double_prime(xp,yp,self.A,self.B,self.C)
-        K_0 = self.K_n(ra_s, dec_s, 0)
-        J_0 = self.J_n(ra_s, dec_s, 0)
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        if fast:
+            K_0 = self.K_n_fast(ra_s, dec_s, 0)
+            J_0 = self.J_n_fast(ra_s, dec_s, 0)
+        else:
+            K_0 = self.K_n(ra_s, dec_s, 0)
+            J_0 = self.J_n(ra_s, dec_s, 0)
         K_0 = np.reshape(K_0, np.shape(ra_s))
         J_0 = np.reshape(J_0, np.shape(ra_s))
         return 2 * q * xpp ** 2 * K_0 + q * J_0
 
-    def phi_yy(self, ra_s, dec_s):
+    def phi_yy(self, ra_s, dec_s, fast=True):
         '''A14 in CK'''
         q = self.q
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
-        K_2 = self.K_n(ra_s, dec_s, 2)
-        J_1 = self.J_n(ra_s, dec_s, 1)
+        if fast:
+            K_2 = self.K_n_fast(ra_s, dec_s, 2)
+            J_1 = self.J_n_fast(ra_s, dec_s, 1)
+        else:
+            K_2 = self.K_n(ra_s, dec_s, 2)
+            J_1 = self.J_n(ra_s, dec_s, 1)
         K_2 = np.reshape(K_2, np.shape(ra_s))
         J_1 = np.reshape(J_1, np.shape(ra_s))
         xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
@@ -1148,13 +1194,13 @@ class triaxialJS02(triaxialHalo):
         J_0 = np.reshape(J_0, np.shape(xpp))
         return q * J_0 * xpp
 
-    def J_n_inxy(self,xpp,ypp,n):
+    def J_n_inxy(self, xpp, ypp, n):
         '''J_n but simplified to just take xpp ypp as arguments'''
         out = np.array([])
         xpp = np.ravel(xpp)
         ypp = np.ravel(ypp)
         for i in range(len(xpp)):
-            temp = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i],n))[0]
+            temp = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
             out = np.append(out, temp)
         return out
 
@@ -1165,18 +1211,21 @@ class triaxialJS02(triaxialHalo):
         J_1 = np.reshape(J_1, np.shape(xpp))
         return q * J_1 * ypp
 
-    def phi_xy(self, ra_s, dec_s):
+    def phi_xy(self, ra_s, dec_s, fast=True):
         '''A15 in CK'''
         theta = self.theta
         # print("theta is", theta)
         q = self.q
         xp = self.cal_xp(ra_s, dec_s)
         yp = self.cal_yp(ra_s, dec_s)
-        K_1 = self.K_n(ra_s, dec_s, 1)
+        if fast:
+            K_1 = self.K_n_fast(ra_s, dec_s, 1)
+        else:
+            K_1 = self.K_n(ra_s, dec_s, 1)
         K_1 = np.reshape(K_1, np.shape(xp))
-        #print(K_1)
+        # print(K_1)
         xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
-        #print(xpp)
+        # print(xpp)
         return 2 * q * ypp * xpp * K_1
 
     def sigma_hard_way(self, ra_s, dec_s):
@@ -1189,12 +1238,12 @@ class triaxialJS02(triaxialHalo):
         dec_s = dec_s0
         phi_xx = self.phi_xx(ra_s, dec_s)
         phi_yy = self.phi_yy(ra_s, dec_s)
-        phi_xy = self.phi_xy(ra_s,dec_s)
-        true_phi_xx, true_phi_xy, true_phi_yy = self.convert_phi_doubleprime_prime(phi_xx,phi_xy,phi_yy,self.psi)
+        phi_xy = self.phi_xy(ra_s, dec_s)
+        true_phi_xx, true_phi_xy, true_phi_yy = self.convert_phi_doubleprime_prime(phi_xx, phi_xy, phi_yy, self.psi)
         gamma1 = 1 / 2 * (true_phi_xx - true_phi_yy)
         gamma2 = true_phi_xy
-        #gamma1 = 1/2*(phi_xx - phi_yy)
-        #gamma2 = phi_xy
+        # gamma1 = 1/2*(phi_xx - phi_yy)
+        # gamma2 = phi_xy
         return gamma1 + 1j * gamma2
 
     def DeltaSigmaComplex(self, ra_s, dec_s):
