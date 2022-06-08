@@ -44,7 +44,7 @@ def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.
     if nx is None:
         nx = ny
     x, y = np.meshgrid(np.fft.fftfreq(nx), np.fft.fftfreq(ny))
-    x *= (2 * np.pi);
+    x *= (2 * np.pi)
     y *= (2 * np.pi)
     rT = np.sqrt(x ** 2 + y ** 2)
     if r_s <= 0.1:
@@ -86,6 +86,50 @@ def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.
         else:
             norm = 1.
     return atom / norm
+
+
+def haloJS02SigmaAtom(halo, ycgrid, xcgrid, ny, nx, normalize=True):
+    """
+    Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
+    kappa field on a whole grid in fourier space. This is evident in
+    Parameters:
+        halo: just pass in a triaxial (or NFW) halo object
+        ycgrid, xcgrid, the namesake of respective property in Grid(Cartesian) Object.
+        the unit we are operating is arcmin.
+    Note: whatever is being returned here is in configuration space.
+    """
+    yy, xx = np.meshgrid(ycgrid, xcgrid, indexing='ij')
+    sigma_field = halo.Sigma(xx.flatten() * 3600., yy.flatten() * 3600.).reshape(ny, nx)  # just a Sigma field
+    if normalize:
+        return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5
+    else:
+        return sigma_field
+
+
+def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
+    """
+    Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
+    kappa field on a whole grid in fourier space. This is evident in
+    Parameters:
+        halo: just pass in a triaxial (or NFW) halo object
+        ycgrid, xcgrid, the namesake of respective property in Grid(Cartesian) Object.
+        the unit we are operating is arcmin.
+    Note: whatever is being returned here is in configuration space.
+    :param dec_0: offset (position of halo center)
+    :param ra_0: offset (position of halo center)
+    """
+    Lx = nx * scale
+    Ly = ny * scale
+    nsamp = nx * ny * 10  # making sure you have enough data points.
+    ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
+    dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
+    # it seems the mass as normalized to be 1e14
+    sigma_field = halo.Sigma(ra * 3600.,
+                             dec * 3600.)  # just a Sigma field. This is also a 1d array, so you would have to pxielize it.
+    if normalize:
+        return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5, ra, dec, nsamp
+    else:
+        return sigma_field, ra, dec, nsamp
 
 
 def mc2rs(mass, conc, redshift, omega_m=Default_OmegaM):
@@ -819,7 +863,7 @@ class triaxialJS02(triaxialHalo):
         self.q = self.q(self.qx, self.qy)
         self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
         self.u_array = np.logspace(np.log10(1e-8), 0, 1000)
-        #self.u_array = np.logspace(np.log10(1e-8), 0, 2000)
+        # self.u_array = np.logspace(np.log10(1e-8), 0, 2000)
         self.u_val = np.array([])
         for i in range(len(self.u_array) - 1):
             self.u_val = np.append(self.u_val, (self.u_array[i + 1] + self.u_array[i]) / 2)
@@ -1375,6 +1419,56 @@ class nfwCS02_grid(Cartesian):
         return kappa, shear
 
 
+class triaxialJS02_grid1(Cartesian):
+    def __init__(self, parser):
+        Cartesian.__init__(self, parser)
+        self.ks2D = ksmap(self.ny, self.nx)
+        return
+
+    def add_halo(self, halo):
+        lk = halo.lensKernel(self.zcgrid)
+        sigma = haloJS02SigmaAtom(halo, self.ycgrid, self.xcgrid, self.ny, self.nx)  # normalization is true be default.
+        snorm = sigma[0, 0]
+        dr = halo.DaLens * self.scale / 180 * np.pi
+        snorm = halo.M / dr ** 2. / snorm
+        sigma = sigma * snorm
+        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        return kappa, shear, sigma, lk, dsigma
+
+
+class triaxialJS02_grid2(Cartesian):
+    def __init__(self, parser):
+        Cartesian.__init__(self, parser)
+        self.ks2D = ksmap(self.ny, self.nx)
+        return
+
+    def add_halo(self, halo):
+        lk = halo.lensKernel(self.zcgrid)
+        sigma = haloJS02SigmaAtom(halo, self.ycgrid, self.xcgrid, self.ny, self.nx, normalize=False)
+        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        return kappa, shear, sigma, lk, dsigma
+
+
+class triaxialJS02_grid_mock(Cartesian):
+    def __init__(self, parser):
+        Cartesian.__init__(self, parser)
+        self.ks2D = ksmap(self.ny, self.nx)
+        return
+
+    def add_halo(self, halo):
+        lk = halo.lensKernel(self.zcgrid)
+        sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp), sigma)
+        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        return kappa, shear
+
+
 class nfwShearlet2D():
     """
     A Class for 2D nfwlet transform
@@ -1484,6 +1578,188 @@ class nfwShearlet2D():
                 # nfw halo with mass normalized to 1e14
                 iAtomF = haloCS02SigmaAtom(r_s=rs, ny=self.ny, nx=self.nx, c=4., \
                                            sigma_pix=self.sigma_pix)
+                normTmp = iAtomF[0, 0] / znorm
+                iAtomF = iAtomF / normTmp
+                self.fouaframesInter[izl, ifr] = iAtomF  # Fourier Space
+                iAtomF = self.ks2D.transform(iAtomF, inFou=True, outFou=True)
+                # KS transform
+                self.fouaframes[izl, ifr] = iAtomF  # Fourier Space
+                self.aframes[izl, ifr] = np.fft.ifft2(iAtomF)  # Real Space
+        return
+
+    def itransformInter(self, dataIn):
+        """
+        transform from model (e.g., nfwlet) dictionary space to intermediate
+        (e.g., delta) space
+        """
+        assert dataIn.shape == self.shapeA, \
+            'input should have shape (nzl,nframe,ny,nx)'
+
+        # convolve with atom in each frame/zlens (to Fourier space)
+        dataTmp = np.fft.fft2(dataIn.astype(np.complex128), axes=(2, 3))
+        dataTmp = dataTmp * self.fouaframesInter
+        # sum over frames
+        dataTmp = np.sum(dataTmp, axis=1)
+        # back to configure space
+        dataOut = np.fft.ifft2(dataTmp, axes=(1, 2))
+        return dataOut
+
+    def itransform(self, dataIn):
+        """
+        transform from model (e.g., nfwlet) dictionary space to measurement
+        (e.g., shear) space
+        Parameters:
+            dataIn: array to be transformed (in configure space, e.g., alpha)
+        """
+        assert dataIn.shape == self.shapeA, \
+            'input should have shape (nzl,nframe,ny,nx)'
+
+        # convolve with atom in each frame/zlens (to Fourier space)
+        dataTmp = np.fft.fft2(dataIn.astype(np.complex128), axes=(2, 3))
+        dataTmp = dataTmp * self.fouaframes
+        # sum over frames
+        dataTmp2 = np.sum(dataTmp, axis=1)
+        # back to configure space
+        dataTmp2 = np.fft.ifft2(dataTmp2, axes=(1, 2))
+        # project to source plane
+        dataOut = np.sum(dataTmp2[None, :, :, :] * self.lensKernel[:, :, None, None], axis=1)
+        return dataOut
+
+    def itranspose(self, dataIn):
+        """
+        transpose of the inverse transform operator
+        Parameters:
+            dataIn: arry to be operated (in config space, e.g., shear)
+        """
+        assert dataIn.shape == self.shapeS, \
+            'input should have shape (nzs,ny,nx)'
+
+        # Projection to lens plane
+        # with shape=(nzl,nframe,ny,nx)
+        dataTmp = np.sum(self.lensKernel[:, :, None, None] * dataIn[:, None, :, :], axis=0)
+        # Convolve with atom*
+        dataTmp = np.fft.fft2(dataTmp, axes=(1, 2))
+        dataTmp = dataTmp[:, None, :, :] * np.conjugate(self.fouaframes)
+        # The output with shape (nzl,nframe,ny,nx)
+        dataOut = np.fft.ifft2(dataTmp, axes=(2, 3))
+        return dataOut
+
+
+class triaxialShearlet2D():
+    """
+    A Class for 2D nfwlet transform
+    with different angular scale in different redshift plane
+
+    Parameters:
+        nframe  :   number of frames
+        ny,nx   :   size of the field (pixel)
+        smooth_scale:   scale radius of Gaussian smoothing kernal (pixel)
+        nlp     :   number of lens plane
+        nz      :   number of source plane
+
+    Methods:
+        itransform: transform from halolet space to observed space
+        itranspose: transpose of itransform operator
+
+    """
+
+    def __init__(self, parser, lensKernel):
+        # transverse plane
+        self.Grid = Cartesian(parser)
+        self.nframe = parser.getint('sparse', 'nframe')
+        self.ny = parser.getint('transPlane', 'ny')
+        self.nx = parser.getint('transPlane', 'nx')
+        # The unit of angle in the configuration
+        unit = parser.get('transPlane', 'unit')
+        # Rescaling to degree
+        if unit == 'degree':
+            self.ratio = 1.
+        elif unit == 'arcmin':
+            self.ratio = 1. / 60.
+        elif unit == 'arcsec':
+            self.ratio = 1. / 60. / 60.
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.ks2D = ksmap(self.ny, self.nx)
+
+        # line of sight
+        self.nzl = parser.getint('lens', 'nlp')
+        self.nzs = parser.getint('sources', 'nz')
+        if self.nzl <= 1:
+            self.zlMin = 0.
+            self.zlscale = 1.
+        else:
+            self.zlMin = parser.getfloat('lens', 'zlMin')
+            self.zlscale = parser.getfloat('lens', 'zlscale')
+        self.zlBin = zMeanBin(self.zlMin, self.zlscale, self.nzl)
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.sigma_pix = parser.getfloat('transPlane', 'smooth_scale') \
+                         * self.ratio / self.scale
+
+        # Shape of output shapelets
+        self.shapeP = (self.ny, self.nx)  # basic plane
+        self.shapeL = (self.nzl, self.ny, self.nx)  # lens plane
+        self.shapeA = (self.nzl, self.nframe, self.ny, self.nx)  # dictionary plane
+        self.shapeS = (self.nzs, self.ny, self.nx)  # observe plane
+        if parser.has_option('lens', 'atomFname'):
+            atFname = parser.get('lens', 'atomFname')
+            tmp = pyfits.getdata(atFname)
+            tmp = np.fft.fftshift(tmp)
+            nzl, nft, nyt, nxt = tmp.shape
+            ypad = (self.ny - nyt) // 2
+            xpad = (self.nx - nxt) // 2
+            assert self.nframe == nft
+            assert self.nzl == nzl
+            ppad = ((0, 0), (0, 0), (ypad, ypad), (xpad, xpad))
+            tmp = np.fft.ifftshift(np.pad(tmp, ppad))
+            tmp = np.fft.fft2(tmp)
+            self.fouaframesInter = tmp
+            self.fouaframes = self.ks2D.transform(tmp, inFou=True, outFou=True)
+            self.aframes = np.fft.ifft2(self.fouaframes)
+        else:
+            self.prepareFrames(parser)
+        self.lensKernel = lensKernel
+
+    def prepareFrames(self, parser):
+        if parser.has_option('cosmology', 'omega_m'):
+            omega_m = parser.getfloat('cosmology', 'omega_m')
+        else:
+            omega_m = Default_OmegaM
+        self.cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
+        self.rs_base = parser.getfloat('lens', 'rs_base')  # Mpc/h
+        self.resolve_lim = parser.getfloat('lens', 'resolve_lim')
+        # Initialize basis predictors
+        # In configure Space
+        self.aframes = np.zeros(self.shapeA, dtype=np.complex128)
+        # In Fourier space
+        self.fouaframes = np.zeros(self.shapeA, dtype=np.complex128)
+        # Intermediate basis in Fourier space
+        self.fouaframesInter = np.zeros(self.shapeA, dtype=np.complex128)
+        self.rs_frame = -1. * np.ones((self.nzl, self.nframe))  # Radius in pixel
+
+        for izl in range(self.nzl):
+            # the r_s for each redshift plane in units of pixel
+            rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+            rz = self.rs_base / rpix
+            # nfw halo with mass normalized to 1e14
+            znorm = 1. / rpix ** 2.
+            # angular scale of pixel size in Mpc
+            for ifr in reversed(range(self.nframe)):
+                # For each lens redshift bins, we begin from the
+                # frame with largest angular scale radius
+                rs = (ifr + 1) * rz
+                if rs < self.resolve_lim:
+                    # if one scale frame is less than resolution limit,
+                    # skip this frame
+                    break
+                self.rs_frame[izl, ifr] = rs
+                # nfw halo with mass normalized to 1e14
+                conc = 4
+                z_h = 0.1  ### Not sure how to deal with these. There seem to be way to many variables
+                a_over_c = 2
+                a_over_b = 0.5
+                halo = triaxialJS02(mass=10 ** 14, conc=conc, redshift=z_h, ra=0., dec=0., a_over_c=a_over_c, a_over_b=a_over_b)
+                iAtomF, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=True)
+                iAtomF = self.Grid.pixelize_data(ra, dec, np.ones(nsamp), iAtomF)
                 normTmp = iAtomF[0, 0] / znorm
                 iAtomF = iAtomF / normTmp
                 self.fouaframesInter[izl, ifr] = iAtomF  # Fourier Space
