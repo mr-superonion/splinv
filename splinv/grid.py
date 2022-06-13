@@ -15,6 +15,7 @@ import numpy as np
 from .default import *
 from .maputil import GausAtom
 from astropy.wcs import WCS
+import astropy.io.fits as pyfits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -102,6 +103,27 @@ class Cartesian():
         self.lensKernel =   None
         return
 
+    def __init_wcs(self):
+        """initialize a wcs (world coordinate system) for the projection
+        """
+        # prepare the WCS for 2D map
+        wcs_header = {
+            'CTYPE1': 'RA---TAN',
+            'CUNIT1': 'deg',
+            'CDELT1': self.scale,
+            'CRPIX1': self.nx//2+1, # fits starting from 1 (but ndarray stars from 0)
+            'CRVAL1': self.xcgrid[self.nx//2],
+            'NAXIS1': self.nx,
+            'CTYPE2': 'DEC--TAN',
+            'CUNIT2': 'deg',
+            'CDELT2': self.scale,
+            'CRPIX2': self.ny//2+1, # fits starting from 1 (but ndarray stars from 0)
+            'CRVAL2': self.ycgrid[self.ny//2],
+            'NAXIS2': self.ny
+        }
+        self.wcs = WCS(wcs_header)
+        return
+
     def reset_smooth_scale(self,sigma):
         """resets the smoothing scale
         (input the sigma in the same unit as self.unit)
@@ -135,6 +157,7 @@ class Cartesian():
         self.ybound =   np.arange(ymin,ymax,self.scale)
         self.ycgrid =   (self.ybound[:-1]+self.ybound[1:])/2.
         self.shape  =   (self.nz,self.ny,self.nx)
+        self.__init_wcs()
         return
 
     def setupTanPlane(self,ra=None,dec=None,pad=0.1,header=None):
@@ -150,7 +173,9 @@ class Cartesian():
             dec (ndarray):  dec in the projected plane
         """
         if (ra is not None) and (dec is not None):
-            # first try
+            if header is not None:
+                raise ValueError('Confusion: use catalog or header to setup grids?')
+            # first try to define the center point of the plane
             self.ra0    =   (np.max(ra)+np.min(ra))/2.
             self.dec0   =   (np.max(dec)+np.min(dec))/2.
             self.cosdec0=   np.cos(self.dec0/180.*np.pi)
@@ -159,7 +184,7 @@ class Cartesian():
             xt          =   (np.max(x)+np.min(x))/2.
             yt          =   (np.max(y)+np.min(y))/2.
 
-            # second try
+            # second try to define the center point of the plane
             self.ra0,self.dec0=self.iproject_tan(xt,yt)
             self.cosdec0=   np.cos(self.dec0/180.*np.pi)
             self.sindec0=   np.sin(self.dec0/180.*np.pi)
@@ -179,7 +204,10 @@ class Cartesian():
             self.ny =   2*dny
             outcome =   (x,y)
         elif header is not None:
-            assert abs(self.scale-header['CDELT1'])/self.scale<1e-2
+            assert abs(self.scale-header['CDELT1'])/self.scale<1e-2,\
+                    'pixel scale inconsistent between ini file and header'
+            assert abs(self.scale-header['CDELT2'])/self.scale<1e-2,\
+                    'pixel scale inconsistent between ini file and header'
             self.ra0    =   header['CRVAL1']
             self.dec0   =   header['CRVAL2']
             self.cosdec0=   np.cos(self.dec0/180.*np.pi)
@@ -190,18 +218,23 @@ class Cartesian():
             dny         =   self.ny//2
             outcome     =   None
         else:
-            raise ValueError('should input (ra,dec) or header')
+            raise ValueError('user should input (ra,dec) or header')
 
         xmin    =   self.ra0-self.scale*(dnx+0.5)
         xmax    =   xmin+self.scale*(self.nx+0.1)
         ymin    =   self.dec0-self.scale*(dny+0.5)
         ymax    =   ymin+self.scale*(self.ny+0.1)
 
+        # for ra direction
+        # boundarys of the binning
         self.xbound= np.arange(xmin,xmax,self.scale)
+        # center
         self.xcgrid= (self.xbound[:-1]+self.xbound[1:])/2.
+        # same for dec direction
         self.ybound= np.arange(ymin,ymax,self.scale)
         self.ycgrid= (self.ybound[:-1]+self.ybound[1:])/2.
-        self.shape=(self.nz,self.ny,self.nx)
+        self.shape = (self.nz,self.ny,self.nx)
+        self.__init_wcs()
         return outcome
 
     def project_tan(self,ra,dec,pix=False):
@@ -324,10 +357,12 @@ class Cartesian():
             if v is not None:
                 dataOut=np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
 
+        # intial guess of the mask to estmiate threshold
         mask            =   weightOut>1e-3
         thres           =   np.mean(weightOut[mask])/6.
+        # final mask
         mask            =   weightOut>thres
-        weightOut[~mask]=   0
+        weightOut[~mask]=   0 # pixels with values lower than threshold are set to 0
         if v is not None:
             # avoid weight is zero
             dataOut[mask]   =   dataOut[mask]/weightOut[mask]
@@ -482,22 +517,6 @@ class Cartesian():
         dim=len(mapIn.shape)
         if dim!=2:
             raise ValueError('Input map should be 2D, but get a %dD array' %dim)
-        # prepare the WCS for 2D map
-        wcs_input_dict = {
-            'CTYPE1': 'RA---TAN',
-            'CUNIT1': 'deg',
-            'CDELT1': 1./60.,
-            'CRPIX1': self.nx//2+1,
-            'CRVAL1': self.xcgrid[self.nx//2],
-            'NAXIS1': self.nx,
-            'CTYPE2': 'DEC--TAN',
-            'CUNIT2': 'deg',
-            'CDELT2': 1./60.,
-            'CRPIX2': self.ny//2+1, #fits 1 based
-            'CRVAL2': self.ycgrid[self.ny//2],
-            'NAXIS2': self.ny
-        }
-        wcs_header = WCS(wcs_input_dict)
         pratio=int(mapIn.shape[1]/mapIn.shape[0]+0.5)
         # pixel value list
         if mask is not None:
@@ -522,7 +541,7 @@ class Cartesian():
         # plot for 2D map
         interpolate=None
         fig1=plt.figure(figsize=(4*pratio,4))
-        ax=fig1.add_subplot(1,1,1,projection=wcs_header,aspect='equal')
+        ax=fig1.add_subplot(1,1,1,projection=self.wcs,aspect='equal')
         ax.set_title(title,fontsize=20)
         imap=ax.imshow(mapIn,origin='lower',norm=norm,cmap=cmap,interpolation=interpolate)
         ax.grid(color=gcolor, ls='dotted')
@@ -549,3 +568,31 @@ class Cartesian():
         ax2.grid()
         fig2.tight_layout()
         return fig1,fig2
+
+    def write_fits(self,fname,data,with_wcs=False,overwrite=False):
+        """wrapper of pyfits.writeto. Write map to disk
+        Args:
+            fname (str):        file name
+            data (ndarray):     map to write to disk
+            with_wcs (bool):    whether write wcs header (default: False)
+            overwrite (bool):   whether overwrite existing file
+        """
+        if with_wcs:
+            pyfits.writeto(fname,data,header=self.wcs.to_header(),overwrite=overwrite)
+        else:
+            pyfits.writeto(fname,data,overwrite=overwrite)
+        return
+
+    def read_fits(self,fname,with_wcs=False):
+        """wrapper of pyfits.read
+        Args:
+            fname (str):        file name
+            with_wcs (bool):    whether read wcs header (default: False)
+        Returns:
+            data (ndarray):     map
+        """
+        data=pyfits.getdata(fname)
+        if with_wcs:
+            wcs_header=pyfits.getheader(fname)
+            self.setupTanPlane(header=wcs_header)
+        return data
