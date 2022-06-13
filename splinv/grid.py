@@ -324,8 +324,8 @@ class Cartesian():
             if v is not None:
                 dataOut=np.fft.ifft2(np.fft.fft2(dataOut)*gausKer).real
 
-        mask            =   weightOut>0.1
-        thres           =   np.mean(weightOut[mask])/10.
+        mask            =   weightOut>1e-3
+        thres           =   np.mean(weightOut[mask])/6.
         mask            =   weightOut>thres
         weightOut[~mask]=   0
         if v is not None:
@@ -468,12 +468,13 @@ class Cartesian():
         lensKernel= kl*rhoM_ave*DaBin
         return lensKernel
 
-    def make_plot2D(self,mapIn,mask=None,title=''):
+    def make_plot2D(self,mapIn,mask=None,title='',histrange=None):
         """Plot the 2D pixelized map
         Args:
             mapIn (ndarray):    input 2D map
             mask (ndarray):     input 2D mask
             title (str):        title of the plot, e.g., 'HSC: g1', 'B-mode'
+            histrange (tuple):  range of the histogram
         Returns:
             fig1 (figure):      matplotlib figure for 2D map
             fig2 (figure):      matplotlib figure for pixel histogram
@@ -520,7 +521,7 @@ class Cartesian():
             norm=mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         # plot for 2D map
         interpolate=None
-        fig1=plt.figure(figsize=(3*pratio,3))
+        fig1=plt.figure(figsize=(4*pratio,4))
         ax=fig1.add_subplot(1,1,1,projection=wcs_header,aspect='equal')
         ax.set_title(title,fontsize=20)
         imap=ax.imshow(mapIn,origin='lower',norm=norm,cmap=cmap,interpolation=interpolate)
@@ -529,12 +530,14 @@ class Cartesian():
         ax.set_xlabel('ra [deg]',fontsize=20)
         ax.set_ylabel('dec [deg]',fontsize=20)
         fig1.colorbar(imap)
-        fig1.tight_layout()
 
         # plot for pixle histogram
         fig2=plt.figure(figsize=(7,6))
         ax2=fig2.add_subplot(1,1,1)
-        ax2.hist(tt,bins=20,histtype='step')
+        if histrange is not None:
+            ax2.hist(tt,bins=20,range=histrange,histtype='step',density=True)
+        else:
+            ax2.hist(tt,bins=20,histtype='step',density=True)
         ax2.set_yscale('log')
         if vmin*vmax<0.:
             ax2.set_xlim(vmin*1.6,vmax*1.6)
