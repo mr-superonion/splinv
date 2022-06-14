@@ -299,7 +299,7 @@ class Cartesian():
         dec     =   np.arcsin(self.sindec0*cosC+self.cosdec0*sinC*sinP)*rr
         return ra,dec
 
-    def pixelize_data(self,x,y,z,v=None,ws=None,smooth_method='pix',return_mask=False):
+    def pixelize_data(self,x,y,z,v=None,ws=None,smethod='pix'):
         """pixelize catalog into the cartesian grid
         Args:
             x (ndarray):    ra of sources [deg]
@@ -307,14 +307,12 @@ class Cartesian():
             z (ndarray):    redshifts of sources
             v (ndarray):    measurements. (e.g., shear, kappa, default: None)
             ws (ndarray):   galaxy weights (default: None).
-            smooth_method (str):
-                            method to convolve with the Gaussian kernel
+            smethod (str):  method to smooth with the Gaussian kernel
                             ('gal' or 'pix' default: 'pix')
-            return_mask (bool):
-                            return mask or not (default: False)
         Returns:
-            out (ndarray):  pixelized data
+            out (ndarray):  pixelized data and mask
                             when v==None, returns the galaxy numbers in pixels
+                            as data
         """
         if z is None:
             # This is for 2D pixeliztion
@@ -323,19 +321,19 @@ class Cartesian():
         if ws is None:
             # Without weight
             ws = np.ones(len(x))
-        if smooth_method=='gal':
+        if smethod=='gal':
             # conduct galaxy level smooth: smooth then pixelize (slow)
             if self.sigma>0.:
                 return self._pixelize_data_gal(x,y,z,v,ws)
             else:
                 raise ValueError("when method is 'gal', smooth_scale must >0")
-        elif smooth_method=='pix':
+        elif smethod=='pix':
             # conduct pixel level smooth: pixelize then smooth (fast)
-            return self._pixelize_data_pix(x,y,z,v,ws,return_mask)
+            return self._pixelize_data_pix(x,y,z,v,ws)
         else:
             raise ValueError("method must be 'pix' or 'gal'")
 
-    def _pixelize_data_pix(self,x,y,z,v=None,ws=np.empty(0),return_mask=False):
+    def _pixelize_data_pix(self,x,y,z,v=None,ws=np.empty(0)):
         """pixelize data and then do smoothing on galaxy level (fast)
         """
         if v is not None:
@@ -359,23 +357,17 @@ class Cartesian():
 
         # intial guess of the mask to estmiate threshold
         mask            =   weightOut>1e-3
-        thres           =   np.mean(weightOut[mask])/6.
+        thres           =   np.mean(weightOut[mask])/8.
         # final mask
         mask            =   weightOut>thres
-        weightOut[~mask]=   0 # pixels with values lower than threshold are set to 0
+        weightOut[~mask]=   0   # pixels with values lower than threshold are set to 0
         if v is not None:
             # avoid weight is zero
             dataOut[mask]   =   dataOut[mask]/weightOut[mask]
             dataOut[~mask]  =   0.
-            if not return_mask:
-                return dataOut
-            else:
-                return dataOut,mask
+            return dataOut,mask
         else:
-            if not return_mask:
-                return weightOut
-            else:
-                return weightOut,mask
+            return weightOut,mask
 
     def _pixelize_data_gal(self,x,y,z,v=None,ws=np.empty(0)):
         """do smoothing on galaxy level and then pixelize data (slow)
@@ -538,6 +530,7 @@ class Cartesian():
                 vmin2=(vmax-vmin)/-2.
                 vmax=vmax2*1.25;vmin=vmin2*1.25
             norm=mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
         # plot for 2D map
         interpolate=None
         fig1=plt.figure(figsize=(4*pratio,4))
@@ -550,7 +543,7 @@ class Cartesian():
         ax.set_ylabel('dec [deg]',fontsize=20)
         fig1.colorbar(imap)
 
-        # plot for pixle histogram
+        # plot for pixel histogram
         fig2=plt.figure(figsize=(7,6))
         ax2=fig2.add_subplot(1,1,1)
         if histrange is not None:
