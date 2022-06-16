@@ -120,7 +120,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 10  # making sure you have enough data points.
+    nsamp = nx * ny * 16  # making sure you have enough data points.
     ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
     dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
     # it seems the mass as normalized to be 1e14
@@ -1462,8 +1462,8 @@ class triaxialJS02_grid_mock(Cartesian):
     def add_halo(self, halo):
         lk = halo.lensKernel(self.zcgrid)
         sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
-        sigma = self.pixelize_data(ra, dec, np.ones(nsamp), sigma)
-        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10, sigma, method='FFT')[0]
+        dsigma = self.ks2D.transform(sigma, inFou=False, outFou=False)
         shear = dsigma[None, :, :] * lk[:, None, None]
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear
