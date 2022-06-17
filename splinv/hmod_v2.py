@@ -88,24 +88,6 @@ def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.
     return atom / norm
 
 
-def haloJS02SigmaAtom(halo, ycgrid, xcgrid, ny, nx, normalize=True):
-    """
-    Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
-    kappa field on a whole grid in fourier space. This is evident in
-    Parameters:
-        halo: just pass in a triaxial (or NFW) halo object
-        ycgrid, xcgrid, the namesake of respective property in Grid(Cartesian) Object.
-        the unit we are operating is arcmin.
-    Note: whatever is being returned here is in configuration space.
-    """
-    yy, xx = np.meshgrid(ycgrid, xcgrid, indexing='ij')
-    sigma_field = halo.Sigma(xx.flatten() * 3600., yy.flatten() * 3600.).reshape(ny, nx)  # just a Sigma field
-    if normalize:
-        return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5
-    else:
-        return sigma_field
-
-
 def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
@@ -428,6 +410,12 @@ class triaxialHalo(Cosmo):
         # Second, derive the charateristic matter density
         # within virial radius at redshift z
         self.rho_s = rho_cZ * self.delta_triaxial  # see eqn 3 OLS03
+        if a_over_b > 1:
+            raise ValueError("a should smaller than or equal to b")
+        if a_over_c > 1:
+            raise ValueError("a should smaller than or equal to c")
+        if a_over_b > a_over_c:
+            raise ValueError("b should smaller than or equal to c")
         return
 
     def DdRs(self, ra_s, dec_s):
@@ -861,7 +849,10 @@ class triaxialJS02(triaxialHalo):
         self.qx = self.qx(self.f, self.A, self.B, self.C)  ####qx, NOT QX SQUARED!!!
         self.qy = self.qy(self.f, self.A, self.B, self.C)  #### qy NOT QY SQUARED!!!
         self.q = self.q(self.qx, self.qy)
-        self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
+        if np.abs(self.B)<1e-8:
+            self.psi = 0
+        else:
+            self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
         self.u_array = np.logspace(np.log10(1e-8), 0, 1000)
         # self.u_array = np.logspace(np.log10(1e-8), 0, 2000)
         self.u_val = np.array([])
@@ -1417,40 +1408,6 @@ class nfwCS02_grid(Cartesian):
         shear = dsigma[None, :, :] * lk[:, None, None]
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear
-
-
-class triaxialJS02_grid1(Cartesian):
-    def __init__(self, parser):
-        Cartesian.__init__(self, parser)
-        self.ks2D = ksmap(self.ny, self.nx)
-        return
-
-    def add_halo(self, halo):
-        lk = halo.lensKernel(self.zcgrid)
-        sigma = haloJS02SigmaAtom(halo, self.ycgrid, self.xcgrid, self.ny, self.nx)  # normalization is true be default.
-        snorm = sigma[0, 0]
-        dr = halo.DaLens * self.scale / 180 * np.pi
-        snorm = halo.M / dr ** 2. / snorm
-        sigma = sigma * snorm
-        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
-        shear = dsigma[None, :, :] * lk[:, None, None]
-        kappa = sigma[None, :, :] * lk[:, None, None]
-        return kappa, shear, sigma, lk, dsigma
-
-
-class triaxialJS02_grid2(Cartesian):
-    def __init__(self, parser):
-        Cartesian.__init__(self, parser)
-        self.ks2D = ksmap(self.ny, self.nx)
-        return
-
-    def add_halo(self, halo):
-        lk = halo.lensKernel(self.zcgrid)
-        sigma = haloJS02SigmaAtom(halo, self.ycgrid, self.xcgrid, self.ny, self.nx, normalize=False)
-        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, inFou=False, outFou=False))
-        shear = dsigma[None, :, :] * lk[:, None, None]
-        kappa = sigma[None, :, :] * lk[:, None, None]
-        return kappa, shear, sigma, lk, dsigma
 
 
 class triaxialJS02_grid_mock(Cartesian):
