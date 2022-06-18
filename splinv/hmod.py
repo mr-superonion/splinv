@@ -17,6 +17,8 @@ from .maputil import TophatAtom
 import scipy.special as spfun
 import astropy.io.fits as pyfits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
+from scipy.misc import derivative
+from scipy.integrate import quad
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -824,3 +826,753 @@ class nfwShearlet2D():
         # The output with shape (nzl,nframe,ny,nx)
         dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
         return dataOut
+
+def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
+    """
+    Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
+    kappa field on a whole grid in fourier space. This is evident in
+    Parameters:
+        halo: just pass in a triaxial (or NFW) halo object
+        ycgrid, xcgrid, the namesake of respective property in Grid(Cartesian) Object.
+        the unit we are operating is arcmin.
+    Note: whatever is being returned here is in configuration space.
+    :param dec_0: offset (position of halo center)
+    :param ra_0: offset (position of halo center)
+    """
+    Lx = nx * scale
+    Ly = ny * scale
+    nsamp = nx * ny * 16  # making sure you have enough data points.
+    ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
+    dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
+    # it seems the mass as normalized to be 1e14
+    sigma_field = halo.Sigma(ra * 3600.,
+                             dec * 3600.)  # just a Sigma field. This is also a 1d array, so you would have to pxielize it.
+    if normalize:
+        return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5, ra, dec, nsamp
+    else:
+        return sigma_field, ra, dec, nsamp
+
+class triaxialHalo(Cosmo):
+    """
+    Referencing mainly: Oguri, Lee, Suto 2003 (https://ui.adsabs.harvard.edu/abs/2003ApJ...599....7O/abstract)
+    Hereafter OLS03
+    and Jing, Suto 2002 (https://ui.adsabs.harvard.edu/abs/2002ApJ...574..538J/abstract)
+    Hereafter JS02
+
+    Parameters:
+        mass:       Mass defined using a spherical overdensity of 200 times the
+                    critical density of the universe, in units of M_solar/h.
+        conc:       Halo concentration parameter, Re / R0. This is ce defined in eqn 5 of OLS03
+        redshift:   Redshift of the halo.
+        ra:         ra of halo center  [arcsec].
+        dec:        dec of halo center [arcsec].
+        omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
+                    set to 1-omega_matter. (default: Default_OmegaM)
+        a_over_b:   look at eqn 4 of OLS03. This is ratio of the length of the axis in the density distribution
+        a_over_c:   same as above, but this number should be smaller than a_over_b, because a<=b<=c
+
+        IMPORTANT: SINCE IT IS SEEN THAT ALPHA=1.5 REPRODUCES ARC STAT CORRECTLY, WE DO THINGS WITH ALPHA = 1.5
+    """
+
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=0, theta_prime=0, rs=None,
+                 omega_m=Default_OmegaM):
+        # Redshift and Geometry
+        # ra dec
+        # self in here seems to be the Cosmo object
+        self.ra = ra  # right ascension in celestial coordinates
+        self.dec = dec  # declination in celestial coordinates
+        self.a_over_b = a_over_b  # not if should have
+        self.a_over_c = a_over_c  # not_if_should_have
+        self.c = np.float128(conc)  # the concentration parameter
+        self.phi_prime = phi_prime  # the intrinsic halo alignment with respect to earth's coordinate. In radians
+        self.theta_prime = theta_prime  # the intrisic halo aignment with respect to earth's coordinate. In radians
+        Cosmo.__init__(self, H0=Default_h0 * 100., Om0=omega_m)
+        self.z = float(redshift)
+        self.a = 1. / (1. + self.z)  # scale factor
+
+        # angular distance in Mpc/h
+        self.DaLens = self.angular_diameter_distance_z1z2(0., self.z).value
+
+        # critical density of the universe
+        # in unit of M_solar / Mpc^3
+        rho_cZ = self.critical_density(self.z).to_value(unit=rho_unt)
+        self.M = np.float128(mass)
+
+        # First, we get the virial radius, which is defined for some spherical
+        # overdensity as 3 M / [4 pi (r_vir)^3] = overdensity. Here we have
+        # overdensity = 200 * rhocrit, to determine r_vir (angular distance).
+        # The factor of 1.63e-5 [h^(-2/3.)] comes from the following set of prefactors:
+        # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2
+        # M_solar / Mpc^3.
+        # (DH=C_LIGHT/1e3/100/h,rho_crit=1.5/four_pi_G_over_c_squared()/(DH)**2.)
+        ezInv = self.inv_efunc(redshift)  # This is 1/H(z). property of astropy flat lambdaCDM.
+        self.ezInv = ezInv
+        self.Omega_z = self.Om(self.z)  # matter (non-relativistic) density parameter, after eqn 6 of OLS03
+        # self.Delta_vir = 18 * np.pi ** 2 + 82 * (self.Omega_z - 1) - 39 * (
+        #         self.Omega_z - 1) ** 2  # Used eqn 6 OLS03, eqn 1 JS02
+        self.omega_vir = 1 / (self.Om0 * (1 + self.z) ** 3 / (self.Om0 * (1 + self.z) ** 3 + 1 - self.Om0)) - 1
+        self.Delta_vir = 18 * np.pi ** 2 * (1 + 0.4093 * self.omega_vir ** (0.9052))  # Used eqn 6 OLS03, see Oguri,
+        # Taruya, Suto 2001, 559, 572-583 eqn 4.
+
+        self.rvir = self.M ** (1 / 3) * (3 / np.pi) ** (1 / 3) / (
+                2 ** (2 / 3) * self.Delta_vir ** (1 / 3) * rho_cZ ** (1 / 3))
+        self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical relation between rvir and Re.
+        self.R0 = 0.45 * self.rvir / self.c  # equation 10 of OLS03.
+        self.Delta_e = 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+
+        self.m_c = self.c ** (3 - 1.5) / 1.5 * (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
+            self.c / (1 + self.c)))  # eqn 8 OLS03, alpha = 1.5
+        # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
+        self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
+        # convert to angular radius in unit of arcsec
+        scale = self.R0 / self.DaLens
+        arcsec2rad = np.pi / 180. / 3600.
+        self.rs_arcsec = scale / arcsec2rad
+        self.rvir_arcsec = (self.rvir / self.DaLens) / arcsec2rad
+
+        # Second, derive the charateristic matter density
+        # within virial radius at redshift z
+        self.rho_s = rho_cZ * self.delta_triaxial  # see eqn 3 OLS03
+        if a_over_b > 1:
+            raise ValueError("a should smaller than or equal to b")
+        if a_over_c > 1:
+            raise ValueError("a should smaller than or equal to c")
+        if a_over_b < a_over_c:
+            raise ValueError("b should smaller than or equal to c")
+        return
+
+    def DdRs(self, ra_s, dec_s):
+        """Calculate 'x' the radius r in units of the Triaxial scale
+        radius, r_s.
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        x = ((ra_s - self.ra) ** 2 + (dec_s - self.dec) ** 2) ** 0.5 / self.rs_arcsec
+        return x
+
+    def DdRvir(self, ra_s, dec_s):
+        """Calculate 'x' the radius r in units of the Triaxial scale
+        radius, r_s.
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        x = ((ra_s - self.ra) ** 2 + (dec_s - self.dec) ** 2) ** 0.5 / self.rvir_arcsec
+        return x
+
+    def sin2phi(self, ra_s, dec_s):
+        """Calculate cos2phi and sin2phi with reference to the halo center
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        # pure tangential shear, no cross component
+        dx = ra_s - self.ra
+        dy = dec_s - self.dec
+        drsq = dx * dx + dy * dy
+        return np.divide(2 * dx * dy, drsq, where=(drsq != 0.))
+
+    def cos2phi(self, ra_s, dec_s):
+        """Calculate cos2phi and sin2phi with reference to the halo center
+        Parameters:
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+        # pure tangential shear, no cross component
+        dx = ra_s - self.ra
+        dy = dec_s - self.dec
+        drsq = dx * dx + dy * dy
+        return np.divide(dx * dx - dy * dy, drsq, where=(drsq != 0.))
+
+    def lensKernel(self, z_s):
+        """Lensing kernel from surface density at lens redshfit to source redshift
+        to kappa at source redshift
+        Parameters:
+            z_s:        redshift of sources.
+        """
+        # convenience: call with single number
+        if not isinstance(z_s, np.ndarray):
+            return self.lensKernel(np.array([z_s], dtype='float'))[0]
+        # lensing weights: the only thing that depends on z_s
+        # First mask the data with z<z_l
+        k_s = np.zeros(len(z_s))
+        mask = z_s > self.z
+        k_s[mask] = self.angular_diameter_distance_z1z2(self.z, z_s[mask]) * self.DaLens \
+                    / self.angular_diameter_distance_z1z2(0., z_s[mask]) * four_pi_G_over_c_squared()
+        return k_s
+
+class triaxialJS02(triaxialHalo):
+    """
+    Integral functions of a triaxial density profile:
+    Eq.27, Takada & Jain (2003, MNRAS, 340, 580) --- Surface Density,
+    and Eq.17, Takada & Jain (2003, MNRAS, 344, 857) --- Excess Surface Density
+    Parameters:
+        mass:       Mass defined using a spherical overdensity of 200 times the
+                    critical density of the universe, in units of M_solar/h.
+        conc:       Concentration parameter virial radius / scale radius.
+        redshift:   Redshift of the halo.
+        ra:         ra of halo center  [arcsec].
+        dec:        dec of halo center [arcsec].
+        omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
+                    set to 1-omega_matter. (default: Default_OmegaM)
+    """
+
+    def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, phi_prime=0, theta_prime=0, rs=None,
+                 omega_m=Default_OmegaM):
+        triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=phi_prime,
+                              theta_prime=theta_prime, rs=None,
+                              omega_m=omega_m)
+        self.c2_a2 = self.a_over_c ** (-2)
+        self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        self.phi = self.cal_phi()
+        self.theta = self.cal_theta()
+        self.f = self.f(self.theta, self.phi)
+        self.b_TNFW = self.b_TNFW_over_sigma_crit(self.f)
+        self.A = self.A(self.theta, self.phi)
+        self.B = self.B(self.theta, self.phi)
+        self.C = self.C(self.theta, self.phi)
+        self.qx = self.qx(self.f, self.A, self.B, self.C)  ####qx, NOT QX SQUARED!!!
+        self.qy = self.qy(self.f, self.A, self.B, self.C)  #### qy NOT QY SQUARED!!!
+        self.q = self.q(self.qx, self.qy)
+        if np.abs(self.B)<1e-8:
+            self.psi = 0
+        else:
+            self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
+        self.u_array = np.logspace(np.log10(1e-8), 0, 1000)
+        # self.u_array = np.logspace(np.log10(1e-8), 0, 2000)
+        self.u_val = np.array([])
+        for i in range(len(self.u_array) - 1):
+            self.u_val = np.append(self.u_val, (self.u_array[i + 1] + self.u_array[i]) / 2)
+        self.dlogu = np.log(self.u_array[1] / self.u_array[0])
+
+    def f_GNFW(self, r):
+        ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
+        top = 2.614
+        bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
+        f_GNFW_val = np.divide(top, bottom)
+        return f_GNFW_val
+
+    def f_GNFW_xi(self, xi):
+        top = 2.614
+        qx = self.qx
+        bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** (3 / 2))
+        f_GNFW_val = np.divide(top, bottom)
+        return f_GNFW_val
+
+    def b_TNFW_over_sigma_crit(self, f):
+        '''eqn 24 in OLS, without the sigma_crit, because we need to multiply that to the expressionwhen we find
+        density anyways '''
+        return 4 * self.rho_s * self.R0 * 1 / np.sqrt(f)
+
+    def cal_xp(self, ra_s, dec_s):
+        '''We divide by rs_arcsec because every x,y,z is scaled by R0'''
+        x = (ra_s - self.ra) / self.rs_arcsec  # normalized (-) xp in Fig 1 OLS. We are cool b/c sign doesn't matter
+        return x
+
+    def cal_yp(self, ra_s, dec_s):
+        y = (
+                    dec_s - self.dec) / self.rs_arcsec  # normalized (-) yp in Fig 1 OLS. We are cool b/c sign doesn't matter (AND ELLIPSOID SYMMETRY)
+        return y
+
+    def zeta(self, h, g, f):
+        '''Eqn 21, OLS Typo in the expression. It should be zeta^2 on the LHS'''
+        return np.sqrt(np.abs(h - g ** 2 / (4 * f)))
+
+    def f(self, theta, phi):
+        '''eqn 17 in OLS'''
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
+        return np.sin(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi) ** 2) + np.cos(theta) ** 2
+
+    def g(self, theta, phi, xp, yp):
+        '''eqn 18, OLS'''
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
+        firstline = np.sin(theta) * np.sin(2 * phi) * (c2_b2 - c2_a2) * xp
+        secondline = np.sin(2 * theta) * (1 - c2_a2 * np.cos(phi) ** 2 - c2_b2 * np.sin(phi) ** 2) * yp
+        return firstline + secondline
+
+    def h_ols(self, theta, phi, xp, yp):
+        '''eqn 19, OLS'''
+        c2_a2 = self.c2_a2
+        c2_b2 = self.c2_b2
+        firstline = (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) * xp ** 2 + np.sin(2 * phi) * np.cos(
+            theta) * (c2_a2 - c2_b2) * xp * yp
+        secondline = (np.cos(theta) ** 2 * (c2_a2 * np.cos(phi) ** 2 + c2_b2 * np.sin(phi) ** 2) + np.sin(
+            theta) ** 2) * yp ** 2
+        return firstline + secondline
+
+    def cal_phi(self):
+        '''ra_s : right ascension of line of sight, which I take as the source?
+        dec: declination of line of sight. Fig 1 of OLS'''
+        arcsec2rad = np.pi / 180. / 3600
+        phi = self.ra * arcsec2rad
+        return phi - self.phi_prime
+
+    def cal_theta(self):
+        '''ra_s : right ascension of line of sight, which I take as the source?
+                dec: declination of line of sight
+                refer to euler angle or Fig 1 of OLS'''
+        arcsec2rad = np.pi / 180. / 3600.
+        theta = np.pi / 2. - self.dec * arcsec2rad
+        # after considering intrinsic alignment of halo
+        return theta - self.theta_prime
+
+    def __Sigma(self, x0, ra_s0, dec_s0):
+        c = np.float128(self.c)
+        out = np.zeros_like(x0, dtype=float)
+        mask = np.where((x0 >= 0) & (x0 <= c / 0.45))[0]
+        x = x0[mask]
+        ra_s = ra_s0[mask]
+        dec_s = dec_s0[mask]
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        g = self.g(theta, phi, xp, yp)
+        h = self.h_ols(theta, phi, xp, yp)
+        zeta = self.zeta(h, g, f)
+        bTNFW = self.b_TNFW_over_sigma_crit(f)
+        f_GNFW = self.f_GNFW(zeta)
+        out[mask] = bTNFW * f_GNFW / 2
+        # the undefined are just zero
+        return out
+
+    def Sigma(self, ra_s, dec_s):
+        """Calculate Surface Density (Sigma) of halo.
+        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
+            ra_s:       ra of sources [arcsec].
+            dec_s:      dec of sources [arcsec].
+        """
+
+        # convenience: call with single number
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
+            'input ra and dec have different length '
+        x = self.DdRs(ra_s, dec_s)
+        return self.__Sigma(x, ra_s, dec_s)
+
+    def qx(self, f, A, B, C):
+        '''A2 in CK'''
+        if A >= C:
+            qx2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
+        else:
+            qx2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
+        # when C>A, the positions should be swtiched
+        return np.sqrt(np.abs(qx2))
+
+    def qy(self, f, A, B, C):
+        '''A3 in CK'''
+        if A >= C:
+            qy2 = 2 * f / (A + C - np.sqrt((A - C) ** 2 + B ** 2))
+        else:
+            qy2 = 2 * f / (A + C + np.sqrt((A - C) ** 2 + B ** 2))
+        # when C>A, the positions should be swtiched
+        return np.sqrt(np.abs(qy2))
+
+    def q(self, qx, qy):
+        return qy / qx
+
+    def A(self, theta, phi):
+        '''A5 in CK'''
+        c2_a2 = self.a_over_c ** (-2)
+        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        A = np.cos(theta) ** 2 * (c2_a2 * np.sin(phi) ** 2 + c2_b2 * np.cos(phi) ** 2) + c2_a2 * c2_b2 * np.sin(
+            theta) ** 2
+        # print("A is", A)
+        # print("c2b2", c2_b2)
+        # print("phi is", phi)
+        return A
+
+    def B(self, theta, phi):
+        '''A6 in CK'''
+        c2_a2 = self.a_over_c ** (-2)
+        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        B = np.cos(theta) * np.sin(2 * phi) * (c2_a2 - c2_b2)
+        # print("B is", B)
+        return B
+
+    def C(self, theta, phi):
+        '''A7 in CK'''
+        c2_a2 = self.a_over_c ** (-2)
+        c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
+        return c2_b2 * np.sin(phi) ** 2 + c2_a2 * np.cos(phi) ** 2
+
+    def zeta2(self, u, xp, yp, qx, q):
+        '''unlike the other zeta, this takes different arguments. This also returns ZETA SQUARED!!!
+        A18 in CK
+        Most likely gonna be obsolete.'''
+        # before, qx is not squared. I believe if u = 1 in A18, you should be able to get A1, which you don't if qx is not squared.
+        return u / (qx ** 2) * (xp ** 2 + yp ** 2 / (1 - (1 - q ** 2) * u))
+
+    def xi2(self, u, xpp, ypp):
+        '''xi defined right after eqn 35 in OLS03. This returns xi SQUARED!!!!. Eqn 39 of OLS03'''
+        q = self.q
+        return u * (xpp ** 2 + ypp ** 2 / (1 - (1 - q ** 2) * u))
+
+    def kappa_without_factor(self, zeta):
+        '''23 in OLS... again, but but with different input options. Also notice that I didn't include Sigma_crit here.
+        THE PROGRAM WILL GIVE THE CORRECT SHEAR AFTER BEING MULTIPLIED BY LENSING KERNEL'''
+        f = self.f
+        btnfw = self.b_TNFW_over_sigma_crit(f)
+        fGNFW = self.f_GNFW(zeta)
+        # return btnfw * fGNFW / 2
+        return fGNFW
+
+    def sigma_multipleways(self, ra_s, dec_s):
+        '''Use different eqn for zeta'''
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        zeta = np.sqrt((self.A * xp ** 2 + self.B * xp * yp + self.C * yp * yp) / self.f)
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        xi = np.sqrt(self.xi2(1, xpp, ypp))
+        zeta_another = np.sqrt(xpp ** 2 / self.qx ** 2 + ypp ** 2 / self.qy ** 2)
+        h = self.h_ols(self.theta, self.phi, xp, yp)
+        g = self.g(self.theta, self.phi, xp, yp)
+        return self.kappa_without_factor(zeta) * self.b_TNFW / 2, self.f_GNFW_xi(xi) * self.b_TNFW / 2, \
+               self.kappa_without_factor(zeta_another) * self.b_TNFW / 2, zeta_another / zeta
+
+    def kappa_prime(self, zeta_0, theta, phi):
+        '''kappa prime at some point, needed for later. zeta_0 is the place you want to take derivative with respect to'''
+        d_zeta = 1e-6
+        return derivative(self.kappa_without_factor, zeta_0, dx=d_zeta)
+
+    def f_GNFW_xi_prime_numerical(self, xi_0):
+        d_xi = 1e-6
+        return derivative(self.f_GNFW_xi, xi_0, dx=d_xi, )
+
+    def f_gnfw_prime_compare(self, r):
+        '''Comparison between analytic and numerical differentiation of f with respect to xi'''
+        d_r = 0.00001
+        zeta = r
+        qx = 1.7
+        xi = zeta / qx
+        first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
+        first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
+        second_top = -1.307
+        second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
+        return derivative(self.f_GNFW_xi, r, dx=d_r, args=(qx,)) / qx - (
+                first_top / first_bottom + second_top / second_bototm)
+
+    def f_GNFW_xi_prime_analytic(self, xi):
+        '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. This should be with respect to xi.'''
+        qx = self.qx
+        first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
+        first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
+        second_top = -1.307
+        second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
+        # print(f)
+        # return btnfw * (first_top / first_bottom + second_top / second_bototm) / 2
+        return first_top / first_bottom + second_top / second_bototm
+
+    def K_n_integrand(self, u, xpp, ypp, n):
+        '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the derivative should be about xi.
+        The 1/2 /xi involves keeping with the notation of phixx phi yy and the chain rule being with respect to xi instead xi^2
+        '''
+        xi = np.sqrt(np.abs(self.xi2(u, xpp, ypp)))
+        f_prime = self.f_GNFW_xi_prime_analytic(xi)
+        # f_prime = self.f_GNFW_xi_prime_numerical(xi)
+        return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2)) * 1 / 2 / xi
+        # return u * f_prime / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2))
+
+    def J_n_integrand(self, u, xpp, ypp, n):
+        '''A17 in Ck'''
+        xi = np.sqrt(np.abs(self.xi2(u, xpp, ypp)))
+        f_GNFW = self.f_GNFW_xi(xi)
+        return f_GNFW / ((1 - (1 - self.q ** 2) * u) ** (n + 1 / 2))
+
+    def prime_to_double_prime(self, xp, yp, A, B, C):
+        '''Goes from x',y' in eqn 21 to x'', y'' in equation 32 in OLS.
+        There's just a rotation, but in the oppositive direction.
+        It is better to verify this numerically rather than analyticially.'''
+        psi = 1 / 2 * np.arctan(B / (A - C))
+        xpp = xp * np.cos(psi) + yp * np.sin(psi)
+        ypp = yp * np.cos(psi) - xp * np.sin(psi)
+        ##### if A>C, it would seem that qx, qy are switched. But if you go ahead to calculate the exact value of
+        ##### zeta, in order for it to stay the same (preserve the quadratic form), you don't have to switch them.
+        return xpp, ypp
+
+    def K_n(self, ra_s, dec_s, n):
+        '''A16 in CK. I transformed to double prime realm here.'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = quad(self.K_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
+        return out * self.b_TNFW / 2
+
+    def J_n(self, ra_s, dec_s, n):
+        '''A17 in CK'''
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
+        return out * self.b_TNFW / 2  # * 1/np.sqrt(self.f) ##actuall b_TNFW / lensing kernel
+
+    def log_integral_Jn(self, xpp, ypp, n):
+        '''A regime for logrithmically integrate. Note that this only applies to Jn, Kn
+        Also note only 1 value should be brought into this function because the integrand
+        function cannot handle inputs with various dimensions'''
+        return np.sum(self.J_n_integrand(self.u_val, xpp, ypp, n) * self.u_val) * self.dlogu
+
+    def log_integral_Kn(self, xpp, ypp, n):
+        '''A regime for logrithmically integrate. Note that this only applies to Jn, Kn'''
+        return np.sum(self.K_n_integrand(self.u_val, xpp, ypp, n) * self.u_val) * self.dlogu
+
+    def K_n_fast(self, ra_s, dec_s, n):
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = self.log_integral_Kn(xpp[i], ypp[i], n)
+        return out * self.b_TNFW / 2
+
+    def J_n_fast(self, ra_s, dec_s, n):
+        xp = np.ravel(self.cal_xp(ra_s, dec_s))
+        yp = np.ravel(self.cal_yp(ra_s, dec_s))
+        A = self.A
+        B = self.B
+        C = self.C
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        length = len(xp)
+        out = np.zeros(length, dtype=float)
+        for i in range(length):
+            out[i] = self.log_integral_Jn(xpp[i], ypp[i], n)
+        return out * self.b_TNFW / 2
+
+    def phi_xx(self, ra_s, dec_s, fast=True):
+        '''A13 in CK'''
+        q = self.q
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_xp(ra_s, dec_s)
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        if fast:
+            K_0 = self.K_n_fast(ra_s, dec_s, 0)
+            J_0 = self.J_n_fast(ra_s, dec_s, 0)
+        else:
+            K_0 = self.K_n(ra_s, dec_s, 0)
+            J_0 = self.J_n(ra_s, dec_s, 0)
+        K_0 = np.reshape(K_0, np.shape(ra_s))
+        J_0 = np.reshape(J_0, np.shape(ra_s))
+        return 2 * q * xpp ** 2 * K_0 + q * J_0
+
+    def phi_yy(self, ra_s, dec_s, fast=True):
+        '''A14 in CK'''
+        q = self.q
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        if fast:
+            K_2 = self.K_n_fast(ra_s, dec_s, 2)
+            J_1 = self.J_n_fast(ra_s, dec_s, 1)
+        else:
+            K_2 = self.K_n(ra_s, dec_s, 2)
+            J_1 = self.J_n(ra_s, dec_s, 1)
+        K_2 = np.reshape(K_2, np.shape(ra_s))
+        J_1 = np.reshape(J_1, np.shape(ra_s))
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        return 2 * q * ypp ** 2 * K_2 + q * J_1
+
+    def plot_q(self, ra_s, dec_s):
+        theta = self.theta
+        # print("theta is", theta)
+        phi = self.phi
+        f = self.f(theta, phi)
+        A = self.A(theta, phi)
+        B = self.B(theta, phi)
+        C = self.C(theta, phi)
+        qx = self.qx(f, A, B, C)
+        qy = self.qy(f, A, B, C)
+        q = self.q(qx, qy)
+        return q
+
+    def phi_x(self, xpp, ypp):
+        '''(7) in keeton, arxiv: astro-ph/0102341v2'''
+        q = self.q
+        J_0 = self.J_n_inxy(xpp, ypp, 0)
+        J_0 = np.reshape(J_0, np.shape(xpp))
+        return q * J_0 * xpp
+
+    def J_n_inxy(self, xpp, ypp, n):
+        '''J_n but simplified to just take xpp ypp as arguments'''
+        out = np.array([])
+        xpp = np.ravel(xpp)
+        ypp = np.ravel(ypp)
+        for i in range(len(xpp)):
+            temp = quad(self.J_n_integrand, 0, 1, args=(xpp[i], ypp[i], n))[0]
+            out = np.append(out, temp)
+        return out
+
+    def phi_y(self, ypp, xpp):
+        '''(8) in keeton, arxiv: astro-ph/0102341v2. Note that I used ypp as the first varible'''
+        q = self.q
+        J_1 = self.J_n(xpp, ypp, 1)
+        J_1 = np.reshape(J_1, np.shape(xpp))
+        return q * J_1 * ypp
+
+    def phi_xy(self, ra_s, dec_s, fast=True):
+        '''A15 in CK'''
+        theta = self.theta
+        # print("theta is", theta)
+        q = self.q
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        if fast:
+            K_1 = self.K_n_fast(ra_s, dec_s, 1)
+        else:
+            K_1 = self.K_n(ra_s, dec_s, 1)
+        K_1 = np.reshape(K_1, np.shape(xp))
+        # print(K_1)
+        xpp, ypp = self.prime_to_double_prime(xp, yp, self.A, self.B, self.C)
+        # print(xpp)
+        return 2 * q * ypp * xpp * K_1
+
+    def sigma_hard_way(self, ra_s, dec_s):
+        return 1 / 2 * (self.phi_xx(ra_s, dec_s) + self.phi_yy(ra_s, dec_s))
+
+    def __DeltaSigmaComplex(self, x0, ra_s0, dec_s0):
+        '''A10 in CK'''
+        # no cutoff needed.
+        ra_s = ra_s0
+        dec_s = dec_s0
+        phi_xx = self.phi_xx(ra_s, dec_s)
+        phi_yy = self.phi_yy(ra_s, dec_s)
+        phi_xy = self.phi_xy(ra_s, dec_s)
+        true_phi_xx, true_phi_xy, true_phi_yy = self.convert_phi_doubleprime_prime(phi_xx, phi_xy, phi_yy, self.psi)
+        gamma1 = 1 / 2 * (true_phi_xx - true_phi_yy)
+        gamma2 = true_phi_xy
+        # gamma1 = 1/2*(phi_xx - phi_yy)
+        # gamma2 = phi_xy
+        return gamma1 + 1j * gamma2
+
+    def DeltaSigmaComplex(self, ra_s, dec_s):
+        """Calculate Surface Density (Sigma) of halo.
+                Takada & Jain(2003, MNRAS, 340, 580) Eq.27
+                    ra_s:       ra of sources [arcsec].
+                    dec_s:      dec of sources [arcsec].
+                """
+
+        # convenience: call with single number
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
+            'input ra and dec have different length '
+        x = self.DdRs(ra_s, dec_s)
+        return self.__DeltaSigmaComplex(x, ra_s, dec_s)
+
+    def DeltaSigma(self, ra_s, dec_s):
+        """Calculate Surface Density (Sigma) of halo.
+                        Takada & Jain(2003, MNRAS, 340, 580) Eq.27
+                            ra_s:       ra of sources [arcsec].
+                            dec_s:      dec of sources [arcsec].
+                        """
+
+        # convenience: call with single number
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
+            'ra_s and dec_s do not have same type'
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
+            'input ra and dec have different length '
+        x = self.DdRs(ra_s, dec_s)
+        return np.sqrt(np.absolute(self.__DeltaSigmaComplex(x, ra_s, dec_s)))
+
+    def zeta_compare_23_27(self, ra_s, dec_s):
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        # u = 1
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        A = self.A
+        B = self.B
+        C = self.C
+        # qx = self.qx(f, A, B, C)
+        # qy = self.qy(f, A, B, C)
+        # q = self.q(qx, qy)
+        # print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1 / f * (A * xp ** 2 + B * xp * yp + C * yp ** 2))  ## eqn 27
+        # zeta_thrid = np.sqrt(self.zeta2(u,xp,yp,qx,q)) ## eqn 32
+        # zeta_fourth = np.sqrt(xp**2/(qx**2) + yp**2/(qy**2))
+        # print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta, phi, xp, yp)
+        g = self.g(theta, phi, xp, yp)
+        zeta = self.zeta(h, g, f)
+        return zeta / zeta_second
+
+    def zeta_compare_23_32(self, ra_s, dec_s):
+        xp = self.cal_xp(ra_s, dec_s)
+        yp = self.cal_yp(ra_s, dec_s)
+        u = 1
+        theta = self.theta
+        phi = self.phi
+        f = self.f
+        A = self.A
+        B = self.B
+        C = self.C
+        qx = self.qx
+        qy = self.qy
+        q = self.q
+        # print((qx**2 + qy**2)/((4*(A+C)*f)/(B**2-4*A*C)))
+        zeta_second = np.sqrt(1 / f * (A * xp ** 2 + B * xp * yp + C * yp ** 2))  ## eqn 27
+        zeta_thrid = np.sqrt(self.zeta2(u, xp, yp, qx, q))  ## eqn 32
+        xpp, ypp = self.prime_to_double_prime(xp, yp, A, B, C)
+        zeta_fourth = np.sqrt(xpp ** 2 / (qx ** 2) + ypp ** 2 / (qy ** 2))
+        # print(zeta_second/zeta_thrid)
+        h = self.h_ols(theta, phi, xp, yp)
+        g = self.g(theta, phi, xp, yp)
+        zeta = self.zeta(h, g, f)
+        return zeta / zeta_fourth
+
+    def convert_phi_doubleprime_prime(self, phi_xx, phi_xy, phi_yy, psi):
+        '''Essentially multivariable calculus chain rule. Detailed can be found in section 3.6 of Gary's notes
+        we will return the respective '''
+        cospsi = np.cos(psi)
+        sinpsi = np.sin(psi)
+        true_phi_xx = phi_xx * cospsi ** 2 - 2 * sinpsi * cospsi * phi_xy + sinpsi ** 2 * phi_yy
+        true_phi_xy = phi_xy * (cospsi ** 2 - sinpsi ** 2) + phi_xx * sinpsi * cospsi - phi_yy * sinpsi * cospsi
+        true_phi_yy = phi_xx * sinpsi ** 2 + 2 * sinpsi * cospsi * phi_xy + cospsi ** 2 * phi_yy
+        return true_phi_xx, true_phi_xy, true_phi_yy
+
+class triaxialJS02_grid_mock(Cartesian):
+    def __init__(self, parser):
+        Cartesian.__init__(self, parser)
+        self.ks2D = ksmap(self.ny, self.nx)
+        return
+
+    def add_halo(self, halo):
+        lk = halo.lensKernel(self.zcgrid)
+        sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10, sigma, method='FFT')[0]
+        dsigma = self.ks2D.transform(sigma, inFou=False, outFou=False)
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        return kappa, shear
