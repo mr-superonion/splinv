@@ -414,7 +414,7 @@ class triaxialHalo(Cosmo):
             raise ValueError("a should smaller than or equal to b")
         if a_over_c > 1:
             raise ValueError("a should smaller than or equal to c")
-        if a_over_b > a_over_c:
+        if a_over_b < a_over_c:
             raise ValueError("b should smaller than or equal to c")
         return
 
