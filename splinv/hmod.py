@@ -896,6 +896,7 @@ class triaxialHalo(Cosmo):
         # critical density of the universe
         # in unit of M_solar / Mpc^3
         rho_cZ = self.critical_density(self.z).to_value(unit=rho_unt)
+        self.rho_cZ = rho_cZ
         self.M = np.float128(mass)
 
         # First, we get the virial radius, which is defined for some spherical
@@ -914,14 +915,20 @@ class triaxialHalo(Cosmo):
         self.Delta_vir = 18 * np.pi ** 2 * (1 + 0.4093 * self.omega_vir ** (0.9052))  # Used eqn 6 OLS03, see Oguri,
         # Taruya, Suto 2001, 559, 572-583 eqn 4.
 
-        self.rvir = self.M ** (1 / 3) * (3 / np.pi) ** (1 / 3) / (
-                2 ** (2 / 3) * self.Delta_vir ** (1 / 3) * rho_cZ ** (1 / 3))
-        self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical relation between rvir and Re.
-        self.R0 = 0.45 * self.rvir / self.c  # equation 10 of OLS03.
-        self.Delta_e = 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+        # self.rvir = self.M ** (1 / 3) * (3 / np.pi) ** (1 / 3) / (
+        #         2 ** (2 / 3) * self.Delta_vir ** (1 / 3) * rho_cZ ** (1 / 3))
+        self.rvir = (3 * self.M/ (4 * np.pi * self.Delta_vir * self.Omega_z * self.rho_cZ))**(1/3)
 
-        self.m_c = self.c ** (3 - 1.5) / 1.5 * (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
-            self.c / (1 + self.c)))  # eqn 8 OLS03, alpha = 1.5
+        ### Older Version
+        #self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
+        #self.R0 = 0.45 * self.rvir / self.c  # equation 10 of OLS03.
+        self.Delta_e = 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+        ### Older Version
+
+        self.Re = (3 * self.M/ (4 * np.pi * self.Delta_e * self.Omega_z * self.rho_cZ))**(1/3) #define re analogous to rvir
+        self.R0 = self.Re/self.c
+        self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
+            self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5
         # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
         self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
         # convert to angular radius in unit of arcsec
