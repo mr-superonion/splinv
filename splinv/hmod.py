@@ -883,7 +883,8 @@ class triaxialHalo(Cosmo):
         self.dec = dec  # declination in celestial coordinates
         self.a_over_b = a_over_b  # not if should have
         self.a_over_c = a_over_c  # not_if_should_have
-        self.c = np.float128(conc)  # the concentration parameter
+        self.c = np.float128(conc)  # the concentration parameter, this virial radius over R0.
+        self.ce = self.c * 0.45
         self.phi_prime = phi_prime  # the intrinsic halo alignment with respect to earth's coordinate. In radians
         self.theta_prime = theta_prime  # the intrisic halo aignment with respect to earth's coordinate. In radians
         Cosmo.__init__(self, H0=Default_h0 * 100., Om0=omega_m)
@@ -920,13 +921,13 @@ class triaxialHalo(Cosmo):
         self.rvir = (3 * self.M/ (4 * np.pi * self.Delta_vir * self.Omega_z * self.rho_cZ))**(1/3)
 
         ### Older Version
-        #self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
-        #self.R0 = 0.45 * self.rvir / self.c  # equation 10 of OLS03.
-        self.Delta_e = 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+        self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
+        self.R0 = 0.45 * self.rvir / self.ce  # equation 10 of OLS03.
+        self.Delta_e = self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+        # is 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75, but this way integrating the mass
+        #to virial radius does not give the correct mass.
         ### Older Version
 
-        self.Re = (3 * self.M/ (4 * np.pi * self.Delta_e * self.Omega_z * self.rho_cZ))**(1/3) #define re analogous to rvir
-        self.R0 = self.Re/self.c
         self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
             self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5
         # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
