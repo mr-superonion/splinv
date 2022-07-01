@@ -19,6 +19,7 @@ import astropy.io.fits as pyfits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 from scipy.misc import derivative
 from scipy.integrate import quad
+import pyfftw
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
@@ -163,7 +164,28 @@ class ksmap():
         if not outFou:
             kOMap    =   np.fft.ifft2(kOMap)
         return kOMap
+    def transform_fftw(self,kMap,inFou=True,outFou=True):
+        """
+        K-S Transform from kappa map to gamma map
 
+        Parameters:
+        gMap:   input kappa map
+        inFou:  input in Fourier space? [default:True=yes]
+        outFou: output in Fourier space? [default:True=yes]
+        """
+        assert kMap.shape[-2:]==self.shape
+        if not inFou:
+            a = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
+            b = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
+            fft_object_forward= pyfftw.FFTW(a, b, axes=(0, 1))
+            kMap =   fft_object_forward(kMap)
+        gOMap    =   kMap*self.e2phiF/np.pi
+        if not outFou:
+            a = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
+            b = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
+            fft_object_backward = pyfftw.FFTW(a, b, axes=(0, 1),direction='FFTW_BACKWARD')
+            gOMap    =   fft_object_backward(gOMap)
+        return gOMap
     def transform(self,kMap,inFou=True,outFou=True):
         """
         K-S Transform from kappa map to gamma map
@@ -206,17 +228,21 @@ class nfwHalo(Cosmo):
         # critical density
         # in unit of M_solar / Mpc^3
         rho_cZ      =   self.critical_density(self.z).to_value(unit=rho_unt)
+        self.rho_cZ = rho_cZ
 
         self.M      =   float(mass)
+        ezInv = self.inv_efunc(redshift)
+        self.ezInv = ezInv
+        self.Omega_z = self.Om(self.z)
+        self.omega_vir = 1 / (self.Om0 * (1 + self.z) ** 3 / (self.Om0 * (1 + self.z) ** 3 + 1 - self.Om0)) - 1
+        self.Delta_vir = 18 * np.pi ** 2 * (1 + 0.4093 * self.omega_vir ** (0.9052))
+        self.rvir = (3 * self.M / (4 * np.pi * self.Delta_vir * self.Omega_z * self.rho_cZ)) ** (1 / 3)
         # First, we get the virial radius, which is defined for some spherical
         # overdensity as 3 M / [4 pi (r_vir)^3] = overdensity. Here we have
         # overdensity = 200 * rhocrit, to determine r_vir (angular distance).
         # The factor of 1.63e-5 [h^(-2/3.)] comes from the following set of prefactors:
         # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2
         # M_solar / Mpc^3.
-        # (DH=C_LIGHT/1e3/100/h,rho_crit=1.5/four_pi_G_over_c_squared()/(DH)**2.)
-        ezInv       =   self.inv_efunc(redshift)
-        self.rvir   =   1.63e-5*(self.M*ezInv**2)**(1./3.) # in Mpc/h
         if conc is not None:
             self.c  =   float(conc)
             # scale radius
@@ -228,9 +254,10 @@ class nfwHalo(Cosmo):
             self.c  =  self.rvir/self.rs
         else:
             raise ValueError("need to give conc or rs, at least one")
-
-        self.A      =   1./(np.log(1+self.c)-(self.c)/(1+self.c))
-        self.delta_nfw =200./3*self.c**3*self.A
+        self.m_c = np.log(1+self.c) - self.c/(1+self.c) #OLS eqn 9, alpha = 1
+        self.A = 1/self.m_c
+        self.delta_nfw = self.Delta_vir * self.Omega_z / 3 * self.c**3 /self.m_c #with spherical model
+        # Delta_vir = Delta_e
         # convert to angular radius in unit of arcsec
         scale       =   self.rs / self.DaLens
         arcsec2rad  =   np.pi/180./3600.
@@ -239,6 +266,7 @@ class nfwHalo(Cosmo):
         # Second, derive the charateristic matter density
         # within virial radius at redshift z
         self.rho_s=   rho_cZ*self.delta_nfw
+
         return
 
     def DdRs(self,ra_s,dec_s):
@@ -1130,7 +1158,7 @@ class triaxialJS02(triaxialHalo):
     def __Sigma(self, x0, ra_s0, dec_s0):
         c = np.float128(self.c)
         out = np.zeros_like(x0, dtype=float)
-        mask = np.where((x0 >= 0) & (x0 <= c / 0.45))[0]
+        mask = np.where((x0 >= 0) & (x0 <= c))[0]
         x = x0[mask]
         ra_s = ra_s0[mask]
         dec_s = dec_s0[mask]
