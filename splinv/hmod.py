@@ -869,7 +869,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 16  # making sure you have enough data points.
+    nsamp = nx * ny * 200 #better be 200  # making sure you have enough data points.
     ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
     dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
     # it seems the mass as normalized to be 1e14
