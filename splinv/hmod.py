@@ -1,4 +1,4 @@
-# Copyright 20211226 Xiangchong Li.
+# Copyright 20220706 Xiangchong Li & Shouzhuo Yang.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -703,6 +703,7 @@ class nfwShearlet2D():
         self.nframe =   parser.getint('sparse','nframe')
         self.ny     =   parser.getint('transPlane','ny')
         self.nx     =   parser.getint('transPlane','nx')
+
         # The unit of angle in the configuration
         unit    =   parser.get('transPlane','unit')
         # Rescaling to degree
@@ -734,6 +735,22 @@ class nfwShearlet2D():
         self.shapeL =   (self.nzl,self.ny,self.nx)          # lens plane
         self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx) # dictionary plane
         self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
+
+        ####pyfftw stuff####
+        array1 = pyfftw.empty_aligned(self.shapeP, dtype='complex128')  # need to intialize pyfftw obj
+        array2 = pyfftw.empty_aligned(self.shapeP, dtype='complex128')
+        array3 = pyfftw.empty_aligned(self.shapeL, dtype='complex128')  # need to intialize pyfftw obj
+        array4 = pyfftw.empty_aligned(self.shapeL, dtype='complex128')
+        array5 = pyfftw.empty_aligned(self.shapeA, dtype='complex128')  # need to intialize pyfftw obj
+        array6 = pyfftw.empty_aligned(self.shapeA, dtype='complex128')
+        self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1)) #2 means for 2d array
+        self.fftw2_inverse = pyfftw.FFTW(array1, array2, axes=(0, 1), direction='FFTW_BACKWARD')
+        self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
+        self.fftw3_inverse = pyfftw.FFTW(array3, array4, axes=(1, 2), direction='FFTW_BACKWARD')
+        self.fftw4 = pyfftw.FFTW(array5, array6, axes=(2, 3))
+        self.fftw4_inverse = pyfftw.FFTW(array5, array6, axes=(2, 3), direction='FFTW_BACKWARD')
+        ####pyfftw stuff####
+
         if parser.has_option('lens','atomFname'):
             atFname =   parser.get('lens','atomFname')
             tmp     =   pyfits.getdata(atFname)
@@ -748,7 +765,9 @@ class nfwShearlet2D():
             tmp     =   np.fft.fft2(tmp)
             self.fouaframesInter =  tmp
             self.fouaframes =   self.ks2D.transform(tmp,inFou=True,outFou=True)
-            self.aframes    =   np.fft.ifft2(self.fouaframes)
+            #self.aframes    =   np.fft.ifft2(self.fouaframes)
+            self.aframes    =   self.fftw2_inverse(self.fouaframes)
+            #print('fouaframes shape: (line 751) ', self.fouaframes.shape)
         else:
             self.prepareFrames(parser)
         self.lensKernel=    lensKernel
@@ -773,6 +792,7 @@ class nfwShearlet2D():
         for izl in range(self.nzl):
             # the r_s for each redshift plane in units of pixel
             rpix    =   self.cosmo.angular_diameter_distance(self.zlBin[izl]).value/180.*np.pi*self.scale
+            #print('rpix is :',rpix)
             rz      =   self.rs_base/rpix
             # nfw halo with mass normalized to 1e14
             znorm   =   1./rpix**2.
@@ -780,12 +800,16 @@ class nfwShearlet2D():
             for ifr in reversed(range(self.nframe)):
                 # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
-                rs  =   (ifr+1)*rz
+                rs  =   (ifr+1)*rz #older version that may not be a good sampling method
+                rs  =   ifr*0.05/rpix + rz # just chose a number that matches my reconstruction.
+                #print('ifr',ifr)
+                #print('rs',rs)
                 if rs<self.resolve_lim:
                     # if one scale frame is less than resolution limit,
                     # skip this frame
                     break
                 self.rs_frame[izl,ifr]= rs
+                #print('rs is:', rs)
                 # nfw halo with mass normalized to 1e14
                 iAtomF  =   haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
                             sigma_pix=self.sigma_pix)
@@ -795,7 +819,9 @@ class nfwShearlet2D():
                 iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
                 # KS transform
                 self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
+                #self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
+                self.aframes[izl,ifr]=self.fftw2_inverse(iAtomF)
+                #print('iAtomF shape:', iAtomF.shape)
         return
 
     def itransformInter(self,dataIn):
@@ -807,12 +833,16 @@ class nfwShearlet2D():
             'input should have shape (nzl,nframe,ny,nx)'
 
         # convolve with atom in each frame/zlens (to Fourier space)
-        dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        #dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp  = self.fftw4(dataIn)
+        #print('dataIn shape: (itransformInter)', dataIn.astype(np.complex128).shape)
         dataTmp =   dataTmp*self.fouaframesInter
         # sum over frames
         dataTmp =   np.sum(dataTmp,axis=1)
         # back to configure space
-        dataOut =   np.fft.ifft2(dataTmp,axes=(1,2))
+        #dataOut =   np.fft.ifft2(dataTmp,axes=(1,2))
+        dataOut  =   self.fftw3_inverse(dataTmp)
+        #print('(itransformInter) dataTmp shape', dataTmp.shape)
         return dataOut
 
     def itransform(self,dataIn):
@@ -826,12 +856,16 @@ class nfwShearlet2D():
             'input should have shape (nzl,nframe,ny,nx)'
 
         # convolve with atom in each frame/zlens (to Fourier space)
-        dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        #dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp  = self.fftw4(dataIn)
+        #print('dataIn shape (itransform):', dataIn.astype(np.complex128).shape)
         dataTmp =   dataTmp*self.fouaframes
         # sum over frames
         dataTmp2=   np.sum(dataTmp,axis=1)
         # back to configure space
-        dataTmp2=   np.fft.ifft2(dataTmp2,axes=(1,2))
+        #dataTmp2=   np.fft.ifft2(dataTmp2,axes=(1,2))
+        dataTmp2 = self.fftw3_inverse(dataTmp2)
+        #print('dataTmp2 shape (itransform):', dataTmp2.shape)
         # project to source plane
         dataOut =   np.sum(dataTmp2[None,:,:,:]*self.lensKernel[:,:,None,None],axis=1)
         return dataOut
@@ -849,10 +883,14 @@ class nfwShearlet2D():
         # with shape=(nzl,nframe,ny,nx)
         dataTmp =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
         # Convolve with atom*
-        dataTmp =   np.fft.fft2(dataTmp,axes=(1,2))
+        #dataTmp =   np.fft.fft2(dataTmp,axes=(1,2))
+        dataTmp = self.fftw3(dataTmp)
+        #print('dataIn shape (in itranspose):', dataTmp.shape)
         dataTmp =   dataTmp[:,None,:,:]*np.conjugate(self.fouaframes)
         # The output with shape (nzl,nframe,ny,nx)
-        dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
+        #dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
+        dataOut  =  self.fftw4_inverse(dataTmp)
+        #print('dataTmp shape (in itranspose):', dataTmp.shape)
         return dataOut
 
 def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
