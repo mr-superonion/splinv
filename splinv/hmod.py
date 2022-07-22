@@ -20,11 +20,16 @@ from astropy.cosmology import FlatLambdaCDM as Cosmo
 from scipy.misc import derivative
 from scipy.integrate import quad
 import pyfftw
+from astropy.io import fits
+from astropy.table import Table
+#import random
 
-def zMeanBin(zMin,dz,nz):
-    return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
-def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,sigma_pix=None,fou=True,lnorm=2.):
+def zMeanBin(zMin, dz, nz):
+    return np.arange(zMin, zMin + dz * nz, dz) + dz / 2.
+
+
+def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.):
     """
     Make haloTJ03 halo (normalized) from Fourier space following
     Eq. 81 and 82, Cooray & Sheth (2002, Physics Reports, 372,1):
@@ -40,50 +45,53 @@ def haloCS02SigmaAtom(r_s,ny,nx=None,c=9.,sigma_pix=None,fou=True,lnorm=2.):
 
     """
     if nx is None:
-        nx=ny
-    x,y =   np.meshgrid(np.fft.fftfreq(nx),np.fft.fftfreq(ny))
-    x   *=  (2*np.pi);y*=(2*np.pi)
-    rT  =   np.sqrt(x**2+y**2)
-    if r_s<=0.1:
+        nx = ny
+    x, y = np.meshgrid(np.fft.fftfreq(nx), np.fft.fftfreq(ny))
+    x *= (2 * np.pi);
+    y *= (2 * np.pi)
+    rT = np.sqrt(x ** 2 + y ** 2)
+    if r_s <= 0.1:
         # point mass in Fourier space
-        atom=np.ones((ny,nx))
+        atom = np.ones((ny, nx))
     else:
         # NFW halo in Fourier space
-        A       =   1./(np.log(1+c)-c/(1.+c))
-        r       =   rT*r_s
-        mask    =   r>0.001
-        atom    =   np.zeros_like(r,dtype=float)
-        r1      =   r[mask]
-        si1,ci1 =   spfun.sici((1+c)*r1)
-        si2,ci2 =   spfun.sici(r1)
-        atom[mask]= A*(np.sin(r1)*(si1-si2)-np.sin(c*r1)/(1+c)/r1+np.cos(r1)*(ci1-ci2))
-        r0      =   r[~mask]
-        atom[~mask]=1.+A*(c+c**3/(6*(1 + c))+1/4.*(-2.*c-c**2.-2*np.log(1+c)))*r0**2.
+        A = 1. / (np.log(1 + c) - c / (1. + c))
+        r = rT * r_s
+        mask = r > 0.001
+        atom = np.zeros_like(r, dtype=float)
+        r1 = r[mask]
+        si1, ci1 = spfun.sici((1 + c) * r1)
+        si2, ci2 = spfun.sici(r1)
+        atom[mask] = A * (np.sin(r1) * (si1 - si2) - np.sin(c * r1) / (1 + c) / r1 + np.cos(r1) * (ci1 - ci2))
+        r0 = r[~mask]
+        atom[~mask] = 1. + A * (
+                    c + c ** 3 / (6 * (1 + c)) + 1 / 4. * (-2. * c - c ** 2. - 2 * np.log(1 + c))) * r0 ** 2.
 
     if sigma_pix is not None:
-        if sigma_pix>0.1:
+        if sigma_pix > 0.1:
             # Gaussian smoothing
-            atom    =   atom*np.exp(-(rT*sigma_pix)**2./2.)
+            atom = atom * np.exp(-(rT * sigma_pix) ** 2. / 2.)
         else:
             # top-hat smoothing
-            atom    =   atom*TophatAtom(width=1.,ny=ny,nx=nx,fou=True)
+            atom = atom * TophatAtom(width=1., ny=ny, nx=nx, fou=True)
 
     if fou:
         # Fourier space
-        if lnorm>0.:
-            norm=   (np.sum(atom**lnorm)/(nx*ny))**(1./lnorm)
+        if lnorm > 0.:
+            norm = (np.sum(atom ** lnorm) / (nx * ny)) ** (1. / lnorm)
         else:
-            norm=   1.
+            norm = 1.
     else:
         # configuration space
-        atom    =   np.real(np.fft.ifft2(atom))
-        if lnorm>0.:
-            norm=   (np.sum(atom**lnorm))**(1./lnorm)
+        atom = np.real(np.fft.ifft2(atom))
+        if lnorm > 0.:
+            norm = (np.sum(atom ** lnorm)) ** (1. / lnorm)
         else:
-            norm=   1.
-    return atom/norm
+            norm = 1.
+    return atom / norm
 
-def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
+
+def mc2rs(mass, conc, redshift, omega_m=Default_OmegaM):
     """
     Get the scale radius of NFW halo from mass and redshift
     Parameters:
@@ -95,24 +103,25 @@ def mc2rs(mass,conc,redshift,omega_m=Default_OmegaM):
     Returns:
         scale radius in arcsec
     """
-    cosmo   =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
-    z       =   redshift
-    #a       =   1./(1.+z)
+    cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
+    z = redshift
+    # a       =   1./(1.+z)
     # angular distance in Mpc/h
-    DaLens  =   cosmo.angular_diameter_distance_z1z2(0.,z).value
+    DaLens = cosmo.angular_diameter_distance_z1z2(0., z).value
     # E(z)^{-1}
-    ezInv   =   cosmo.inv_efunc(z)
+    ezInv = cosmo.inv_efunc(z)
     # critical density (in unit of M_sun h^2 / Mpc^3)
-    #rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=rho_unt)
-    rvir    =   1.63e-5*(mass*ezInv**2)**(1./3.) # in Mpc/h
-    rs      =   rvir/conc
-    #A       =   1./(np.log(1+conc)-(conc)/(1+conc))
-    #delta_nfw   =   200./3*conc**3*A
+    # rho_cZ  =   cosmo.critical_density(self.z).to_value(unit=rho_unt)
+    rvir = 1.63e-5 * (mass * ezInv ** 2) ** (1. / 3.)  # in Mpc/h
+    rs = rvir / conc
+    # A       =   1./(np.log(1+conc)-(conc)/(1+conc))
+    # delta_nfw   =   200./3*conc**3*A
     # convert to angular radius in unit of arcsec
-    scale       =   rs / DaLens
-    arcmin2rad  =   np.pi/180./60.
-    rs_arcmin   =   scale/arcmin2rad
+    scale = rs / DaLens
+    arcmin2rad = np.pi / 180. / 60.
+    rs_arcmin = scale / arcmin2rad
     return rs_arcmin
+
 
 class ksmap():
     """
@@ -128,27 +137,32 @@ class ksmap():
 
     transform:
     """
-    def __init__(self,ny,nx):
-        self.shape   =   (ny,nx)
-        self.e2phiF  =   self.e2phiFou()
+
+    def __init__(self, ny, nx):
+        self.shape = (ny, nx)
+        self.e2phiF = self.e2phiFou()
+        self.a = pyfftw.empty_aligned(self.shape, dtype='complex128')
+        self.b = pyfftw.empty_aligned(self.shape, dtype='complex128')
+        self.fft_object_forward = pyfftw.FFTW(self.a, self.b, axes=(0, 1))
+        self.fft_object_inverse = pyfftw.FFTW(self.a, self.b, axes=(0, 1), direction='FFTW_BACKWARD')
 
     def e2phiFou(self):
-        ny,nx   =   self.shape
-        e2phiF  =   np.zeros(self.shape,dtype=np.complex128)
+        ny, nx = self.shape
+        e2phiF = np.zeros(self.shape, dtype=np.complex128)
         for j in range(ny):
-            jy  =   (j+ny//2.)%ny-ny//2.
-            jy  =   np.float64(jy/ny)
+            jy = (j + ny // 2.) % ny - ny // 2.
+            jy = np.float64(jy / ny)
             for i in range(nx):
-                ix  =   (i+nx//2.)%nx-nx//2.
-                ix  =   np.float64(ix/nx)
-                if i==0 and j==0:
-                    e2phiF[j,i] =   0.
+                ix = (i + nx // 2.) % nx - nx // 2.
+                ix = np.float64(ix / nx)
+                if i == 0 and j == 0:
+                    e2phiF[j, i] = 0.
                 else:
-                    r2  =   ix**2.+jy**2.
-                    e2phiF[j,i] =   (ix**2.-jy**2.)/r2+(2j*ix*jy/r2)
-        return e2phiF*np.pi
+                    r2 = ix ** 2. + jy ** 2.
+                    e2phiF[j, i] = (ix ** 2. - jy ** 2.) / r2 + (2j * ix * jy / r2)
+        return e2phiF * np.pi
 
-    def itransform(self,gMap,inFou=True,outFou=True):
+    def itransform(self, gMap, inFou=True, outFou=True):
         """
         K-S Transform from gamma map to kappa map
 
@@ -157,14 +171,17 @@ class ksmap():
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
         """
-        assert gMap.shape[-2:]==self.shape
+        assert gMap.shape[-2:] == self.shape
         if not inFou:
-            gMap =   np.fft.fft2(gMap)
-        kOMap    =   gMap*np.conjugate(self.e2phiF*np.pi)
+            # gMap =   np.fft.fft2(gMap)
+            gMap = self.fft_object_forward(gMap)
+        kOMap = gMap * np.conjugate(self.e2phiF * np.pi)
         if not outFou:
-            kOMap    =   np.fft.ifft2(kOMap)
+            # kOMap    =   np.fft.ifft2(kOMap)
+            kOMap = self.fft_object_inverse(kOMap)
         return kOMap
-    def transform_fftw(self,kMap,inFou=True,outFou=True):
+
+    def transform_fftw(self, kMap, inFou=True, outFou=True):
         """
         K-S Transform from kappa map to gamma map
 
@@ -173,20 +190,15 @@ class ksmap():
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
         """
-        assert kMap.shape[-2:]==self.shape
+        assert kMap.shape[-2:] == self.shape
         if not inFou:
-            a = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
-            b = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
-            fft_object_forward= pyfftw.FFTW(a, b, axes=(0, 1))
-            kMap =   fft_object_forward(kMap)
-        gOMap    =   kMap*self.e2phiF/np.pi
+            kMap = self.fft_object_forward(kMap)
+        gOMap = kMap * self.e2phiF / np.pi
         if not outFou:
-            a = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
-            b = pyfftw.empty_aligned(kMap.shape, dtype='complex128')
-            fft_object_backward = pyfftw.FFTW(a, b, axes=(0, 1),direction='FFTW_BACKWARD')
-            gOMap    =   fft_object_backward(gOMap)
+            gOMap = self.fft_object_inverse(gOMap)
         return gOMap
-    def transform(self,kMap,inFou=True,outFou=True):
+
+    def transform(self, kMap, inFou=True, outFou=True):
         """
         K-S Transform from kappa map to gamma map
 
@@ -195,13 +207,16 @@ class ksmap():
         inFou:  input in Fourier space? [default:True=yes]
         outFou: output in Fourier space? [default:True=yes]
         """
-        assert kMap.shape[-2:]==self.shape
+        assert kMap.shape[-2:] == self.shape
         if not inFou:
-            kMap =   np.fft.fft2(kMap)
-        gOMap    =   kMap*self.e2phiF/np.pi
+            # kMap =   np.fft.fft2(kMap)
+            kMap = self.fft_object_forward(kMap)
+        gOMap = kMap * self.e2phiF / np.pi
         if not outFou:
-            gOMap    =   np.fft.ifft2(gOMap)
+            # gOMap    =   np.fft.ifft2(gOMap)
+            gOMap = self.fft_object_inverse(gOMap)
         return gOMap
+
 
 class nfwHalo(Cosmo):
     """
@@ -215,22 +230,23 @@ class nfwHalo(Cosmo):
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
-    def __init__(self,ra,dec,redshift,mass,conc=None,rs=None,omega_m=Default_OmegaM):
+
+    def __init__(self, ra, dec, redshift, mass, conc=None, rs=None, omega_m=Default_OmegaM):
         # Redshift and Geometry
         ## ra dec
-        self.ra     =   ra
-        self.dec    =   dec
-        Cosmo.__init__(self,H0=Default_h0*100.,Om0=omega_m)
-        self.z      =   float(redshift)
-        self.a      =   1./(1.+self.z)
+        self.ra = ra
+        self.dec = dec
+        Cosmo.__init__(self, H0=Default_h0 * 100., Om0=omega_m)
+        self.z = float(redshift)
+        self.a = 1. / (1. + self.z)
         # angular distance in Mpc/h
-        self.DaLens =   self.angular_diameter_distance_z1z2(0.,self.z).value
+        self.DaLens = self.angular_diameter_distance_z1z2(0., self.z).value
         # critical density
         # in unit of M_solar / Mpc^3
-        rho_cZ      =   self.critical_density(self.z).to_value(unit=rho_unt)
+        rho_cZ = self.critical_density(self.z).to_value(unit=rho_unt)
         self.rho_cZ = rho_cZ
 
-        self.M      =   float(mass)
+        self.M = float(mass)
         ezInv = self.inv_efunc(redshift)
         self.ezInv = ezInv
         self.Omega_z = self.Om(self.z)
@@ -244,42 +260,42 @@ class nfwHalo(Cosmo):
         # (3 / (4 pi * 200 * rhocrit))^(1/3), where rhocrit = 2.8e11 h^2
         # M_solar / Mpc^3.
         if conc is not None:
-            self.c  =   float(conc)
+            self.c = float(conc)
             # scale radius
-            self.rs =   self.rvir/self.c
+            self.rs = self.rvir / self.c
             if rs is not None:
-                assert abs(self.rs-rs)<0.01, 'input rs is different from derived'
+                assert abs(self.rs - rs) < 0.01, 'input rs is different from derived'
         elif rs is not None:
-            self.rs =   float(rs)
-            self.c  =  self.rvir/self.rs
+            self.rs = float(rs)
+            self.c = self.rvir / self.rs
         else:
             raise ValueError("need to give conc or rs, at least one")
-        self.m_c = np.log(1+self.c) - self.c/(1+self.c) #OLS eqn 9, alpha = 1
-        self.A = 1/self.m_c
-        self.delta_nfw = self.Delta_vir * self.Omega_z / 3 * self.c**3 /self.m_c #with spherical model
+        self.m_c = np.log(1 + self.c) - self.c / (1 + self.c)  # OLS eqn 9, alpha = 1
+        self.A = 1 / self.m_c
+        self.delta_nfw = self.Delta_vir * self.Omega_z / 3 * self.c ** 3 / self.m_c  # with spherical model
         # Delta_vir = Delta_e
         # convert to angular radius in unit of arcsec
-        scale       =   self.rs / self.DaLens
-        arcsec2rad  =   np.pi/180./3600.
-        self.rs_arcsec =scale/arcsec2rad
+        scale = self.rs / self.DaLens
+        arcsec2rad = np.pi / 180. / 3600.
+        self.rs_arcsec = scale / arcsec2rad
 
         # Second, derive the charateristic matter density
         # within virial radius at redshift z
-        self.rho_s=   rho_cZ*self.delta_nfw
+        self.rho_s = rho_cZ * self.delta_nfw
 
         return
 
-    def DdRs(self,ra_s,dec_s):
+    def DdRs(self, ra_s, dec_s):
         """Calculate 'x' the radius r in units of the NFW scale
         radius, r_s.
         Parameters:
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
-        x = ((ra_s - self.ra)**2 + (dec_s - self.dec)**2)**0.5/self.rs_arcsec
+        x = ((ra_s - self.ra) ** 2 + (dec_s - self.dec) ** 2) ** 0.5 / self.rs_arcsec
         return x
 
-    def sin2phi(self,ra_s,dec_s):
+    def sin2phi(self, ra_s, dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
         Parameters:
             ra_s:       ra of sources [arcsec].
@@ -288,10 +304,10 @@ class nfwHalo(Cosmo):
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
         dy = dec_s - self.dec
-        drsq = dx*dx+dy*dy
-        return np.divide(2*dx*dy, drsq, where=(drsq != 0.))
+        drsq = dx * dx + dy * dy
+        return np.divide(2 * dx * dy, drsq, where=(drsq != 0.))
 
-    def cos2phi(self,ra_s,dec_s):
+    def cos2phi(self, ra_s, dec_s):
         """Calculate cos2phi and sin2phi with reference to the halo center
         Parameters:
             ra_s:       ra of sources [arcsec].
@@ -300,10 +316,10 @@ class nfwHalo(Cosmo):
         # pure tangential shear, no cross component
         dx = ra_s - self.ra
         dy = dec_s - self.dec
-        drsq = dx*dx+dy*dy
-        return np.divide(dx*dx-dy*dy, drsq, where=(drsq != 0.))
+        drsq = dx * dx + dy * dy
+        return np.divide(dx * dx - dy * dy, drsq, where=(drsq != 0.))
 
-    def lensKernel(self,z_s):
+    def lensKernel(self, z_s):
         """Lensing kernel from surface density at lens redshfit to source redshift
         to kappa at source redshift
         Parameters:
@@ -314,10 +330,10 @@ class nfwHalo(Cosmo):
             return self.lensKernel(np.array([z_s], dtype='float'))[0]
         # lensing weights: the only thing that depends on z_s
         # First mask the data with z<z_l
-        k_s =   np.zeros(len(z_s))
-        mask=   z_s>self.z
-        k_s[mask] =   self.angular_diameter_distance_z1z2(self.z,z_s[mask])*self.DaLens\
-                /self.angular_diameter_distance_z1z2(0.,z_s[mask])*four_pi_G_over_c_squared()
+        k_s = np.zeros(len(z_s))
+        mask = z_s > self.z
+        k_s[mask] = self.angular_diameter_distance_z1z2(self.z, z_s[mask]) * self.DaLens \
+                    / self.angular_diameter_distance_z1z2(0., z_s[mask]) * four_pi_G_over_c_squared()
         return k_s
 
 
@@ -337,27 +353,28 @@ class nfwWB00(nfwHalo):
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
-    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=Default_OmegaM):
-        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=omega_m)
 
-    def __Sigma(self,x):
+    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM):
+        nfwHalo.__init__(self, ra, dec, redshift, mass=mass, conc=conc, rs=rs, omega_m=omega_m)
+
+    def __Sigma(self, x):
         out = np.zeros_like(x, dtype=float)
 
         # 3 cases: x < 1, x > 1, and |x-1| < 0.001
         mask = np.where(x < 0.999)[0]
-        a = ((1 - x[mask])/(x[mask] + 1))**0.5
-        out[mask] = 2/(x[mask]**2 - 1) * (1 - 2*np.arctanh(a)/(1-x[mask]**2)**0.5)
+        a = ((1 - x[mask]) / (x[mask] + 1)) ** 0.5
+        out[mask] = 2 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctanh(a) / (1 - x[mask] ** 2) ** 0.5)
 
         mask = np.where(x > 1.001)[0]
-        a = ((x[mask] - 1)/(x[mask] + 1))**0.5
-        out[mask] = 2/(x[mask]**2 - 1) * (1 - 2*np.arctan(a)/(x[mask]**2- 1)**0.5)
+        a = ((x[mask] - 1) / (x[mask] + 1)) ** 0.5
+        out[mask] = 2 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctan(a) / (x[mask] ** 2 - 1) ** 0.5)
 
         # the approximation below has a maximum fractional error of 7.4e-7
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
-        out[mask] = (22./15. - 0.8*x[mask])
-        return out* self.rs * self.rho_s
+        out[mask] = (22. / 15. - 0.8 * x[mask])
+        return out * self.rs * self.rho_s
 
-    def Sigma(self,ra_s,dec_s):
+    def Sigma(self, ra_s, dec_s):
         """Calculate Surface Density (Sigma) of halo.
         Equation (11) in Wright & Brainerd (2000, ApJ, 534, 34).
         Parameters:
@@ -365,18 +382,18 @@ class nfwWB00(nfwHalo):
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__Sigma(x)
 
-    def __DeltaSigma(self,x):
+    def __DeltaSigma(self, x):
         out = np.zeros_like(x, dtype=float)
         """
         # 4 cases:
@@ -384,47 +401,47 @@ class nfwWB00(nfwHalo):
         # x<0.01
         """
         mask = np.where(x > 1.001)[0]
-        a = ((x[mask]-1.)/(x[mask]+1.))**0.5
-        out[mask] = x[mask]**(-2)*(4.*np.log(x[mask]/2)+8.*np.arctan(a)\
-                /(x[mask]**2 - 1)**0.5)*self.rs * self.rho_s-self.__Sigma(x[mask])
+        a = ((x[mask] - 1.) / (x[mask] + 1.)) ** 0.5
+        out[mask] = x[mask] ** (-2) * (4. * np.log(x[mask] / 2) + 8. * np.arctan(a) \
+                                       / (x[mask] ** 2 - 1) ** 0.5) * self.rs * self.rho_s - self.__Sigma(x[mask])
         # Equivalent but usually faster than mask = (x < 0.999)
-        mask = np.where((x < 0.999) & (x> 0.01))[0]
-        a = ((1.-x[mask])/(x[mask]+1.))**0.5
-        out[mask] = x[mask]**(-2)*(4.*np.log(x[mask]/2)+8.*np.arctanh(a)\
-                /(1-x[mask]**2)**0.5)*self.rs * self.rho_s-self.__Sigma(x[mask])
+        mask = np.where((x < 0.999) & (x > 0.01))[0]
+        a = ((1. - x[mask]) / (x[mask] + 1.)) ** 0.5
+        out[mask] = x[mask] ** (-2) * (4. * np.log(x[mask] / 2) + 8. * np.arctanh(a) \
+                                       / (1 - x[mask] ** 2) ** 0.5) * self.rs * self.rho_s - self.__Sigma(x[mask])
         """
         # the approximation below has a maximum fractional error of 2.3e-7
         """
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
-        out[mask] = (4.*np.log(x[mask]/2)+40./6. - 8.*x[mask]/3.)*self.rs * self.rho_s\
-                    -self.__Sigma(x[mask])
+        out[mask] = (4. * np.log(x[mask] / 2) + 40. / 6. - 8. * x[mask] / 3.) * self.rs * self.rho_s \
+                    - self.__Sigma(x[mask])
         """
         # the approximation below has a maximum fractional error of 1.1e-7
         """
-        mask        =   np.where(x <= 0.01)[0]
-        out[mask]   =   4.*(0.25 + 0.125 * x[mask]**2 * \
-                (3.25 + 3.0*np.log(x[mask]/2)))*self.rs * self.rho_s
+        mask = np.where(x <= 0.01)[0]
+        out[mask] = 4. * (0.25 + 0.125 * x[mask] ** 2 * \
+                          (3.25 + 3.0 * np.log(x[mask] / 2))) * self.rs * self.rho_s
         return out
 
-    def DeltaSigma(self,ra_s,dec_s):
+    def DeltaSigma(self, ra_s, dec_s):
         """Calculate excess surface density of halo.
         Parameters:
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__DeltaSigma(x)
 
-    def DeltaSigmaComplex(self,ra_s,dec_s):
+    def DeltaSigmaComplex(self, ra_s, dec_s):
         """Calculate excess surface density of halo.
         return a complex array Delta Sigma_1+ i Delta Sigma_2
         Parameters:
@@ -432,53 +449,54 @@ class nfwWB00(nfwHalo):
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigmaComplex(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigmaComplex(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
-        DeltaSigma=self.__DeltaSigma(x)
-        DeltaSigma1 = -DeltaSigma*self.cos2phi(ra_s,dec_s)
-        DeltaSigma2 = -DeltaSigma*self.sin2phi(ra_s,dec_s)
-        return DeltaSigma1+1j*DeltaSigma2
+        x = self.DdRs(ra_s, dec_s)
+        DeltaSigma = self.__DeltaSigma(x)
+        DeltaSigma1 = -DeltaSigma * self.cos2phi(ra_s, dec_s)
+        DeltaSigma2 = -DeltaSigma * self.sin2phi(ra_s, dec_s)
+        return DeltaSigma1 + 1j * DeltaSigma2
 
-    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def SigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Atom on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.Sigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.Sigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
 
-    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def DeltaSigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Atom on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.DeltaSigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
+
 
 class nfwTJ03(nfwHalo):
     """
@@ -495,34 +513,36 @@ class nfwTJ03(nfwHalo):
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
-    def __init__(self,ra,dec,redshift,mass=None,conc=None,rs=None,omega_m=Default_OmegaM):
-        nfwHalo.__init__(self,ra,dec,redshift,mass=mass,conc=conc,rs=rs,omega_m=omega_m)
 
-    def __Sigma(self,x0):
-        c   = float(self.c)
+    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM):
+        nfwHalo.__init__(self, ra, dec, redshift, mass=mass, conc=conc, rs=rs, omega_m=omega_m)
+
+    def __Sigma(self, x0):
+        c = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
         mask = np.where(x0 < 0.999)[0]
-        x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)+\
-            1./(1-x**2.)**1.5*np.arccosh((x**2.+c)/x/(1.+c))
+        x = x0[mask]
+        out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) + \
+                    1. / (1 - x ** 2.) ** 1.5 * np.arccosh((x ** 2. + c) / x / (1. + c))
 
-        mask = np.where((x0 > 1.001) & (x0<c))[0]
-        x=x0[mask]
-        out[mask] = -np.sqrt(c**2.-x**2.)/(1-x**2.)/(1+c)-\
-            1./(x**2.-1)**1.5*np.arccos((x**2.+c)/x/(1.+c))
+        mask = np.where((x0 > 1.001) & (x0 < c))[0]
+        x = x0[mask]
+        out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) - \
+                    1. / (x ** 2. - 1) ** 1.5 * np.arccos((x ** 2. + c) / x / (1. + c))
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
-        x=x0[mask]
-        out[mask] = (-2.+c+c**2.)/(3.*np.sqrt(-1.+c)*(1+c)**(3./2))\
-            +((2.-c-4.*c**2.-2.*c**3.)*(x-1.))/(5.*np.sqrt(-1.+c)*(1+c)**(5/2.))
+        x = x0[mask]
+        out[mask] = (-2. + c + c ** 2.) / (3. * np.sqrt(-1. + c) * (1 + c) ** (3. / 2)) \
+                    + ((2. - c - 4. * c ** 2. - 2. * c ** 3.) * (x - 1.)) / (
+                                5. * np.sqrt(-1. + c) * (1 + c) ** (5 / 2.))
 
         mask = np.where(x0 >= c)[0]
-        out[mask]=0.
-        return out* self.rs * self.rho_s*2.
+        out[mask] = 0.
+        return out * self.rs * self.rho_s * 2.
 
-    def Sigma(self,ra_s,dec_s):
+    def Sigma(self, ra_s, dec_s):
         """Calculate Surface Density (Sigma) of halo.
         Takada & Jain(2003, MNRAS, 340, 580) Eq.27
             ra_s:       ra of sources [arcsec].
@@ -530,19 +550,19 @@ class nfwTJ03(nfwHalo):
         """
 
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.Sigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.Sigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__Sigma(x)
 
-    def __DeltaSigma(self,x0):
-        c   = float(self.c)
+    def __DeltaSigma(self, x0):
+        c = float(self.c)
         out = np.zeros_like(x0, dtype=float)
 
         # 4 cases:
@@ -550,105 +570,108 @@ class nfwTJ03(nfwHalo):
         # 1.001<x<=c, x>c
 
         mask = np.where(x0 < 0.0001)[0]
-        out[mask]=1./2.
+        out[mask] = 1. / 2.
 
-        mask = np.where((x0 < 0.999) & (x0>0.0001) )[0]
-        x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
-            +((2-3*x**2)*np.arccosh((c+x**2)/((1.+c)*x)))/(x**2*(1-x**2.)**1.5)\
-            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+        mask = np.where((x0 < 0.999) & (x0 > 0.0001))[0]
+        x = x0[mask]
+        out[mask] = (-2. * c + ((2. - x ** 2.) * np.sqrt(c ** 2. - x ** 2.)) / (1 - x ** 2)) / ((1 + c) * x ** 2.) \
+                    + ((2 - 3 * x ** 2) * np.arccosh((c + x ** 2) / ((1. + c) * x))) / (x ** 2 * (1 - x ** 2.) ** 1.5) \
+                    + (2 * np.log(((1. + c) * x) / (c + np.sqrt(c ** 2 - x ** 2)))) / x ** 2
 
-        mask = np.where((x0 > 1.001) & (x0< c))[0]
-        x=x0[mask]
-        out[mask] = (-2.*c+((2.-x**2.)*np.sqrt(c**2.-x**2.))/(1-x**2))/((1+c)*x**2.)\
-            -((2-3*x**2)*np.arccos((c+x**2)/((1.+c)*x)))/(x**2*(-1+x**2.)**1.5)\
-            +(2*np.log(((1.+c)*x)/(c+np.sqrt(c**2-x**2))))/x**2
+        mask = np.where((x0 > 1.001) & (x0 < c))[0]
+        x = x0[mask]
+        out[mask] = (-2. * c + ((2. - x ** 2.) * np.sqrt(c ** 2. - x ** 2.)) / (1 - x ** 2)) / ((1 + c) * x ** 2.) \
+                    - ((2 - 3 * x ** 2) * np.arccos((c + x ** 2) / ((1. + c) * x))) / (x ** 2 * (-1 + x ** 2.) ** 1.5) \
+                    + (2 * np.log(((1. + c) * x) / (c + np.sqrt(c ** 2 - x ** 2)))) / x ** 2
 
         mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
-        x=x0[mask]
-        out[mask] = (10*np.sqrt(-1.+c**2)+c*(-6-6*c+11*np.sqrt(-1.+c**2))\
-            +6*(1 + c)**2*np.log((1. + c)/(c +np.sqrt(-1.+c**2))))/(3.*(1+c)**2)-\
-            (-1.+x)*((94 + c*(113 + 60*np.sqrt((-1.+c)/(1 + c))+4*c*(-22 + 30*np.sqrt((-1 + c)/(1 + c)) \
-            + c*(-26 + 15*np.sqrt((-1 + c)/(1 + c))))))/(15.*(1.+c)**2*np.sqrt(-1.+c**2))- 4*np.log(1.+c)+\
-            4*np.log(c +np.sqrt(-1.+c**2)))
+        x = x0[mask]
+        out[mask] = (10 * np.sqrt(-1. + c ** 2) + c * (-6 - 6 * c + 11 * np.sqrt(-1. + c ** 2)) \
+                     + 6 * (1 + c) ** 2 * np.log((1. + c) / (c + np.sqrt(-1. + c ** 2)))) / (3. * (1 + c) ** 2) - \
+                    (-1. + x) * ((94 + c * (
+                    113 + 60 * np.sqrt((-1. + c) / (1 + c)) + 4 * c * (-22 + 30 * np.sqrt((-1 + c) / (1 + c)) \
+                                                                       + c * (-26 + 15 * np.sqrt(
+                        (-1 + c) / (1 + c)))))) / (15. * (1. + c) ** 2 * np.sqrt(-1. + c ** 2)) - 4 * np.log(1. + c) + \
+                                 4 * np.log(c + np.sqrt(-1. + c ** 2)))
 
         mask = np.where(x0 >= c)[0]
-        x=x0[mask]
-        out[mask] = 2./self.A/x**2.
-        return out*self.rs * self.rho_s*2.
+        x = x0[mask]
+        out[mask] = 2. / self.A / x ** 2.
+        return out * self.rs * self.rho_s * 2.
 
-    def DeltaSigma(self,ra_s,dec_s):
+    def DeltaSigma(self, ra_s, dec_s):
         """Calculate excess surface density of halo according to
         Takada & Jain (2003, MNRAS, 344, 857) Eq.17 -- Excess Surface Density
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigma(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigma(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
+        x = self.DdRs(ra_s, dec_s)
         return self.__DeltaSigma(x)
 
-    def DeltaSigmaComplex(self,ra_s,dec_s):
+    def DeltaSigmaComplex(self, ra_s, dec_s):
         """Calculate excess surface density of halo.
         return a complex array Delta Sigma_1+ i Delta Sigma_2
             ra_s:       ra of sources [arcsec].
             dec_s:      dec of sources [arcsec].
         """
         # convenience: call with single number
-        assert isinstance(ra_s,np.ndarray)==isinstance(dec_s,np.ndarray),\
+        assert isinstance(ra_s, np.ndarray) == isinstance(dec_s, np.ndarray), \
             'ra_s and dec_s do not have same type'
-        if not isinstance(ra_s,np.ndarray):
-            ra_sA=np.array([ra_s], dtype='float')
-            dec_sA=np.array([dec_s], dtype='float')
-            return self.DeltaSigmaComplex(ra_sA,dec_sA)[0]
-        assert len(ra_s)==len(dec_s),\
+        if not isinstance(ra_s, np.ndarray):
+            ra_sA = np.array([ra_s], dtype='float')
+            dec_sA = np.array([dec_s], dtype='float')
+            return self.DeltaSigmaComplex(ra_sA, dec_sA)[0]
+        assert len(ra_s) == len(dec_s), \
             'input ra and dec have different length '
-        x=self.DdRs(ra_s,dec_s)
-        DeltaSigma=self.__DeltaSigma(x)
-        DeltaSigma1 = -DeltaSigma*self.cos2phi(ra_s,dec_s)
-        DeltaSigma2 = -DeltaSigma*self.sin2phi(ra_s,dec_s)
-        return DeltaSigma1+1j*DeltaSigma2
+        x = self.DdRs(ra_s, dec_s)
+        DeltaSigma = self.__DeltaSigma(x)
+        DeltaSigma1 = -DeltaSigma * self.cos2phi(ra_s, dec_s)
+        DeltaSigma2 = -DeltaSigma * self.sin2phi(ra_s, dec_s)
+        return DeltaSigma1 + 1j * DeltaSigma2
 
-    def SigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def SigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Sigma on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.Sigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.Sigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
 
-    def DeltaSigmaAtom(self,pix_scale,ngrid,xc=None,yc=None):
+    def DeltaSigmaAtom(self, pix_scale, ngrid, xc=None, yc=None):
         """NFW Delta Sigma on Grid
         Parameters:
             pix_scale:    pixel sacle [arcsec]
             ngrid:        number of pixels on x and y axis
         """
         if xc is None:
-            xc  =   self.ra
+            xc = self.ra
         if yc is None:
-            yc  =   self.dec
+            yc = self.dec
 
-        X   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+xc
-        Y   =   (np.arange(ngrid)-ngrid/2.)*pix_scale+yc
-        x,y =   np.meshgrid(X,Y)
-        atomReal=self.DeltaSigma(x.ravel(),y.ravel()).reshape((ngrid,ngrid))
+        X = (np.arange(ngrid) - ngrid / 2.) * pix_scale + xc
+        Y = (np.arange(ngrid) - ngrid / 2.) * pix_scale + yc
+        x, y = np.meshgrid(X, Y)
+        atomReal = self.DeltaSigma(x.ravel(), y.ravel()).reshape((ngrid, ngrid))
         return atomReal
+
 
 class nfwCS02_grid(Cartesian):
     """
@@ -659,27 +682,29 @@ class nfwCS02_grid(Cartesian):
     Parameters:
         parser
     """
-    def __init__(self,parser):
-        Cartesian.__init__(self,parser)
-        self.ks2D    =   ksmap(self.ny,self.nx)
+
+    def __init__(self, parser):
+        Cartesian.__init__(self, parser)
+        self.ks2D = ksmap(self.ny, self.nx)
         return
 
-    def add_halo(self,halo):
-        lk      =   halo.lensKernel(self.zcgrid)
-        rpix    =   halo.rs_arcsec/self.scale/3600.
+    def add_halo(self, halo):
+        lk = halo.lensKernel(self.zcgrid)
+        rpix = halo.rs_arcsec / self.scale / 3600.
 
-        sigma   =   haloCS02SigmaAtom(rpix,ny=self.ny,nx=self.nx,\
-                    sigma_pix=self.sigma_pix,c=halo.c,fou=True)
-        snorm   =   sigma[0,0]
-        dr      =   halo.DaLens*self.scale/180*np.pi
-        snorm   =   halo.M/dr**2./snorm
-        sigma   =   sigma*snorm
-        dsigma  =   np.fft.fftshift(self.ks2D.transform(sigma,\
-                    inFou=True,outFou=False))
-        sigma   =   np.fft.fftshift(np.fft.ifft2(sigma)).real
-        shear   =   dsigma[None,:,:]*lk[:,None,None]
-        kappa   =   sigma[None,:,:]*lk[:,None,None]
-        return kappa,shear
+        sigma = haloCS02SigmaAtom(rpix, ny=self.ny, nx=self.nx, \
+                                  sigma_pix=self.sigma_pix, c=halo.c, fou=True)
+        snorm = sigma[0, 0]
+        dr = halo.DaLens * self.scale / 180 * np.pi
+        snorm = halo.M / dr ** 2. / snorm
+        sigma = sigma * snorm
+        dsigma = np.fft.fftshift(self.ks2D.transform(sigma, \
+                                                     inFou=True, outFou=False))
+        sigma = np.fft.fftshift(np.fft.ifft2(sigma)).real
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        return kappa, shear, sigma, lk, snorm, dr
+
 
 class nfwShearlet2D():
     """
@@ -698,43 +723,44 @@ class nfwShearlet2D():
         itranspose: transpose of itransform operator
 
     """
-    def __init__(self,parser,lensKernel):
+
+    def __init__(self, parser, lensKernel):
         # transverse plane
-        self.nframe =   parser.getint('sparse','nframe')
-        self.ny     =   parser.getint('transPlane','ny')
-        self.nx     =   parser.getint('transPlane','nx')
+        self.nframe = parser.getint('sparse', 'nframe')
+        self.ny = parser.getint('transPlane', 'ny')
+        self.nx = parser.getint('transPlane', 'nx')
 
         # The unit of angle in the configuration
-        unit    =   parser.get('transPlane','unit')
+        unit = parser.get('transPlane', 'unit')
         # Rescaling to degree
-        if unit ==  'degree':
-            self.ratio= 1.
-        elif unit== 'arcmin':
-            self.ratio= 1./60.
-        elif unit== 'arcsec':
-            self.ratio= 1./60./60.
-        self.scale= parser.getfloat('transPlane','scale')*self.ratio
-        self.ks2D   =   ksmap(self.ny,self.nx)
+        if unit == 'degree':
+            self.ratio = 1.
+        elif unit == 'arcmin':
+            self.ratio = 1. / 60.
+        elif unit == 'arcsec':
+            self.ratio = 1. / 60. / 60.
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.ks2D = ksmap(self.ny, self.nx)
 
         # line of sight
-        self.nzl    =   parser.getint('lens','nlp')
-        self.nzs    =   parser.getint('sources','nz')
-        if self.nzl <=  1:
-            self.zlMin  =   0.
-            self.zlscale=   1.
+        self.nzl = parser.getint('lens', 'nlp')
+        self.nzs = parser.getint('sources', 'nz')
+        if self.nzl <= 1:
+            self.zlMin = 0.
+            self.zlscale = 1.
         else:
-            self.zlMin  =   parser.getfloat('lens','zlMin')
-            self.zlscale=   parser.getfloat('lens','zlscale')
-        self.zlBin      =   zMeanBin(self.zlMin,self.zlscale,self.nzl)
-        self.scale      =   parser.getfloat('transPlane','scale')*self.ratio
-        self.sigma_pix  =   parser.getfloat('transPlane','smooth_scale')\
-                            *self.ratio/self.scale
+            self.zlMin = parser.getfloat('lens', 'zlMin')
+            self.zlscale = parser.getfloat('lens', 'zlscale')
+        self.zlBin = zMeanBin(self.zlMin, self.zlscale, self.nzl)
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.sigma_pix = parser.getfloat('transPlane', 'smooth_scale') \
+                         * self.ratio / self.scale
 
         # Shape of output shapelets
-        self.shapeP =   (self.ny,self.nx)                   # basic plane
-        self.shapeL =   (self.nzl,self.ny,self.nx)          # lens plane
-        self.shapeA =   (self.nzl,self.nframe,self.ny,self.nx) # dictionary plane
-        self.shapeS =   (self.nzs,self.ny,self.nx)          # observe plane
+        self.shapeP = (self.ny, self.nx)  # basic plane
+        self.shapeL = (self.nzl, self.ny, self.nx)  # lens plane
+        self.shapeA = (self.nzl, self.nframe, self.ny, self.nx)  # dictionary plane
+        self.shapeS = (self.nzs, self.ny, self.nx)  # observe plane
 
         ####pyfftw stuff####
         array1 = pyfftw.empty_aligned(self.shapeP, dtype='complex128')  # need to intialize pyfftw obj
@@ -743,7 +769,7 @@ class nfwShearlet2D():
         array4 = pyfftw.empty_aligned(self.shapeL, dtype='complex128')
         array5 = pyfftw.empty_aligned(self.shapeA, dtype='complex128')  # need to intialize pyfftw obj
         array6 = pyfftw.empty_aligned(self.shapeA, dtype='complex128')
-        self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1)) #2 means for 2d array
+        self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1))  # 2 means for 2d array
         self.fftw2_inverse = pyfftw.FFTW(array1, array2, axes=(0, 1), direction='FFTW_BACKWARD')
         self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
         self.fftw3_inverse = pyfftw.FFTW(array3, array4, axes=(1, 2), direction='FFTW_BACKWARD')
@@ -751,147 +777,149 @@ class nfwShearlet2D():
         self.fftw4_inverse = pyfftw.FFTW(array5, array6, axes=(2, 3), direction='FFTW_BACKWARD')
         ####pyfftw stuff####
 
-        if parser.has_option('lens','atomFname'):
-            atFname =   parser.get('lens','atomFname')
-            tmp     =   pyfits.getdata(atFname)
-            tmp     =   np.fft.fftshift(tmp)
-            nzl,nft,nyt,nxt =   tmp.shape
-            ypad    =   (self.ny-nyt)//2
-            xpad    =   (self.nx-nxt)//2
-            assert self.nframe==nft
-            assert self.nzl==nzl
-            ppad    =   ((0,0),(0,0),(ypad,ypad),(xpad,xpad))
-            tmp     =   np.fft.ifftshift(np.pad(tmp,ppad))
-            tmp     =   np.fft.fft2(tmp)
-            self.fouaframesInter =  tmp
-            self.fouaframes =   self.ks2D.transform(tmp,inFou=True,outFou=True)
-            #self.aframes    =   np.fft.ifft2(self.fouaframes)
-            self.aframes    =   self.fftw2_inverse(self.fouaframes)
-            #print('fouaframes shape: (line 751) ', self.fouaframes.shape)
+        if parser.has_option('lens', 'atomFname'):
+            atFname = parser.get('lens', 'atomFname')
+            tmp = pyfits.getdata(atFname)
+            tmp = np.fft.fftshift(tmp)
+            nzl, nft, nyt, nxt = tmp.shape
+            ypad = (self.ny - nyt) // 2
+            xpad = (self.nx - nxt) // 2
+            assert self.nframe == nft
+            assert self.nzl == nzl
+            ppad = ((0, 0), (0, 0), (ypad, ypad), (xpad, xpad))
+            tmp = np.fft.ifftshift(np.pad(tmp, ppad))
+            tmp = np.fft.fft2(tmp)
+            self.fouaframesInter = tmp
+            self.fouaframes = self.ks2D.transform(tmp, inFou=True, outFou=True)
+            # self.aframes    =   np.fft.ifft2(self.fouaframes)
+            self.aframes = self.fftw2_inverse(self.fouaframes)
+            # print('fouaframes shape: (line 751) ', self.fouaframes.shape)
         else:
             self.prepareFrames(parser)
-        self.lensKernel=    lensKernel
+        self.lensKernel = lensKernel
 
-    def prepareFrames(self,parser):
-        if parser.has_option('cosmology','omega_m'):
-            omega_m =   parser.getfloat('cosmology','omega_m')
+    def prepareFrames(self, parser):
+        if parser.has_option('cosmology', 'omega_m'):
+            omega_m = parser.getfloat('cosmology', 'omega_m')
         else:
-            omega_m =   Default_OmegaM
-        self.cosmo  =   Cosmo(H0=Default_h0*100.,Om0=omega_m)
-        self.rs_base=   parser.getfloat('lens','rs_base')  # Mpc/h
-        self.resolve_lim  =   parser.getfloat('lens','resolve_lim')
+            omega_m = Default_OmegaM
+        self.cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
+        self.rs_base = parser.getfloat('lens', 'rs_base')  # Mpc/h
+        self.resolve_lim = parser.getfloat('lens', 'resolve_lim')
         # Initialize basis predictors
         # In configure Space
-        self.aframes    =   np.zeros(self.shapeA,dtype=np.complex128)
+        self.aframes = np.zeros(self.shapeA, dtype=np.complex128)
         # In Fourier space
-        self.fouaframes =   np.zeros(self.shapeA,dtype=np.complex128)
+        self.fouaframes = np.zeros(self.shapeA, dtype=np.complex128)
         # Intermediate basis in Fourier space
-        self.fouaframesInter =   np.zeros(self.shapeA,dtype=np.complex128)
-        self.rs_frame   =   -1.*np.ones((self.nzl,self.nframe)) # Radius in pixel
+        self.fouaframesInter = np.zeros(self.shapeA, dtype=np.complex128)
+        self.rs_frame = -1. * np.ones((self.nzl, self.nframe))  # Radius in pixel
 
         for izl in range(self.nzl):
             # the r_s for each redshift plane in units of pixel
-            rpix    =   self.cosmo.angular_diameter_distance(self.zlBin[izl]).value/180.*np.pi*self.scale
-            #print('rpix is :',rpix)
-            rz      =   self.rs_base/rpix
+            rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+            # print('rpix is :',rpix)
+            rz = self.rs_base / rpix
             # nfw halo with mass normalized to 1e14
-            znorm   =   1./rpix**2.
+            znorm = 1. / rpix ** 2.
             # angular scale of pixel size in Mpc
             for ifr in reversed(range(self.nframe)):
                 # For each lens redshift bins, we begin from the
                 # frame with largest angular scale radius
-                rs  =   (ifr+1)*rz #older version that may not be a good sampling method
-                rs  =   ifr*0.05/rpix + rz # just chose a number that matches my reconstruction.
-                #print('ifr',ifr)
-                #print('rs',rs)
-                if rs<self.resolve_lim:
+                rs = (ifr + 1) * rz  # older version that may not be a good sampling method
+                rs = ifr * 0.05 / rpix + rz  # just chose a number that matches my reconstruction.
+                # rs = ifr * 0.03 / rpix + rz
+                # print('ifr',ifr)
+                # print('rs',rs)
+                if rs < self.resolve_lim:
                     # if one scale frame is less than resolution limit,
                     # skip this frame
                     break
-                self.rs_frame[izl,ifr]= rs
-                #print('rs is:', rs)
+                self.rs_frame[izl, ifr] = rs
+                # print('rs is:', rs)
                 # nfw halo with mass normalized to 1e14
-                iAtomF  =   haloCS02SigmaAtom(r_s=rs,ny=self.ny,nx=self.nx,c=4.,\
-                            sigma_pix=self.sigma_pix)
-                normTmp =   iAtomF[0,0]/znorm
-                iAtomF  =   iAtomF/normTmp
-                self.fouaframesInter[izl,ifr]=iAtomF        # Fourier Space
-                iAtomF= self.ks2D.transform(iAtomF,inFou=True,outFou=True)
+                iAtomF = haloCS02SigmaAtom(r_s=rs, ny=self.ny, nx=self.nx, c=4., \
+                                           sigma_pix=self.sigma_pix)
+                normTmp = iAtomF[0, 0] / znorm
+                iAtomF = iAtomF / normTmp
+                self.fouaframesInter[izl, ifr] = iAtomF  # Fourier Space
+                iAtomF = self.ks2D.transform(iAtomF, inFou=True, outFou=True)
                 # KS transform
-                self.fouaframes[izl,ifr]=iAtomF             # Fourier Space
-                #self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
-                self.aframes[izl,ifr]=self.fftw2_inverse(iAtomF)
-                #print('iAtomF shape:', iAtomF.shape)
+                self.fouaframes[izl, ifr] = iAtomF  # Fourier Space
+                # self.aframes[izl,ifr]=np.fft.ifft2(iAtomF)  # Real Space
+                self.aframes[izl, ifr] = self.fftw2_inverse(iAtomF)
+                # print('iAtomF shape:', iAtomF.shape)
         return
 
-    def itransformInter(self,dataIn):
+    def itransformInter(self, dataIn):
         """
         transform from model (e.g., nfwlet) dictionary space to intermediate
         (e.g., delta) space
         """
-        assert dataIn.shape==self.shapeA,\
+        assert dataIn.shape == self.shapeA, \
             'input should have shape (nzl,nframe,ny,nx)'
 
         # convolve with atom in each frame/zlens (to Fourier space)
-        #dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
-        dataTmp  = self.fftw4(dataIn)
-        #print('dataIn shape: (itransformInter)', dataIn.astype(np.complex128).shape)
-        dataTmp =   dataTmp*self.fouaframesInter
+        # dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp = self.fftw4(dataIn)
+        # print('dataIn shape: (itransformInter)', dataIn.astype(np.complex128).shape)
+        dataTmp = dataTmp * self.fouaframesInter
         # sum over frames
-        dataTmp =   np.sum(dataTmp,axis=1)
+        dataTmp = np.sum(dataTmp, axis=1)
         # back to configure space
-        #dataOut =   np.fft.ifft2(dataTmp,axes=(1,2))
-        dataOut  =   self.fftw3_inverse(dataTmp)
-        #print('(itransformInter) dataTmp shape', dataTmp.shape)
+        # dataOut =   np.fft.ifft2(dataTmp,axes=(1,2))
+        dataOut = self.fftw3_inverse(dataTmp)
+        # print('(itransformInter) dataTmp shape', dataTmp.shape)
         return dataOut
 
-    def itransform(self,dataIn):
+    def itransform(self, dataIn):
         """
         transform from model (e.g., nfwlet) dictionary space to measurement
         (e.g., shear) space
         Parameters:
             dataIn: array to be transformed (in configure space, e.g., alpha)
         """
-        assert dataIn.shape==self.shapeA,\
+        assert dataIn.shape == self.shapeA, \
             'input should have shape (nzl,nframe,ny,nx)'
 
         # convolve with atom in each frame/zlens (to Fourier space)
-        #dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
-        dataTmp  = self.fftw4(dataIn)
-        #print('dataIn shape (itransform):', dataIn.astype(np.complex128).shape)
-        dataTmp =   dataTmp*self.fouaframes
+        # dataTmp =   np.fft.fft2(dataIn.astype(np.complex128),axes=(2,3))
+        dataTmp = self.fftw4(dataIn)
+        # print('dataIn shape (itransform):', dataIn.astype(np.complex128).shape)
+        dataTmp = dataTmp * self.fouaframes
         # sum over frames
-        dataTmp2=   np.sum(dataTmp,axis=1)
+        dataTmp2 = np.sum(dataTmp, axis=1)
         # back to configure space
-        #dataTmp2=   np.fft.ifft2(dataTmp2,axes=(1,2))
+        # dataTmp2=   np.fft.ifft2(dataTmp2,axes=(1,2))
         dataTmp2 = self.fftw3_inverse(dataTmp2)
-        #print('dataTmp2 shape (itransform):', dataTmp2.shape)
+        # print('dataTmp2 shape (itransform):', dataTmp2.shape)
         # project to source plane
-        dataOut =   np.sum(dataTmp2[None,:,:,:]*self.lensKernel[:,:,None,None],axis=1)
+        dataOut = np.sum(dataTmp2[None, :, :, :] * self.lensKernel[:, :, None, None], axis=1)
         return dataOut
 
-    def itranspose(self,dataIn):
+    def itranspose(self, dataIn):
         """
         transpose of the inverse transform operator
         Parameters:
             dataIn: arry to be operated (in config space, e.g., shear)
         """
-        assert dataIn.shape==self.shapeS,\
+        assert dataIn.shape == self.shapeS, \
             'input should have shape (nzs,ny,nx)'
 
         # Projection to lens plane
         # with shape=(nzl,nframe,ny,nx)
-        dataTmp =   np.sum(self.lensKernel[:,:,None,None]*dataIn[:,None,:,:],axis=0)
+        dataTmp = np.sum(self.lensKernel[:, :, None, None] * dataIn[:, None, :, :], axis=0)
         # Convolve with atom*
-        #dataTmp =   np.fft.fft2(dataTmp,axes=(1,2))
+        # dataTmp =   np.fft.fft2(dataTmp,axes=(1,2))
         dataTmp = self.fftw3(dataTmp)
-        #print('dataIn shape (in itranspose):', dataTmp.shape)
-        dataTmp =   dataTmp[:,None,:,:]*np.conjugate(self.fouaframes)
+        # print('dataIn shape (in itranspose):', dataTmp.shape)
+        dataTmp = dataTmp[:, None, :, :] * np.conjugate(self.fouaframes)
         # The output with shape (nzl,nframe,ny,nx)
-        #dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
-        dataOut  =  self.fftw4_inverse(dataTmp)
-        #print('dataTmp shape (in itranspose):', dataTmp.shape)
+        # dataOut =   np.fft.ifft2(dataTmp,axes=(2,3))
+        dataOut = self.fftw4_inverse(dataTmp)
+        # print('dataTmp shape (in itranspose):', dataTmp.shape)
         return dataOut
+
 
 def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
     """
@@ -907,7 +935,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 200 #better be 200  # making sure you have enough data points.
+    nsamp = nx * ny * 200  # better be 200  # making sure you have enough data points.
     ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
     dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
     # it seems the mass as normalized to be 1e14
@@ -917,6 +945,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5, ra, dec, nsamp
     else:
         return sigma_field, ra, dec, nsamp
+
 
 class triaxialHalo(Cosmo):
     """
@@ -984,14 +1013,14 @@ class triaxialHalo(Cosmo):
 
         # self.rvir = self.M ** (1 / 3) * (3 / np.pi) ** (1 / 3) / (
         #         2 ** (2 / 3) * self.Delta_vir ** (1 / 3) * rho_cZ ** (1 / 3))
-        self.rvir = (3 * self.M/ (4 * np.pi * self.Delta_vir * self.Omega_z * self.rho_cZ))**(1/3)
+        self.rvir = (3 * self.M / (4 * np.pi * self.Delta_vir * self.Omega_z * self.rho_cZ)) ** (1 / 3)
 
         ### Older Version
         self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
         self.R0 = 0.45 * self.rvir / self.ce  # equation 10 of OLS03.
         self.Delta_e = self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
         # is 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75, but this way integrating the mass
-        #to virial radius does not give the correct mass.
+        # to virial radius does not give the correct mass.
         ### Older Version
 
         self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
@@ -1076,6 +1105,7 @@ class triaxialHalo(Cosmo):
                     / self.angular_diameter_distance_z1z2(0., z_s[mask]) * four_pi_G_over_c_squared()
         return k_s
 
+
 class triaxialJS02(triaxialHalo):
     """
     Integral functions of a triaxial density profile:
@@ -1109,7 +1139,7 @@ class triaxialJS02(triaxialHalo):
         self.qx = self.qx(self.f, self.A, self.B, self.C)  ####qx, NOT QX SQUARED!!!
         self.qy = self.qy(self.f, self.A, self.B, self.C)  #### qy NOT QY SQUARED!!!
         self.q = self.q(self.qx, self.qy)
-        if np.abs(self.B)<1e-8:
+        if np.abs(self.B) < 1e-8:
             self.psi = 0
         else:
             self.psi = 1 / 2 * np.arctan(self.B / (self.A - self.C))
@@ -1645,8 +1675,79 @@ class triaxialJS02_grid_mock(Cartesian):
     def add_halo(self, halo):
         lk = halo.lensKernel(self.zcgrid)
         sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
-        sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10, sigma, method='FFT')[0]
-        dsigma = self.ks2D.transform(sigma, inFou=False, outFou=False)
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[0] # np.ones(nsamp) is just a random choice that gets the data pixelized.
+        dsigma = self.ks2D.transform(sigma, inFou=False, outFou=False) # in real space because no fourier space function available.
         shear = dsigma[None, :, :] * lk[:, None, None]
         kappa = sigma[None, :, :] * lk[:, None, None]
-        return kappa, shear
+        return kappa, shear, sigma
+    def add_halo_noise(self,halo, shear_catalog_name='9347.fits'):
+        lk = halo.lensKernel(self.zcgrid)
+        sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[
+            0]  # np.ones(nsamp) is just a random choice that gets the data pixelized.
+        dsigma = self.ks2D.transform(sigma, inFou=False,
+                                     outFou=False)  # in real space because no fourier space function available.
+        shear = dsigma[None, :, :] * lk[:, None, None]
+        kappa = sigma[None, :, :] * lk[:, None, None]
+        s19A = fits.open(shear_catalog_name)
+        data = s19A[1].data
+        s19A_table = Table(data)
+        error1, error2 = make_mock(s19A_table) #the realistic error from HSC shear catalog
+        random_ints1, random_ints2 = np.random.randint(0, high=error1.size,size = shear.size), np.random.randint(0, high=error1.size,size = shear.size)
+        dg1 = np.zeros(shear.size)
+        dg2 = np.zeros(shear.size)
+        for i in range(shear.size):
+            dg1[i] = error1[random_ints1[i]]
+            dg2[i] = error2[random_ints2[i]]
+        dg1 = dg1.reshape(shear.shape)
+        dg2 = dg2.reshape(shear.shape)
+        shear = shear + dg1 + 1j * dg2
+        return kappa, shear, sigma, dg1, dg2, np.std(np.abs(dg1 + 1j * dg2))
+
+
+def make_mock(dat):
+    """Simulates shape noise and measurement error using HSC year1 shape catalog
+    Args:
+        dat (ndarray):  input year-1 shape catalog
+    Returns:
+        dg1 (ndarray):  noise on shear (first component)
+        dg2 (ndarray):  noise on shear (second component)
+    """
+
+    def RotCatalog(e1, e2):
+        """Rotates galaxy ellipticity
+        Args:
+            e1 (ndarray):  input ellipticity (first component)
+            e2 (ndarray):  input ellipticity (second component)
+        Returns:
+            e1_rot (ndarray):  rotated ellipticity (first component)
+            e2_rot (ndarray):  rotated ellipticity (second component)
+        """
+        phi = 2.0 * np.pi * np.random.rand(len(e1))
+        cs = np.cos(phi)
+        ss = np.sin(phi)
+        e1_rot = e1 * cs + e2 * ss
+        e2_rot = (-1.0) * e1 * ss + e2 * cs
+        return e1_rot, e2_rot
+
+    e1_ini= dat['ishape_hsm_regauss_e1'] # shape
+    e2_ini= dat['ishape_hsm_regauss_e2']
+    erms =  dat['ishape_hsm_regauss_derived_rms_e'] # RMS of shape noise
+    sigma_e2 = (dat['ishape_hsm_regauss_derived_shape_weight'])**(-1) - erms**2
+    esigma= np.sqrt(sigma_e2) * (2*np.random.randint(0,2,size=(sigma_e2.shape))-1) #my dataset does not have this dat['ishape_hsm_regauss_derived_sigma_e'] # 1 sigma of measurment error
+    eres =   1.-np.average(erms**2.) # shear response (no shape weight)
+
+    # rotate galaxy
+    e1_rot, e2_rot = RotCatalog(e1_ini, e2_ini)
+
+    # shape noise
+    # equation (23) of https://arxiv.org/pdf/1901.09488.pdf
+    f = np.sqrt( erms * erms / ( erms * erms + esigma * esigma ))
+    e1_shape = e1_rot * f; e2_shape = e2_rot * f
+    # measurment error
+    e1_n = esigma * np.random.randn(len(e1_ini))
+    e2_n = esigma * np.random.randn(len(e2_ini))
+
+    dg1 = (e1_n+e1_shape)/2./eres
+    dg2 = (e2_n+e2_shape)/2./eres
+    return dg1,dg2
