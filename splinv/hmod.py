@@ -806,8 +806,8 @@ class nfwShearlet2D():
         return
 
     def __numerical_frames(self, parser):
-        fname = parser.getstring('lens', 'SigmaF_fname')
-        pyfits.getdatas(fname)
+        # fname = parser.getstring('lens', 'SigmaF_fname')
+        # pyfits.getdatas(fname)
         pass
 
     def __analytic_frames(self, parser):
