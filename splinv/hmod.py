@@ -799,6 +799,18 @@ class nfwShearlet2D():
         self.lensKernel = lensKernel
 
     def prepareFrames(self, parser):
+        if parser.has_option('lens', 'SigmaF_fname'):
+            self.__numerical_frames(parser)
+        else:
+            self.__analytic_frames(parser)
+        return
+
+    def __numerical_frames(self, parser):
+        fname = parser.getstring('lens', 'SigmaF_fname')
+        pyfits.getdatas(fname)
+        pass
+
+    def __analytic_frames(self, parser):
         if parser.has_option('cosmology', 'omega_m'):
             omega_m = parser.getfloat('cosmology', 'omega_m')
         else:
