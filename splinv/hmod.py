@@ -22,14 +22,16 @@ from scipy.integrate import quad
 import pyfftw
 from astropy.io import fits
 from astropy.table import Table
-#import random
+
+
+# import random
 
 
 def zMeanBin(zMin, dz, nz):
     return np.arange(zMin, zMin + dz * nz, dz) + dz / 2.
 
 
-def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.):
+def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2., truncate=True):
     """
     Make haloTJ03 halo (normalized) from Fourier space following
     Eq. 81 and 82, Cooray & Sheth (2002, Physics Reports, 372,1):
@@ -62,11 +64,18 @@ def haloCS02SigmaAtom(r_s, ny, nx=None, c=9., sigma_pix=None, fou=True, lnorm=2.
         r1 = r[mask]
         si1, ci1 = spfun.sici((1 + c) * r1)
         si2, ci2 = spfun.sici(r1)
-        atom[mask] = A * (np.sin(r1) * (si1 - si2) - np.sin(c * r1) / (1 + c) / r1 + np.cos(r1) * (ci1 - ci2))
         r0 = r[~mask]
-        atom[~mask] = 1. + A * (
+        if truncate:
+            # original version of NFW in fourier space.
+            atom[mask] = A * (np.sin(r1) * (si1 - si2) - np.sin(c * r1) / (1 + c) / r1 + np.cos(r1) * (ci1 - ci2))
+            atom[~mask] = 1. + A * (
                     c + c ** 3 / (6 * (1 + c)) + 1 / 4. * (-2. * c - c ** 2. - 2 * np.log(1 + c))) * r0 ** 2.
-
+        else:
+            atom[mask] = 1 / 2 * (-np.cos(r1) * 2 * ci2 + np.sin(r1) * (np.pi - 2 * si2))
+            # Idk the meaning of A so I am leaving it out for now.
+            # because we select r>0.001, points closest to the halo's center have r on the magnitude of ~0.0005
+            mock_small_distance = np.ones_like(r0, dtype=float) * 0.0005
+            atom[~mask] = -np.euler_gamma - np.log(mock_small_distance)
     if sigma_pix is not None:
         if sigma_pix > 0.1:
             # Gaussian smoothing
@@ -354,8 +363,9 @@ class nfwWB00(nfwHalo):
                     set to 1-omega_matter. (default: Default_OmegaM)
     """
 
-    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM):
+    def __init__(self, ra, dec, redshift, mass=None, conc=None, rs=None, omega_m=Default_OmegaM, long_truncation=False):
         nfwHalo.__init__(self, ra, dec, redshift, mass=mass, conc=conc, rs=rs, omega_m=omega_m)
+        self.long_truncation = long_truncation
 
     def __Sigma(self, x):
         out = np.zeros_like(x, dtype=float)
@@ -372,6 +382,12 @@ class nfwWB00(nfwHalo):
         # the approximation below has a maximum fractional error of 7.4e-7
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
         out[mask] = (22. / 15. - 0.8 * x[mask])
+        if self.long_truncation:
+            #mask = np.where(x > 2 * self.c)[0]
+            mask = np.where(x > 2 * self.c)[0]
+        else:
+            mask = np.where(x > self.c)[0]
+        out[mask] = 0
         return out * self.rs * self.rho_s
 
     def Sigma(self, ra_s, dec_s):
@@ -536,7 +552,7 @@ class nfwTJ03(nfwHalo):
         x = x0[mask]
         out[mask] = (-2. + c + c ** 2.) / (3. * np.sqrt(-1. + c) * (1 + c) ** (3. / 2)) \
                     + ((2. - c - 4. * c ** 2. - 2. * c ** 3.) * (x - 1.)) / (
-                                5. * np.sqrt(-1. + c) * (1 + c) ** (5 / 2.))
+                            5. * np.sqrt(-1. + c) * (1 + c) ** (5 / 2.))
 
         mask = np.where(x0 >= c)[0]
         out[mask] = 0.
@@ -589,9 +605,9 @@ class nfwTJ03(nfwHalo):
         out[mask] = (10 * np.sqrt(-1. + c ** 2) + c * (-6 - 6 * c + 11 * np.sqrt(-1. + c ** 2)) \
                      + 6 * (1 + c) ** 2 * np.log((1. + c) / (c + np.sqrt(-1. + c ** 2)))) / (3. * (1 + c) ** 2) - \
                     (-1. + x) * ((94 + c * (
-                    113 + 60 * np.sqrt((-1. + c) / (1 + c)) + 4 * c * (-22 + 30 * np.sqrt((-1 + c) / (1 + c)) \
-                                                                       + c * (-26 + 15 * np.sqrt(
-                        (-1 + c) / (1 + c)))))) / (15. * (1. + c) ** 2 * np.sqrt(-1. + c ** 2)) - 4 * np.log(1. + c) + \
+                113 + 60 * np.sqrt((-1. + c) / (1 + c)) + 4 * c * (-22 + 30 * np.sqrt((-1 + c) / (1 + c)) \
+                                                                   + c * (-26 + 15 * np.sqrt(
+                    (-1 + c) / (1 + c)))))) / (15. * (1. + c) ** 2 * np.sqrt(-1. + c ** 2)) - 4 * np.log(1. + c) + \
                                  4 * np.log(c + np.sqrt(-1. + c ** 2)))
 
         mask = np.where(x0 >= c)[0]
@@ -780,6 +796,7 @@ class nfwShearlet2D():
         if parser.has_option('lens', 'atomFname'):
             atFname = parser.get('lens', 'atomFname')
             tmp = pyfits.getdata(atFname)
+            '''Will consider revising this later--Shouzhuo'''
             tmp = np.fft.fftshift(tmp)
             nzl, nft, nyt, nxt = tmp.shape
             ypad = (self.ny - nyt) // 2
@@ -791,14 +808,41 @@ class nfwShearlet2D():
             tmp = np.fft.fft2(tmp)
             self.fouaframesInter = tmp
             self.fouaframes = self.ks2D.transform(tmp, inFou=True, outFou=True)
-            # self.aframes    =   np.fft.ifft2(self.fouaframes)
             self.aframes = self.fftw2_inverse(self.fouaframes)
             # print('fouaframes shape: (line 751) ', self.fouaframes.shape)
         else:
             self.prepareFrames(parser)
         self.lensKernel = lensKernel
-
-    def prepareFrames(self, parser):
+    def prepareFrames(self,parser):
+        if parser.has_option('lens','SigmaFname'):
+            self.__numerical_frames(parser)
+            print("preparing numerical frames!!!!")
+        else:
+            self.__analytic_frames(parser)
+    def __numerical_frames(self,parser):
+        if parser.has_option('cosmology', 'omega_m'):
+            omega_m = parser.getfloat('cosmology', 'omega_m')
+        else:
+            omega_m = Default_OmegaM
+        self.cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
+        sigmaFname = parser.get('lens','SigmaFname') #input fourier sigma field
+        self.fouaframes = np.zeros(self.shapeA, dtype=np.complex128)
+        self.aframes = np.zeros(self.shapeA, dtype=np.complex128)
+        self.fouaframesInter = np.zeros(self.shapeA, dtype=np.complex128)
+        unnormalized_sigma = fits.getdata(sigmaFname)
+        for izl in range(self.nzl):
+            '''no need to normalize'''
+            #rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+            #znorm = 1. / rpix ** 2.
+            for ifr in reversed(range(self.nframe)):
+                iAtomF = np.fft.fft2(np.fft.fftshift(unnormalized_sigma[izl,ifr])) #fourier space sigma field
+                #normTmp = iAtomF[0,0]/znorm
+                iAtomF = iAtomF#/normTmp
+                self.fouaframesInter[izl,ifr] = iAtomF
+                iAtomF = self.ks2D.transform(iAtomF, inFou = True, outFou = True)
+                self.fouaframes[izl,ifr] = iAtomF
+                self.aframes[izl,ifr] = self.fftw2_inverse(iAtomF)
+    def __analytic_frames(self, parser):
         if parser.has_option('cosmology', 'omega_m'):
             omega_m = parser.getfloat('cosmology', 'omega_m')
         else:
@@ -935,7 +979,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 200  # better be 200  # making sure you have enough data points.
+    nsamp = nx * ny * 2000  # better be 200  # making sure you have enough data points.
     ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
     dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
     # it seems the mass as normalized to be 1e14
@@ -945,6 +989,31 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field / (np.sum(sigma_field ** 2.)) ** 0.5, ra, dec, nsamp
     else:
         return sigma_field, ra, dec, nsamp
+
+
+def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
+    """
+    Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
+    kappa field on a whole grid in fourier space. This is evident in
+    Parameters:
+        halo: just pass in a triaxial (or NFW) halo object
+        ycgrid, xcgrid, the namesake of respective property in Grid(Cartesian) Object.
+        the unit we are operating is arcmin.
+    Note: whatever is being returned here is in configuration space.
+    :param dec_0: offset (position of halo center)
+    :param ra_0: offset (position of halo center)
+    """
+    Lx = nx * scale
+    Ly = ny * scale
+    nsamp = nx * ny * 2  # 2 to simulate realistic condition
+    ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
+    dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
+    dsigma_field = halo.DeltaSigmaComplex(ra * 3600.,
+                                          dec * 3600.)  # just a dSigma field. This is also a 1d array, so you would have to pxielize it.
+    if normalize:
+        return dsigma_field / (np.sum(np.abs(dsigma_field) ** 2.)) ** 0.5, ra, dec, nsamp  # I never use this anyways
+    else:
+        return dsigma_field, ra, dec, nsamp
 
 
 class triaxialHalo(Cosmo):
@@ -967,10 +1036,11 @@ class triaxialHalo(Cosmo):
         a_over_c:   same as above, but this number should be smaller than a_over_b, because a<=b<=c
 
         IMPORTANT: SINCE IT IS SEEN THAT ALPHA=1.5 REPRODUCES ARC STAT CORRECTLY, WE DO THINGS WITH ALPHA = 1.5
+        tri_nfw:    if the halo is a triaxial version of NFW halos (alpha=1)
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM):
+                 omega_m=Default_OmegaM, tri_nfw=False):
         # Redshift and Geometry
         # ra dec
         # self in here seems to be the Cosmo object
@@ -1018,13 +1088,16 @@ class triaxialHalo(Cosmo):
         ### Older Version
         self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
         self.R0 = 0.45 * self.rvir / self.ce  # equation 10 of OLS03.
+        self.rs = self.R0
         self.Delta_e = self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
         # is 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75, but this way integrating the mass
         # to virial radius does not give the correct mass.
         ### Older Version
 
         self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
-            self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5
+            self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5. I believe a typo as been made between c and ce.
+        if tri_nfw:
+            self.m_c = np.log(1 + self.c) - self.c / (1 + self.c)
         # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
         self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
         # convert to angular radius in unit of arcsec
@@ -1120,13 +1193,16 @@ class triaxialJS02(triaxialHalo):
         dec:        dec of halo center [arcsec].
         omega_m:    Omega_matter to pass to Cosmology constructor, omega_l is
                     set to 1-omega_matter. (default: Default_OmegaM)
+        tri_nfw:    if set to true, returns sigma and dsigma associate with alpha=1 (triaxial version of nfw halo)
+        long_truncation:
+                    if set to true, enforce a cutoff at x = 2c instead of x = c.
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM):
+                 omega_m=Default_OmegaM, tri_nfw=False, long_truncation = False):
         triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=phi_prime,
                               theta_prime=theta_prime, rs=None,
-                              omega_m=omega_m)
+                              omega_m=omega_m, tri_nfw=tri_nfw)
         self.c2_a2 = self.a_over_c ** (-2)
         self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
         self.phi = self.cal_phi()
@@ -1139,6 +1215,7 @@ class triaxialJS02(triaxialHalo):
         self.qx = self.qx(self.f, self.A, self.B, self.C)  ####qx, NOT QX SQUARED!!!
         self.qy = self.qy(self.f, self.A, self.B, self.C)  #### qy NOT QY SQUARED!!!
         self.q = self.q(self.qx, self.qy)
+        self.tri_nfw = tri_nfw
         if np.abs(self.B) < 1e-8:
             self.psi = 0
         else:
@@ -1149,19 +1226,110 @@ class triaxialJS02(triaxialHalo):
         for i in range(len(self.u_array) - 1):
             self.u_val = np.append(self.u_val, (self.u_array[i + 1] + self.u_array[i]) / 2)
         self.dlogu = np.log(self.u_array[1] / self.u_array[0])
+        self.long_truncation = long_truncation
 
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
-        top = 2.614
-        bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
-        f_GNFW_val = np.divide(top, bottom)
+        if not self.tri_nfw:
+            #truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!!!
+            # f_GNFW_val = 4.9257573299999995 * 10 ** (-6) * r ** 0.0422695641 + 8.87596287 / (
+            #             5.08395682 * r ** 0.557570911 + 14.4920247 * r ** 1.54971972 +
+            #             2.0591881 * r ** 3.03259341)
+            # for untruncated values
+            top = 2.614
+            bottom = r ** 0.5 * (1 + 2.378 * r ** 0.5833 + 2.617 * r ** (3 / 2))
+            f_GNFW_val = np.divide(top, bottom)
+        else:
+            # this has potential to have any different concentration parameter.
+            x=r
+            f_GNFW_val = np.zeros_like(r,dtype=np.float128)
+            mask = np.where(x < 0.999)[0]
+            a = ((1 - x[mask]) / (x[mask] + 1)) ** 0.5
+            f_GNFW_val[mask] = 1 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctanh(a) / (1 - x[mask] ** 2) ** 0.5)
+
+            mask = np.where(x > 1.001)[0]
+            a = ((x[mask] - 1) / (x[mask] + 1)) ** 0.5
+            f_GNFW_val[mask] = 1 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctan(a) / (x[mask] ** 2 - 1) ** 0.5)
+
+            # the approximation below has a maximum fractional error of 7.4e-7
+            mask = np.where((x >= 0.999) & (x <= 1.001))[0]
+            f_GNFW_val[mask] = (22. / 15. - 0.8 * x[mask])/2
+            if self.long_truncation:
+                #mask = np.where(x > 2 * self.c)[0]
+                mask = np.where(x>np.inf)[0] # no cut-off
+            else:
+                mask = np.where(x > self.c)[0]
+            f_GNFW_val[mask] = 0
+            '''c = float(self.c)
+            x0 = r
+            out = np.zeros_like(x0, dtype=float)
+
+            # 3 cases: x < 1-0.001, x > 1+0.001, and |x-1| < 0.001
+            mask = np.where(x0 < 0.999)[0]
+            x = x0[mask]
+            out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) + \
+                        1. / (1 - x ** 2.) ** 1.5 * np.arccosh((x ** 2. + c) / x / (1. + c))
+
+            mask = np.where((x0 > 1.001) & (x0 < c))[0]
+            x = x0[mask]
+            out[mask] = -np.sqrt(c ** 2. - x ** 2.) / (1 - x ** 2.) / (1 + c) - \
+                        1. / (x ** 2. - 1) ** 1.5 * np.arccos((x ** 2. + c) / x / (1. + c))
+
+            mask = np.where((x0 >= 0.999) & (x0 <= 1.001))[0]
+            x = x0[mask]
+            out[mask] = (-2. + c + c ** 2.) / (3. * np.sqrt(-1. + c) * (1 + c) ** (3. / 2)) \
+                        + ((2. - c - 4. * c ** 2. - 2. * c ** 3.) * (x - 1.)) / (
+                                5. * np.sqrt(-1. + c) * (1 + c) ** (5 / 2.))
+
+            mask = np.where(x0 >= c)[0]
+            out[mask] = 0.
+            f_GNFW_val = out'''
+            # Below are untruncated triaxial profiles. three cases x<1, x>1, and |x-1|<0.001
+
+            # top = np.ones_like(r, dtype=np.float128)
+            # bottom = np.ones_like(r, dtype=np.float128)
+            # mask = np.where(r < 0.999)[0]
+            # top[mask] = -1 + 2 / (np.sqrt(1 - r[mask] ** 2)) * np.arctanh(np.sqrt((1 - r[mask]) / (1 + r[mask])))
+            # bottom[mask] = 1 - r[mask] ** 2
+            # mask = np.where((r >= 0.999) & (r <= 1.001))[0]
+            # top[mask] = 1 / 3
+            # bottom[mask] = 1
+            # mask = np.where(r > 1.001)[0]
+            # top[mask] = 1 - 2 / (np.sqrt(r[mask] ** 2 - 1)) * np.arctan(np.sqrt((r[mask] - 1) / (1 + r[mask])))
+            # bottom[mask] = -1 + r[mask] ** 2
+
         return f_GNFW_val
 
     def f_GNFW_xi(self, xi):
-        top = 2.614
-        qx = self.qx
-        bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** (3 / 2))
-        f_GNFW_val = np.divide(top, bottom)
+        if not self.tri_nfw:
+            #for truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!
+            top = 2.614
+            qx = self.qx
+            bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** (3 / 2))
+            f_GNFW_val = np.divide(top, bottom)
+            # f_GNFW_val = 4.9257573299999995 * 10 ** (-6) * (xi / qx) ** 0.0422695641
+            # + 8.87596287 / (5.08395682 * (xi / qx) ** 0.557570911 + 14.4920247 * (xi / qx) ** 1.54971972 +
+            #                 2.0591881 * (xi / qx) ** 3.03259341)
+        else:
+            # alpha = 1, untruncated
+            x = xi/self.qx
+            f_GNFW_val = np.zeros_like(xi, dtype=np.float128)
+            mask = np.where(x < 0.999)[0]
+            a = ((1 - x[mask]) / (x[mask] + 1)) ** 0.5
+            f_GNFW_val[mask] = 1 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctanh(a) / (1 - x[mask] ** 2) ** 0.5)
+
+            mask = np.where(x > 1.001)[0]
+            a = ((x[mask] - 1) / (x[mask] + 1)) ** 0.5
+            f_GNFW_val[mask] = 1 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctan(a) / (x[mask] ** 2 - 1) ** 0.5)
+
+            # the approximation below has a maximum fractional error of 7.4e-7
+            mask = np.where((x >= 0.999) & (x <= 1.001))[0]
+            f_GNFW_val[mask] = (22. / 15. - 0.8 * x[mask]) / 2
+            if self.long_truncation:
+                mask = np.where(x > 2 * self.c)[0]
+            else:
+                mask = np.where(x > self.c)[0]
+            f_GNFW_val[mask] = 0
         return f_GNFW_val
 
     def b_TNFW_over_sigma_crit(self, f):
@@ -1226,7 +1394,11 @@ class triaxialJS02(triaxialHalo):
     def __Sigma(self, x0, ra_s0, dec_s0):
         c = np.float128(self.c)
         out = np.zeros_like(x0, dtype=float)
-        mask = np.where((x0 >= 0) & (x0 <= c))[0]
+        if self.long_truncation:
+            #mask = np.where((x0 >= 0) & (x0 <= 2 * c))[0]
+            mask = np.where((x0 >= 0) & (x0 <= np.inf)) # not cutoff
+        else:
+            mask = np.where((x0 >= 0) & (x0 <= c))[0]
         x = x0[mask]
         ra_s = ra_s0[mask]
         dec_s = dec_s0[mask]
@@ -1366,15 +1538,33 @@ class triaxialJS02(triaxialHalo):
                 first_top / first_bottom + second_top / second_bototm)
 
     def f_GNFW_xi_prime_analytic(self, xi):
-        '''Taking derivative with respect to r (zeta) in eqn 41 OLS03. This should be with respect to xi.'''
+        '''Taking derivative with respect to xi in OLS 041.'''
         qx = self.qx
-        first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
-        first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
-        second_top = -1.307
-        second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
-        # print(f)
-        # return btnfw * (first_top / first_bottom + second_top / second_bototm) / 2
-        return first_top / first_bottom + second_top / second_bototm
+        if not self.tri_nfw:
+            qx = self.qx
+            first_top = - 2.614 * (1.38709 / (qx * (xi / qx) ** 0.4167) + 3.9255 * (xi / qx) ** 0.5 / qx)
+            first_bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5) ** 2
+            second_top = -1.307
+            second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
+            out = first_top / first_bottom + second_top / second_bototm
+            #truncated alpha = 1.5 case. ONLY WORKS WITH C=4
+            # return 2.0820961520147983e-7/(qx*(xi/qx)**0.9577304359) -(8.87596287*(2.834666435612063/(qx*(xi/qx)**0.442429089) +
+            # (22.458576460317083*(xi/qx)**0.5497197199999999)/
+            # qx + (6.244680262010421*(xi/qx)**2.03259341)/qx))/(5.08395682*(xi/qx)**0.557570911 + 14.4920247*(xi/qx)**1.54971972 + 2.0591881*(xi/qx)**3.03259341)**2
+        else:
+            # alpha =1 untruncated.
+            x = xi / self.qx
+            qx = self.qx
+            out = np.zeros_like(xi, dtype=np.float128)
+            mask = np.where(x < 0.999)[0]
+            out[mask] = -((qx**2*(2*xi[mask]**2*np.sqrt(1 - xi[mask]**2/qx**2) + qx**2*np.sqrt(-1 + (2*qx)/(qx + xi[mask])) + qx*xi[mask]*np.sqrt(-1 + (2*qx)/(qx + xi[mask])) - 6*xi[mask]**2*np.arctanh(np.sqrt(-1 + (2*qx)/(qx + xi[mask])))))/(xi[mask]*(qx**2 - xi[mask]**2)**2*np.sqrt(1 - xi[mask]**2/qx**2)))
+
+            mask = np.where(x > 1.001)[0]
+            out[mask] = (qx**2*(qx**2 - qx*xi[mask] - 2*xi[mask]**2*np.sqrt(-1 + xi[mask]**2/qx**2)*np.sqrt(1 - (2*qx)/(qx + xi[mask])) + 6*xi[mask]**2*np.sqrt(1 - (2*qx)/(qx + xi[mask]))*np.arctan(np.sqrt(1 - (2*qx)/(qx + xi[mask])))))/(xi[mask]*(qx**2 - xi[mask]**2)**2*np.sqrt(-1 + xi[mask]**2/qx**2)*np.sqrt(1 - (2*qx)/(qx + xi[mask])))
+            # the approximation below has a maximum fractional error of 7.4e-7
+            mask = np.where((x >= 0.999) & (x <= 1.001))[0]
+            out[mask] = - 0.4 * x[mask]
+        return out
 
     def K_n_integrand(self, u, xpp, ypp, n):
         '''A16 in Ck. From Keeton  https://arxiv.org/pdf/astro-ph/0102341.pdf, the derivative should be about xi.
@@ -1396,7 +1586,7 @@ class triaxialJS02(triaxialHalo):
         '''Goes from x',y' in eqn 21 to x'', y'' in equation 32 in OLS.
         There's just a rotation, but in the oppositive direction.
         It is better to verify this numerically rather than analyticially.'''
-        psi = 1 / 2 * np.arctan(B / (A - C))
+        psi = self.psi  # 1 / 2 * np.arctan(B / (A - C))
         xpp = xp * np.cos(psi) + yp * np.sin(psi)
         ypp = yp * np.cos(psi) - xp * np.sin(psi)
         ##### if A>C, it would seem that qx, qy are switched. But if you go ahead to calculate the exact value of
@@ -1666,6 +1856,7 @@ class triaxialJS02(triaxialHalo):
         true_phi_yy = phi_xx * sinpsi ** 2 + 2 * sinpsi * cospsi * phi_xy + cospsi ** 2 * phi_yy
         return true_phi_xx, true_phi_xy, true_phi_yy
 
+
 class triaxialJS02_grid_mock(Cartesian):
     def __init__(self, parser):
         Cartesian.__init__(self, parser)
@@ -1675,12 +1866,50 @@ class triaxialJS02_grid_mock(Cartesian):
     def add_halo(self, halo):
         lk = halo.lensKernel(self.zcgrid)
         sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
-        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[0] # np.ones(nsamp) is just a random choice that gets the data pixelized.
-        dsigma = self.ks2D.transform(sigma, inFou=False, outFou=False) # in real space because no fourier space function available.
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[0]  # np.ones(nsamp) is just a random choice that gets the data pixelized.
+        dsigma = self.ks2D.transform(sigma, inFou=False,
+                                     outFou=False)  # in real space because no fourier space function available.
         shear = dsigma[None, :, :] * lk[:, None, None]
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear, sigma
-    def add_halo_noise(self,halo, shear_catalog_name='9347.fits'):
+
+    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits'):
+        lk = halo.lensKernel(self.zcgrid)
+        dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
+                                                                       normalize=False)
+        if add_noise:
+            s19A = fits.open(shear_catalog_name)
+            data = s19A[1].data
+            s19A_table = Table(data)
+            error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
+            shear = dsigma[None, :] * lk[:, None]
+            random_ints1, random_ints2 = np.random.randint(0, high=error1.size, size=shear.size), np.random.randint(0,
+                                                                                                                    high=error1.size,
+                                                                                                                    size=shear.size)
+            dg1 = np.zeros(shear.size)
+            dg2 = np.zeros(shear.size)
+            for i in range(shear.size):  ###compute errors
+                dg1[i] = error1[random_ints1[i]]
+                dg2[i] = error2[random_ints2[i]]
+            dg1 = dg1.reshape(shear.shape)
+            dg2 = dg2.reshape(shear.shape)
+            shear = shear + dg1 + 1j * dg2  # added noise in this step
+            shear_shape = (len(self.zcgrid))
+            shearpixreal = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
+            shearpixcomplex = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
+            for i in range(len(self.zcgrid)):
+                shearpixreal[i, :, :] = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
+                shearpixcomplex[i, :, :] = \
+                    self.pixelize_data(ra, dec, np.ones(nsamp) / 10, shear[i].imag, method='FFT')[0]
+            shearpix = shearpixreal + 1j * shearpixcomplex
+        else:
+            dsigmapixreal = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.real, method='FFT')[0]
+            dsigmapiximag = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.imag, method='FFT')[0]
+            dsigmapix = dsigmapixreal + 1j * dsigmapiximag
+            shearpix = dsigmapix[None, :, :] * lk[:, None, None]
+        return shearpix
+
+    def add_halo_noise(self, halo, shear_catalog_name='9347.fits'):
         lk = halo.lensKernel(self.zcgrid)
         sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
         sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[
@@ -1692,8 +1921,10 @@ class triaxialJS02_grid_mock(Cartesian):
         s19A = fits.open(shear_catalog_name)
         data = s19A[1].data
         s19A_table = Table(data)
-        error1, error2 = make_mock(s19A_table) #the realistic error from HSC shear catalog
-        random_ints1, random_ints2 = np.random.randint(0, high=error1.size,size = shear.size), np.random.randint(0, high=error1.size,size = shear.size)
+        error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
+        random_ints1, random_ints2 = np.random.randint(0, high=error1.size, size=shear.size), np.random.randint(0,
+                                                                                                                high=error1.size,
+                                                                                                                size=shear.size)
         dg1 = np.zeros(shear.size)
         dg2 = np.zeros(shear.size)
         for i in range(shear.size):
@@ -1730,24 +1961,146 @@ def make_mock(dat):
         e2_rot = (-1.0) * e1 * ss + e2 * cs
         return e1_rot, e2_rot
 
-    e1_ini= dat['ishape_hsm_regauss_e1'] # shape
-    e2_ini= dat['ishape_hsm_regauss_e2']
-    erms =  dat['ishape_hsm_regauss_derived_rms_e'] # RMS of shape noise
-    sigma_e2 = (dat['ishape_hsm_regauss_derived_shape_weight'])**(-1) - erms**2
-    esigma= np.sqrt(sigma_e2) * (2*np.random.randint(0,2,size=(sigma_e2.shape))-1) #my dataset does not have this dat['ishape_hsm_regauss_derived_sigma_e'] # 1 sigma of measurment error
-    eres =   1.-np.average(erms**2.) # shear response (no shape weight)
+    e1_ini = dat['ishape_hsm_regauss_e1']  # shape
+    e2_ini = dat['ishape_hsm_regauss_e2']
+    erms = dat['ishape_hsm_regauss_derived_rms_e']  # RMS of shape noise
+    sigma_e2 = (dat['ishape_hsm_regauss_derived_shape_weight']) ** (-1) - erms ** 2
+    esigma = np.sqrt(sigma_e2) * (2 * np.random.randint(0, 2, size=(
+        sigma_e2.shape)) - 1)  # my dataset does not have this dat['ishape_hsm_regauss_derived_sigma_e'] # 1 sigma of measurment error
+    eres = 1. - np.average(erms ** 2.)  # shear response (no shape weight)
 
     # rotate galaxy
     e1_rot, e2_rot = RotCatalog(e1_ini, e2_ini)
 
     # shape noise
     # equation (23) of https://arxiv.org/pdf/1901.09488.pdf
-    f = np.sqrt( erms * erms / ( erms * erms + esigma * esigma ))
-    e1_shape = e1_rot * f; e2_shape = e2_rot * f
+    f = np.sqrt(erms * erms / (erms * erms + esigma * esigma))
+    e1_shape = e1_rot * f;
+    e2_shape = e2_rot * f
     # measurment error
     e1_n = esigma * np.random.randn(len(e1_ini))
     e2_n = esigma * np.random.randn(len(e2_ini))
 
-    dg1 = (e1_n+e1_shape)/2./eres
-    dg2 = (e2_n+e2_shape)/2./eres
-    return dg1,dg2
+    dg1 = (e1_n + e1_shape) / 2. / eres
+    dg2 = (e2_n + e2_shape) / 2. / eres
+    return dg1, dg2
+
+class prepare_numerical_frame(Cartesian):
+    '''A Class that takes in parameters including redshifts, scale radius, (ellipticity may be in the future)to create
+    FOURIER frames of SIGMA field. Important numbers are passed in from .ini files'''
+    def __init__(self, parser, halo_mass,filename,alpha=1,fou=False):
+        #halo_mass is the log mass of the halo.
+        self.fou = fou
+        Cartesian.__init__(self, parser)
+        self.nframe = parser.getint('sparse', 'nframe')
+        self.nzl = parser.getint('lens', 'nlp')
+        if self.nzl <= 1:
+            self.zlMin = 0.
+            self.zlscale = 1.
+        else:
+            self.zlMin = parser.getfloat('lens', 'zlMin')
+            self.zlscale = parser.getfloat('lens', 'zlscale')
+        self.zlBin = zMeanBin(self.zlMin, self.zlscale, self.nzl)
+        self.alpha = alpha
+        self.ny = parser.getint('transPlane','ny')
+        self.nx = parser.getint('transPlane','nx')
+        self.rs_base = parser.getfloat('lens', 'rs_base')  # Mpc/h. I will keep using Mpc/h for length units.
+        self.rsBin = np.zeros(self.nframe)
+        self.sigmaAtom = np.zeros((self.nzl,self.nframe,self.ny,self.nx),dtype=float)
+        self.fouaframesInter_real = np.zeros((self.nzl,self.nframe,self.ny,self.nx),dtype=float)
+        self.fouaframesInter_complex = np.zeros((self.nzl, self.nframe, self.ny, self.nx), dtype=float)
+        self.halo_mass = halo_mass # an array of halo masses
+        assert len(self.halo_mass) == self.nframe
+        if parser.has_option('cosmology', 'omega_m'):
+            omega_m = parser.getfloat('cosmology', 'omega_m')
+        else:
+            omega_m = Default_OmegaM
+        self.cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
+        unit = parser.get('transPlane', 'unit')
+        # Rescaling to degree
+        if unit == 'degree':
+            self.ratio = 1.
+        elif unit == 'arcmin':
+            self.ratio = 1. / 60.
+        elif unit == 'arcsec':
+            self.ratio = 1. / 60. / 60.
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.filename = filename
+        return
+    def __create_frames(self, long_truncation = False):
+        for izl in range(self.nzl):
+            for im in reversed(range(len(self.halo_mass))):
+                logm = self.halo_mass[im]
+                M_200 = 10**logm
+                if self.alpha == 1:
+                    halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
+                                        a_over_b=1.0, tri_nfw=True, long_truncation= long_truncation)#nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0.)
+                else:
+                    halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
+                                        a_over_b=1.0, long_truncation = long_truncation)
+                sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
+                                                                       normalize=False)
+                sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
+                self.sigmaAtom[izl,im] = sigma/M_200
+        hdu1 = fits.PrimaryHDU(self.sigmaAtom)
+        hdu1.writeto(self.filename)
+        del hdu1
+        return
+    def __create_frames_fou(self):
+        for izl in range(self.nzl):
+            for im in reversed(range(len(self.halo_mass))):
+                logm = self.halo_mass[im]
+                M_200 = 10**logm
+                if self.alpha==1:
+                    halo =  nfwWB00(mass=M_200,conc=4,redshift=self.zlBin[izl],ra=0.,dec=0.)
+                else:
+                    halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
+                                 a_over_b=1.0)
+                sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
+                                                                       normalize=False)
+                sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
+                fousigma = np.fft.fft2(np.fft.fftshift(sigma))
+                rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+                znorm = 1./ rpix**2
+                normTmp = fousigma[0, 0] / znorm
+                fousigma = fousigma/normTmp
+                self.rsBin[im] = halo.rs
+                self.fouaframesInter_real[izl, im] = fousigma.real
+                self.fouaframesInter_complex[izl,im] = fousigma.complex
+        hdu1 = fits.PrimaryHDU(self.fouaframesInter_real)
+        hdu1.writeto('fourier_real.fits')
+        hdu2 = fits.PrimaryHDU(self.fouaframesInter_complex)
+        hdu2.writeto('fourier_complex.fits')
+        del hdu1
+        del hdu2
+        return
+    # def __create_semi_JS02_frames_fou(self):
+    #     for izl in range(self.nzl):
+    #         for im in reversed(range(len(self.halo_mass))):
+    #             logm = self.halo_mass[im]
+    #             M_200 = 10**logm
+    #             halo  =  triaxialJS02(mass=M_200,conc=4,redshift=self.zlBin[izl],ra=0.,dec=0.,a_over_c = 1.0, a_over_b=1.0)
+    #             sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
+    #                                                                    normalize=False)
+    #             sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
+    #             fousigma = np.fft.fft2(np.fft.fftshift(sigma))
+    #             rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+    #             znorm = 1. / rpix ** 2
+    #             normTmp = fousigma[0, 0] / znorm
+    #             fousigma = fousigma / normTmp
+    #             self.rsBin[im] = halo.rs
+    #             self.fouaframesInter_real[izl, im] = fousigma.real
+    #             self.fouaframesInter_complex[izl, im] = fousigma.complex
+    #     hdu1 = fits.PrimaryHDU(self.fouaframesInter_real)
+    #     hdu1.writeto('WB00_real.fits')
+    #     hdu2 = fits.PrimaryHDU(self.fouaframesInter_complex)
+    #     hdu2.writeto('WB00_complex.fits')
+    #     del hdu1
+    #     del hdu2
+    #     return
+    def create_frames(self,long_truncation = False):
+        if self.fou:
+            return self.__create_frames_fou() # fourier space
+        else:
+            return self.__create_frames(long_truncation = long_truncation) # configuration space. The preferred way.
+
