@@ -813,6 +813,7 @@ class nfwShearlet2D():
         else:
             self.prepareFrames(parser)
         self.lensKernel = lensKernel
+
     def prepareFrames(self,parser):
         if parser.has_option('lens','SigmaFname'):
             self.__numerical_frames(parser)
@@ -842,6 +843,7 @@ class nfwShearlet2D():
                 iAtomF = self.ks2D.transform(iAtomF, inFou = True, outFou = True)
                 self.fouaframes[izl,ifr] = iAtomF
                 self.aframes[izl,ifr] = self.fftw2_inverse(iAtomF)
+
     def __analytic_frames(self, parser):
         if parser.has_option('cosmology', 'omega_m'):
             omega_m = parser.getfloat('cosmology', 'omega_m')
@@ -1980,7 +1982,6 @@ def make_mock(dat):
     # measurment error
     e1_n = esigma * np.random.randn(len(e1_ini))
     e2_n = esigma * np.random.randn(len(e2_ini))
-
     dg1 = (e1_n + e1_shape) / 2. / eres
     dg2 = (e2_n + e2_shape) / 2. / eres
     return dg1, dg2
@@ -2103,4 +2104,3 @@ class prepare_numerical_frame(Cartesian):
             return self.__create_frames_fou() # fourier space
         else:
             return self.__create_frames(long_truncation = long_truncation) # configuration space. The preferred way.
-
