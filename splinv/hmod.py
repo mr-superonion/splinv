@@ -1039,13 +1039,15 @@ class triaxialHalo(Cosmo):
 
         IMPORTANT: SINCE IT IS SEEN THAT ALPHA=1.5 REPRODUCES ARC STAT CORRECTLY, WE DO THINGS WITH ALPHA = 1.5
         tri_nfw:    if the halo is a triaxial version of NFW halos (alpha=1)
+        OLS03:   Use original definition of OLS03, which involves ce and Re extensively.
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM, tri_nfw=False):
+                 omega_m=Default_OmegaM, tri_nfw=False, OLS03 = False):
         # Redshift and Geometry
         # ra dec
         # self in here seems to be the Cosmo object
+        self.OLS03 = OLS03
         self.ra = ra  # right ascension in celestial coordinates
         self.dec = dec  # declination in celestial coordinates
         self.a_over_b = a_over_b  # not if should have
@@ -1091,15 +1093,26 @@ class triaxialHalo(Cosmo):
         self.Re = 0.45 * self.rvir  # at top of the page 9 on OLS03. An empirical/// relation between rvir and Re.
         self.R0 = 0.45 * self.rvir / self.ce  # equation 10 of OLS03.
         self.rs = self.R0
-        self.Delta_e = self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
+        if self.OLS03:
+            self.Delta_e = 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75
+        else:
+            self.Delta_e = self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75  # eqn 6 OLS03
         # is 5 * self.Delta_vir * (self.a_over_b / self.a_over_c / self.a_over_c) ** 0.75, but this way integrating the mass
         # to virial radius does not give the correct mass.
         ### Older Version
-
-        self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
+        if self.OLS03:
+            if tri_nfw:
+                self.m_c = np.log(1 + self.ce) - self.ce / (1 + self.ce)
+            else:
+                self.m_c = (2 * np.log(np.sqrt(self.ce) + np.sqrt(1 + self.ce)) - 2 * np.sqrt(
+            self.ce / (1 + self.ce)))
+        else:
+            if tri_nfw:
+                self.m_c = np.log(1 + self.c) - self.c / (1 + self.c)
+            else:
+                self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
             self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5. I believe a typo as been made between c and ce.
-        if tri_nfw:
-            self.m_c = np.log(1 + self.c) - self.c / (1 + self.c)
+
         # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
         self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
         # convert to angular radius in unit of arcsec
@@ -1328,7 +1341,7 @@ class triaxialJS02(triaxialHalo):
             mask = np.where((x >= 0.999) & (x <= 1.001))[0]
             f_GNFW_val[mask] = (22. / 15. - 0.8 * x[mask]) / 2
             if self.long_truncation:
-                mask = np.where(x > 2 * self.c)[0]
+                mask = np.where(x > np.inf)[0]
             else:
                 mask = np.where(x > self.c)[0]
             f_GNFW_val[mask] = 0

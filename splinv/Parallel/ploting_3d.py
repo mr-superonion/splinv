@@ -30,9 +30,9 @@ lensKer1=   Grid.lensing_kernel(deltaIn=False)
 #general_grid    =   triaxialJS02_grid_mock(parser)
 # data2   =   general_grid.add_halo(halo)[1]
 # data1   = general_grid.add_halo(halo)[0]
-data2 = fits.getdata('data2.fits')
-data3 = fits.getdata('data3.fits')
-data1 = fits.getdata('data1.fits')
+data2 = fits.getdata('../data2.fits')
+data3 = fits.getdata('../data3.fits')
+data1 = fits.getdata('../data1.fits')
 gErr    =   np.ones(Grid.shape)*0.05
 
 z_list = np.linspace(0,2.5,30)
