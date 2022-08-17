@@ -1214,10 +1214,10 @@ class triaxialJS02(triaxialHalo):
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM, tri_nfw=False, long_truncation = False):
+                 omega_m=Default_OmegaM, tri_nfw=False, long_truncation = False, OLS03 = False):
         triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=phi_prime,
                               theta_prime=theta_prime, rs=None,
-                              omega_m=omega_m, tri_nfw=tri_nfw)
+                              omega_m=omega_m, tri_nfw=tri_nfw, OLS03=OLS03)
         self.c2_a2 = self.a_over_c ** (-2)
         self.c2_b2 = (np.abs(self.a_over_c / self.a_over_b)) ** (-2)
         self.phi = self.cal_phi()
