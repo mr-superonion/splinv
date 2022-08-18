@@ -1931,12 +1931,13 @@ class triaxialJS02_grid_mock(Cartesian):
                 shearpixcomplex[i, :, :] = \
                     self.pixelize_data(ra, dec, np.ones(nsamp) / 10, shear[i].imag, method='FFT')[0]
             shearpix = shearpixreal + 1j * shearpixcomplex
+            return shearpix, np.std(np.abs(dg1 + 1j * dg2))
         else:
             dsigmapixreal = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.real, method='FFT')[0]
             dsigmapiximag = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.imag, method='FFT')[0]
             dsigmapix = dsigmapixreal + 1j * dsigmapiximag
             shearpix = dsigmapix[None, :, :] * lk[:, None, None]
-        return shearpix
+            return shearpix
 
     def add_halo_noise(self, halo, shear_catalog_name='9347.fits'):
         lk = halo.lensKernel(self.zcgrid)
