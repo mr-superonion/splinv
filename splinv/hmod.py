@@ -383,7 +383,7 @@ class nfwWB00(nfwHalo):
         mask = np.where((x >= 0.999) & (x <= 1.001))[0]
         out[mask] = (22. / 15. - 0.8 * x[mask])
         if self.long_truncation:
-            #mask = np.where(x > 2 * self.c)[0]
+            # mask = np.where(x > 2 * self.c)[0]
             mask = np.where(x > 2 * self.c)[0]
         else:
             mask = np.where(x > self.c)[0]
@@ -814,35 +814,36 @@ class nfwShearlet2D():
             self.prepareFrames(parser)
         self.lensKernel = lensKernel
 
-    def prepareFrames(self,parser):
-        if parser.has_option('lens','SigmaFname'):
+    def prepareFrames(self, parser):
+        if parser.has_option('lens', 'SigmaFname'):
             self.__numerical_frames(parser)
             print("preparing numerical frames!!!!")
         else:
             self.__analytic_frames(parser)
-    def __numerical_frames(self,parser):
+
+    def __numerical_frames(self, parser):
         if parser.has_option('cosmology', 'omega_m'):
             omega_m = parser.getfloat('cosmology', 'omega_m')
         else:
             omega_m = Default_OmegaM
         self.cosmo = Cosmo(H0=Default_h0 * 100., Om0=omega_m)
-        sigmaFname = parser.get('lens','SigmaFname') #input fourier sigma field
+        sigmaFname = parser.get('lens', 'SigmaFname')  # input fourier sigma field
         self.fouaframes = np.zeros(self.shapeA, dtype=np.complex128)
         self.aframes = np.zeros(self.shapeA, dtype=np.complex128)
         self.fouaframesInter = np.zeros(self.shapeA, dtype=np.complex128)
         unnormalized_sigma = fits.getdata(sigmaFname)
         for izl in range(self.nzl):
             '''no need to normalize'''
-            #rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
-            #znorm = 1. / rpix ** 2.
+            # rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
+            # znorm = 1. / rpix ** 2.
             for ifr in reversed(range(self.nframe)):
-                iAtomF = np.fft.fft2(np.fft.fftshift(unnormalized_sigma[izl,ifr])) #fourier space sigma field
-                #normTmp = iAtomF[0,0]/znorm
-                iAtomF = iAtomF#/normTmp
-                self.fouaframesInter[izl,ifr] = iAtomF
-                iAtomF = self.ks2D.transform(iAtomF, inFou = True, outFou = True)
-                self.fouaframes[izl,ifr] = iAtomF
-                self.aframes[izl,ifr] = self.fftw2_inverse(iAtomF)
+                iAtomF = np.fft.fft2(np.fft.fftshift(unnormalized_sigma[izl, ifr]))  # fourier space sigma field
+                # normTmp = iAtomF[0,0]/znorm
+                iAtomF = iAtomF  # /normTmp
+                self.fouaframesInter[izl, ifr] = iAtomF
+                iAtomF = self.ks2D.transform(iAtomF, inFou=True, outFou=True)
+                self.fouaframes[izl, ifr] = iAtomF
+                self.aframes[izl, ifr] = self.fftw2_inverse(iAtomF)
 
     def __analytic_frames(self, parser):
         if parser.has_option('cosmology', 'omega_m'):
@@ -1043,7 +1044,7 @@ class triaxialHalo(Cosmo):
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM, tri_nfw=False, OLS03 = False):
+                 omega_m=Default_OmegaM, tri_nfw=False, OLS03=False):
         # Redshift and Geometry
         # ra dec
         # self in here seems to be the Cosmo object
@@ -1105,16 +1106,19 @@ class triaxialHalo(Cosmo):
                 self.m_c = np.log(1 + self.ce) - self.ce / (1 + self.ce)
             else:
                 self.m_c = (2 * np.log(np.sqrt(self.ce) + np.sqrt(1 + self.ce)) - 2 * np.sqrt(
-            self.ce / (1 + self.ce)))
+                    self.ce / (1 + self.ce)))
         else:
             if tri_nfw:
                 self.m_c = np.log(1 + self.c) - self.c / (1 + self.c)
             else:
                 self.m_c = (2 * np.log(np.sqrt(self.c) + np.sqrt(1 + self.c)) - 2 * np.sqrt(
-            self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5. I believe a typo as been made between c and ce.
+                    self.c / (1 + self.c)))  # eqn 9 OLS03, alpha = 1.5. I believe a typo as been made between c and ce.
 
         # self.m_c =  self.c ** (3 - 1) / 2 * (np.log(1+self.c) - self.c/(1+self.c))  # alpha = 1
-        self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
+        if self.OLS03:
+            self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.ce ** 3. / self.m_c
+        else:
+            self.delta_triaxial = self.Delta_e * self.Omega_z / 3. * self.c ** 3. / self.m_c  # eqn 7 OLS 03
         # convert to angular radius in unit of arcsec
         scale = self.R0 / self.DaLens
         arcsec2rad = np.pi / 180. / 3600.
@@ -1214,7 +1218,7 @@ class triaxialJS02(triaxialHalo):
     """
 
     def __init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc=None, phi_prime=0, theta_prime=0, rs=None,
-                 omega_m=Default_OmegaM, tri_nfw=False, long_truncation = False, OLS03 = False):
+                 omega_m=Default_OmegaM, tri_nfw=False, long_truncation=False, OLS03=False):
         triaxialHalo.__init__(self, ra, dec, redshift, mass, a_over_b, a_over_c, conc, phi_prime=phi_prime,
                               theta_prime=theta_prime, rs=None,
                               omega_m=omega_m, tri_nfw=tri_nfw, OLS03=OLS03)
@@ -1246,7 +1250,7 @@ class triaxialJS02(triaxialHalo):
     def f_GNFW(self, r):
         ''' Eqn 41 in OLS. The input r takes zeta, defined in 21 of OLS'''
         if not self.tri_nfw:
-            #truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!!!
+            # truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!!!
             # f_GNFW_val = 4.9257573299999995 * 10 ** (-6) * r ** 0.0422695641 + 8.87596287 / (
             #             5.08395682 * r ** 0.557570911 + 14.4920247 * r ** 1.54971972 +
             #             2.0591881 * r ** 3.03259341)
@@ -1256,8 +1260,8 @@ class triaxialJS02(triaxialHalo):
             f_GNFW_val = np.divide(top, bottom)
         else:
             # this has potential to have any different concentration parameter.
-            x=r
-            f_GNFW_val = np.zeros_like(r,dtype=np.float128)
+            x = r
+            f_GNFW_val = np.zeros_like(r, dtype=np.float128)
             mask = np.where(x < 0.999)[0]
             a = ((1 - x[mask]) / (x[mask] + 1)) ** 0.5
             f_GNFW_val[mask] = 1 / (x[mask] ** 2 - 1) * (1 - 2 * np.arctanh(a) / (1 - x[mask] ** 2) ** 0.5)
@@ -1268,10 +1272,10 @@ class triaxialJS02(triaxialHalo):
 
             # the approximation below has a maximum fractional error of 7.4e-7
             mask = np.where((x >= 0.999) & (x <= 1.001))[0]
-            f_GNFW_val[mask] = (22. / 15. - 0.8 * x[mask])/2
+            f_GNFW_val[mask] = (22. / 15. - 0.8 * x[mask]) / 2
             if self.long_truncation:
-                #mask = np.where(x > 2 * self.c)[0]
-                mask = np.where(x>np.inf)[0] # no cut-off
+                # mask = np.where(x > 2 * self.c)[0]
+                mask = np.where(x > np.inf)[0]  # no cut-off
             else:
                 mask = np.where(x > self.c)[0]
             f_GNFW_val[mask] = 0
@@ -1317,7 +1321,7 @@ class triaxialJS02(triaxialHalo):
 
     def f_GNFW_xi(self, xi):
         if not self.tri_nfw:
-            #for truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!
+            # for truncated alpha=1.5 case. NOTE THIS ONLY APPLIES TO C=4!!!!
             top = 2.614
             qx = self.qx
             bottom = (xi / qx) ** 0.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** (3 / 2))
@@ -1327,7 +1331,7 @@ class triaxialJS02(triaxialHalo):
             #                 2.0591881 * (xi / qx) ** 3.03259341)
         else:
             # alpha = 1, untruncated
-            x = xi/self.qx
+            x = xi / self.qx
             f_GNFW_val = np.zeros_like(xi, dtype=np.float128)
             mask = np.where(x < 0.999)[0]
             a = ((1 - x[mask]) / (x[mask] + 1)) ** 0.5
@@ -1410,8 +1414,8 @@ class triaxialJS02(triaxialHalo):
         c = np.float128(self.c)
         out = np.zeros_like(x0, dtype=float)
         if self.long_truncation:
-            #mask = np.where((x0 >= 0) & (x0 <= 2 * c))[0]
-            mask = np.where((x0 >= 0) & (x0 <= np.inf)) # not cutoff
+            # mask = np.where((x0 >= 0) & (x0 <= 2 * c))[0]
+            mask = np.where((x0 >= 0) & (x0 <= np.inf))  # not cutoff
         else:
             mask = np.where((x0 >= 0) & (x0 <= c))[0]
         x = x0[mask]
@@ -1562,7 +1566,7 @@ class triaxialJS02(triaxialHalo):
             second_top = -1.307
             second_bototm = qx * (xi / qx) ** 1.5 * (1 + 2.378 * (xi / qx) ** 0.5833 + 2.617 * (xi / qx) ** 1.5)
             out = first_top / first_bottom + second_top / second_bototm
-            #truncated alpha = 1.5 case. ONLY WORKS WITH C=4
+            # truncated alpha = 1.5 case. ONLY WORKS WITH C=4
             # return 2.0820961520147983e-7/(qx*(xi/qx)**0.9577304359) -(8.87596287*(2.834666435612063/(qx*(xi/qx)**0.442429089) +
             # (22.458576460317083*(xi/qx)**0.5497197199999999)/
             # qx + (6.244680262010421*(xi/qx)**2.03259341)/qx))/(5.08395682*(xi/qx)**0.557570911 + 14.4920247*(xi/qx)**1.54971972 + 2.0591881*(xi/qx)**3.03259341)**2
@@ -1572,10 +1576,18 @@ class triaxialJS02(triaxialHalo):
             qx = self.qx
             out = np.zeros_like(xi, dtype=np.float128)
             mask = np.where(x < 0.999)[0]
-            out[mask] = -((qx**2*(2*xi[mask]**2*np.sqrt(1 - xi[mask]**2/qx**2) + qx**2*np.sqrt(-1 + (2*qx)/(qx + xi[mask])) + qx*xi[mask]*np.sqrt(-1 + (2*qx)/(qx + xi[mask])) - 6*xi[mask]**2*np.arctanh(np.sqrt(-1 + (2*qx)/(qx + xi[mask])))))/(xi[mask]*(qx**2 - xi[mask]**2)**2*np.sqrt(1 - xi[mask]**2/qx**2)))
+            out[mask] = -((qx ** 2 * (2 * xi[mask] ** 2 * np.sqrt(1 - xi[mask] ** 2 / qx ** 2) + qx ** 2 * np.sqrt(
+                -1 + (2 * qx) / (qx + xi[mask])) + qx * xi[mask] * np.sqrt(-1 + (2 * qx) / (qx + xi[mask])) - 6 * xi[
+                                          mask] ** 2 * np.arctanh(np.sqrt(-1 + (2 * qx) / (qx + xi[mask]))))) / (
+                                  xi[mask] * (qx ** 2 - xi[mask] ** 2) ** 2 * np.sqrt(1 - xi[mask] ** 2 / qx ** 2)))
 
             mask = np.where(x > 1.001)[0]
-            out[mask] = (qx**2*(qx**2 - qx*xi[mask] - 2*xi[mask]**2*np.sqrt(-1 + xi[mask]**2/qx**2)*np.sqrt(1 - (2*qx)/(qx + xi[mask])) + 6*xi[mask]**2*np.sqrt(1 - (2*qx)/(qx + xi[mask]))*np.arctan(np.sqrt(1 - (2*qx)/(qx + xi[mask])))))/(xi[mask]*(qx**2 - xi[mask]**2)**2*np.sqrt(-1 + xi[mask]**2/qx**2)*np.sqrt(1 - (2*qx)/(qx + xi[mask])))
+            out[mask] = (qx ** 2 * (
+                    qx ** 2 - qx * xi[mask] - 2 * xi[mask] ** 2 * np.sqrt(-1 + xi[mask] ** 2 / qx ** 2) * np.sqrt(
+                1 - (2 * qx) / (qx + xi[mask])) + 6 * xi[mask] ** 2 * np.sqrt(
+                1 - (2 * qx) / (qx + xi[mask])) * np.arctan(np.sqrt(1 - (2 * qx) / (qx + xi[mask]))))) / (
+                                xi[mask] * (qx ** 2 - xi[mask] ** 2) ** 2 * np.sqrt(
+                            -1 + xi[mask] ** 2 / qx ** 2) * np.sqrt(1 - (2 * qx) / (qx + xi[mask])))
             # the approximation below has a maximum fractional error of 7.4e-7
             mask = np.where((x >= 0.999) & (x <= 1.001))[0]
             out[mask] = - 0.4 * x[mask]
@@ -1881,7 +1893,8 @@ class triaxialJS02_grid_mock(Cartesian):
     def add_halo(self, halo):
         lk = halo.lensKernel(self.zcgrid)
         sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx, normalize=False)
-        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[0]  # np.ones(nsamp) is just a random choice that gets the data pixelized.
+        sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, sigma, method='FFT')[
+            0]  # np.ones(nsamp) is just a random choice that gets the data pixelized.
         dsigma = self.ks2D.transform(sigma, inFou=False,
                                      outFou=False)  # in real space because no fourier space function available.
         shear = dsigma[None, :, :] * lk[:, None, None]
@@ -1999,11 +2012,13 @@ def make_mock(dat):
     dg2 = (e2_n + e2_shape) / 2. / eres
     return dg1, dg2
 
+
 class prepare_numerical_frame(Cartesian):
     '''A Class that takes in parameters including redshifts, scale radius, (ellipticity may be in the future)to create
     FOURIER frames of SIGMA field. Important numbers are passed in from .ini files'''
-    def __init__(self, parser, halo_mass,filename,alpha=1,fou=False):
-        #halo_mass is the log mass of the halo.
+
+    def __init__(self, parser, halo_mass, filename, alpha=1, fou=False):
+        # halo_mass is the log mass of the halo.
         self.fou = fou
         Cartesian.__init__(self, parser)
         self.nframe = parser.getint('sparse', 'nframe')
@@ -2016,14 +2031,14 @@ class prepare_numerical_frame(Cartesian):
             self.zlscale = parser.getfloat('lens', 'zlscale')
         self.zlBin = zMeanBin(self.zlMin, self.zlscale, self.nzl)
         self.alpha = alpha
-        self.ny = parser.getint('transPlane','ny')
-        self.nx = parser.getint('transPlane','nx')
+        self.ny = parser.getint('transPlane', 'ny')
+        self.nx = parser.getint('transPlane', 'nx')
         self.rs_base = parser.getfloat('lens', 'rs_base')  # Mpc/h. I will keep using Mpc/h for length units.
         self.rsBin = np.zeros(self.nframe)
-        self.sigmaAtom = np.zeros((self.nzl,self.nframe,self.ny,self.nx),dtype=float)
-        self.fouaframesInter_real = np.zeros((self.nzl,self.nframe,self.ny,self.nx),dtype=float)
+        self.sigmaAtom = np.zeros((self.nzl, self.nframe, self.ny, self.nx), dtype=float)
+        self.fouaframesInter_real = np.zeros((self.nzl, self.nframe, self.ny, self.nx), dtype=float)
         self.fouaframesInter_complex = np.zeros((self.nzl, self.nframe, self.ny, self.nx), dtype=float)
-        self.halo_mass = halo_mass # an array of halo masses
+        self.halo_mass = halo_mass  # an array of halo masses
         assert len(self.halo_mass) == self.nframe
         if parser.has_option('cosmology', 'omega_m'):
             omega_m = parser.getfloat('cosmology', 'omega_m')
@@ -2041,46 +2056,50 @@ class prepare_numerical_frame(Cartesian):
         self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
         self.filename = filename
         return
-    def __create_frames(self, long_truncation = False):
+
+    def __create_frames(self, long_truncation=False, OLS03=False):
         for izl in range(self.nzl):
             for im in reversed(range(len(self.halo_mass))):
                 logm = self.halo_mass[im]
-                M_200 = 10**logm
+                M_200 = 10 ** logm
                 if self.alpha == 1:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
-                                        a_over_b=1.0, tri_nfw=True, long_truncation= long_truncation)#nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0.)
+                                        a_over_b=1.0, tri_nfw=True,
+                                        long_truncation=long_truncation,
+                                        OLS03=OLS03)  # nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0.)
                 else:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
-                                        a_over_b=1.0, long_truncation = long_truncation)
+                                        a_over_b=1.0, long_truncation=long_truncation, OLS03=OLS03)
                 sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
                                                                        normalize=False)
-                sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
-                self.sigmaAtom[izl,im] = sigma/M_200
+                sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
+                self.sigmaAtom[izl, im] = sigma / M_200
         hdu1 = fits.PrimaryHDU(self.sigmaAtom)
         hdu1.writeto(self.filename)
         del hdu1
         return
+
     def __create_frames_fou(self):
         for izl in range(self.nzl):
             for im in reversed(range(len(self.halo_mass))):
                 logm = self.halo_mass[im]
-                M_200 = 10**logm
-                if self.alpha==1:
-                    halo =  nfwWB00(mass=M_200,conc=4,redshift=self.zlBin[izl],ra=0.,dec=0.)
+                M_200 = 10 ** logm
+                if self.alpha == 1:
+                    halo = nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0.)
                 else:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
-                                 a_over_b=1.0)
+                                        a_over_b=1.0)
                 sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
                                                                        normalize=False)
-                sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
+                sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
                 fousigma = np.fft.fft2(np.fft.fftshift(sigma))
                 rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
-                znorm = 1./ rpix**2
+                znorm = 1. / rpix ** 2
                 normTmp = fousigma[0, 0] / znorm
-                fousigma = fousigma/normTmp
+                fousigma = fousigma / normTmp
                 self.rsBin[im] = halo.rs
                 self.fouaframesInter_real[izl, im] = fousigma.real
-                self.fouaframesInter_complex[izl,im] = fousigma.complex
+                self.fouaframesInter_complex[izl, im] = fousigma.complex
         hdu1 = fits.PrimaryHDU(self.fouaframesInter_real)
         hdu1.writeto('fourier_real.fits')
         hdu2 = fits.PrimaryHDU(self.fouaframesInter_complex)
@@ -2088,6 +2107,7 @@ class prepare_numerical_frame(Cartesian):
         del hdu1
         del hdu2
         return
+
     # def __create_semi_JS02_frames_fou(self):
     #     for izl in range(self.nzl):
     #         for im in reversed(range(len(self.halo_mass))):
@@ -2112,8 +2132,9 @@ class prepare_numerical_frame(Cartesian):
     #     del hdu1
     #     del hdu2
     #     return
-    def create_frames(self,long_truncation = False):
+    def create_frames(self, long_truncation=False, OLS03=False):
         if self.fou:
-            return self.__create_frames_fou() # fourier space
+            return self.__create_frames_fou()  # fourier space
         else:
-            return self.__create_frames(long_truncation = long_truncation) # configuration space. The preferred way.
+            return self.__create_frames(long_truncation=long_truncation,
+                                        OLS03=OLS03)  # configuration space. The preferred way.
