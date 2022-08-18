@@ -791,6 +791,7 @@ class nfwShearlet2D():
         self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
         self.fftw3_inverse = pyfftw.FFTW(array3, array4, axes=(1, 2), direction='FFTW_BACKWARD')
         self.fftw4 = pyfftw.FFTW(array5, array6, axes=(2, 3))
+        print(array5)
         self.fftw4_inverse = pyfftw.FFTW(array5, array6, axes=(2, 3), direction='FFTW_BACKWARD')
         ####pyfftw stuff####
 
