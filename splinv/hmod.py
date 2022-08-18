@@ -779,18 +779,17 @@ class nfwShearlet2D():
         self.shapeS = (self.nzs, self.ny, self.nx)  # observe plane
 
         ####pyfftw stuff####
-        array1 = 0*pyfftw.empty_aligned(self.shapeP, dtype='complex128')  # need to intialize pyfftw obj
-        array2 = 0*pyfftw.empty_aligned(self.shapeP, dtype='complex128')
-        array3 = 0*pyfftw.empty_aligned(self.shapeL, dtype='complex128')  # need to intialize pyfftw obj
-        array4 = 0*pyfftw.empty_aligned(self.shapeL, dtype='complex128')
-        array5 = 0*pyfftw.empty_aligned(self.shapeA, dtype='complex128')  # need to intialize pyfftw obj
-        array6 = 0*pyfftw.empty_aligned(self.shapeA, dtype='complex128')
+        array1 = pyfftw.empty_aligned(self.shapeP, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array2 = pyfftw.empty_aligned(self.shapeP, dtype='complex128', n=16)
+        array3 = pyfftw.empty_aligned(self.shapeL, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array4 = pyfftw.empty_aligned(self.shapeL, dtype='complex128', n=16)
+        array5 = pyfftw.empty_aligned(self.shapeA, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array6 = pyfftw.empty_aligned(self.shapeA, dtype='complex128', n=16)
 
         self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1))  # 2 means for 2d array
         self.fftw2_inverse = pyfftw.FFTW(array1, array2, axes=(0, 1), direction='FFTW_BACKWARD')
         self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
         self.fftw3_inverse = pyfftw.FFTW(array3, array4, axes=(1, 2), direction='FFTW_BACKWARD')
-        print(array5)
         self.fftw4 = pyfftw.FFTW(array5, array6, axes=(2, 3))
         self.fftw4_inverse = pyfftw.FFTW(array5, array6, axes=(2, 3), direction='FFTW_BACKWARD')
         ####pyfftw stuff####
