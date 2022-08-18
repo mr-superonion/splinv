@@ -787,7 +787,6 @@ class nfwShearlet2D():
         array6 = pyfftw.empty_aligned(self.shapeA, dtype='complex128')
         print(self.shapeA)
         print(array5)
-        print(array6)
         self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1))  # 2 means for 2d array
         self.fftw2_inverse = pyfftw.FFTW(array1, array2, axes=(0, 1), direction='FFTW_BACKWARD')
         self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
