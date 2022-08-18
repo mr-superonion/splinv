@@ -721,6 +721,82 @@ class nfwCS02_grid(Cartesian):
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear, sigma, lk, snorm, dr
 
+class testnfwShearlet2D():
+    def __init__(self, parser, lensKernel):
+        # transverse plane
+        self.nframe = parser.getint('sparse', 'nframe')
+        self.ny = parser.getint('transPlane', 'ny')
+        self.nx = parser.getint('transPlane', 'nx')
+
+        # The unit of angle in the configuration
+        unit = parser.get('transPlane', 'unit')
+        # Rescaling to degree
+        if unit == 'degree':
+            self.ratio = 1.
+        elif unit == 'arcmin':
+            self.ratio = 1. / 60.
+        elif unit == 'arcsec':
+            self.ratio = 1. / 60. / 60.
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.ks2D = ksmap(self.ny, self.nx)
+
+        # line of sight
+        self.nzl = parser.getint('lens', 'nlp')
+        self.nzs = parser.getint('sources', 'nz')
+        if self.nzl <= 1:
+            self.zlMin = 0.
+            self.zlscale = 1.
+        else:
+            self.zlMin = parser.getfloat('lens', 'zlMin')
+            self.zlscale = parser.getfloat('lens', 'zlscale')
+        self.zlBin = zMeanBin(self.zlMin, self.zlscale, self.nzl)
+        self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
+        self.sigma_pix = parser.getfloat('transPlane', 'smooth_scale') \
+                         * self.ratio / self.scale
+
+        # Shape of output shapelets
+        self.shapeP = (self.ny, self.nx)  # basic plane
+        self.shapeL = (self.nzl, self.ny, self.nx)  # lens plane
+        self.shapeA = (self.nzl, self.nframe, self.ny, self.nx)  # dictionary plane
+        self.shapeS = (self.nzs, self.ny, self.nx)  # observe plane
+
+        ####pyfftw stuff####
+        array1 = pyfftw.empty_aligned(self.shapeP, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array2 = pyfftw.empty_aligned(self.shapeP, dtype='complex128', n=16)
+        array3 = pyfftw.empty_aligned(self.shapeL, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array4 = pyfftw.empty_aligned(self.shapeL, dtype='complex128', n=16)
+        array5 = pyfftw.empty_aligned(self.shapeA, dtype='complex128', n=16)  # need to intialize pyfftw obj
+        array6 = pyfftw.empty_aligned(self.shapeA, dtype='complex128', n=16)
+
+        self.fftw2 = pyfftw.FFTW(array1, array2, axes=(0, 1))  # 2 means for 2d array
+        self.fftw2_inverse = pyfftw.FFTW(array1, array2, axes=(0, 1), direction='FFTW_BACKWARD')
+        self.fftw3 = pyfftw.FFTW(array3, array4, axes=(1, 2))
+        self.fftw3_inverse = pyfftw.FFTW(array3, array4, axes=(1, 2), direction='FFTW_BACKWARD')
+        self.fftw4 = pyfftw.FFTW(array5, array6, axes=(2, 3))
+        self.fftw4_inverse = pyfftw.FFTW(array5, array6, axes=(2, 3), direction='FFTW_BACKWARD')
+        ####pyfftw stuff####
+
+        if parser.has_option('lens', 'atomFname'):
+            atFname = parser.get('lens', 'atomFname')
+            tmp = pyfits.getdata(atFname)
+            '''Will consider revising this later--Shouzhuo'''
+            tmp = np.fft.fftshift(tmp)
+            nzl, nft, nyt, nxt = tmp.shape
+            ypad = (self.ny - nyt) // 2
+            xpad = (self.nx - nxt) // 2
+            assert self.nframe == nft
+            assert self.nzl == nzl
+            ppad = ((0, 0), (0, 0), (ypad, ypad), (xpad, xpad))
+            tmp = np.fft.ifftshift(np.pad(tmp, ppad))
+            tmp = np.fft.fft2(tmp)
+            self.fouaframesInter = tmp
+            self.fouaframes = self.ks2D.transform(tmp, inFou=True, outFou=True)
+            self.aframes = self.fftw2_inverse(self.fouaframes)
+            # print('fouaframes shape: (line 751) ', self.fouaframes.shape)
+        else:
+           print('initialization successful')
+        self.lensKernel = lensKernel
+
 
 class nfwShearlet2D():
     """
