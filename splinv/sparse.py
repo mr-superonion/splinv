@@ -1,4 +1,4 @@
-# Copyright 20211226 Xiangchong Li.
+# Copyright 20220820 Xiangchong Li and Shouzhuo Yang.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

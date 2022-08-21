@@ -36,8 +36,8 @@ class Simulator:
     def __init__(self, parser):
         file_name_raw = parser.get('file', 'file_name')
         self.file_name = file_name_raw.split(", ")  # if the file names are separated by ", " this is how to split them
-        dictionary_name = parser.get('file', 'dictionary_name')
-        self.dictionary_name = file_name_raw.split(", ")
+        dictionary_name_raw = parser.get('file', 'dictionary_name')
+        self.dictionary_name = dictionary_name_raw.split(", ")
         self.n_a_over_c_sample = parser.getint('simulation', 'n_a_over_c_sample')
         self.init_file_name = parser.get('file', 'init_filename')  # do change the dictionary name
         another_parser = ConfigParser()
@@ -66,54 +66,45 @@ class Simulator:
         n_a_over_c_sample = self.n_a_over_c_sample
         n_type = self.n_type
         n_frame = self.nframe
+
+        # shapes needed for file setup
+        shape_basic_input = (n_z_samp, n_a_over_c_sample)  # each trail uses same setup
+        shape_basic_simulation_result = (n_z_samp, n_a_over_c_sample, n_trials)
+        shape_detail_input = (n_z_samp, n_a_over_c_sample, n_trials, self.nzl, self.Grid.ny, self.Grid.nx)
+        shape_detail_simulation_result = (n_z_samp, n_a_over_c_sample, n_trials, self.nzl, n_frame, self.Grid.ny,
+                                          self.Grid.nx)
+
         for name in self.file_name:
             file = h5py.File(name, 'w')
             file_basics_group = file.create_group('basics')
             # each trial has same input redshift and a_over_c
             input_redshift = file_basics_group.create_dataset(name='input_redshift',
-                                                              shape=(n_z_samp, n_a_over_c_sample),
+                                                              shape=shape_basic_input,
                                                               dtype=np.float32)
             input_a_over_c = file_basics_group.create_dataset(name='input_a_over_c',
-                                                              shape=(n_z_samp, n_a_over_c_sample),
+                                                              shape=shape_basic_input,
                                                               dtype=np.float32)
-            true_mass = file_basics_group.create_dataset(name='true_mass', shape=(1),
+            true_mass = file_basics_group.create_dataset(name='true_mass', shape=1,
                                                          dtype=np.float64)  # only 1 true mass
             simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
-                                                              shape=(n_z_samp, n_a_over_c_sample, n_trials, n_type,
-                                                                     n_frame),
+                                                              shape=shape_basic_simulation_result,
                                                               dtype=np.float64)
-            same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=(n_z_samp, n_a_over_c_sample,
-                                                                                          n_trials, n_type,
-                                                                                          n_frame), dtype=bool)
-            mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=(n_z_samp, n_a_over_c_sample,
-                                                                                  n_trials, n_type,
-                                                                                  n_frame),
+            same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
+                                                             dtype=bool)
+            mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
                                                          dtype=np.float64)
             simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
-                                                                  shape=(n_z_samp, n_a_over_c_sample, n_trials, n_type,
-                                                                         n_frame), dtype=np.float32)
+                                                                  shape=shape_basic_simulation_result, dtype=np.float32)
             file_detail_group = file.create_group('detail')
             # shape might be ny,nx but it doesn't matter for now....
             dmapper_w = file_detail_group.create_dataset(name='dmapper_w',
-                                                         shape=(
-                                                             n_z_samp, n_a_over_c_sample, n_trials, n_type, self.nzl,
-                                                             n_frame,
-                                                             self.Grid.ny,
-                                                             self.Grid.nx),
+                                                         shape=shape_detail_simulation_result,
                                                          dtype=np.float32)
             alpha_R = file_detail_group.create_dataset(name='alphaR',
-                                                       shape=(
-                                                           n_z_samp, n_a_over_c_sample, n_trials, n_type, self.nzl,
-                                                           n_frame,
-                                                           self.Grid.nx,
-                                                           self.Grid.ny),
+                                                       shape=shape_detail_simulation_result,
                                                        dtype=np.float32)
             input_shear = file_detail_group.create_dataset(name='input_shear',
-                                                           shape=(
-                                                               n_z_samp, n_a_over_c_sample, n_trials, n_type,
-                                                               self.nzl,
-                                                               self.Grid.nx,
-                                                               self.Grid.ny),
+                                                           shape=shape_detail_input,
                                                            dtype=np.complex64)
             file.close()
 
@@ -176,8 +167,8 @@ class Simulator:
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True)
-        gErr = np.ones(Grid.shape) * 0.05
-        file['detail/input_shear'][z_index, a_over_c_index, trial_index, self.n_type, :, :, :] = data2
+        gErr = np.ones(Grid.shape) * gErrval
+        file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
         dmapper.lbd = lbd  # Lasso penalty.
@@ -196,23 +187,26 @@ class Simulator:
 
         try:
             if c1[0][0][0] != z_index:
-                file['basics/same_redshift'][z_index, a_over_c_index, trial_index, self.n_type, self.nframe] = False
+                file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
             else:
-                file['basics/same_redshift'][z_index, a_over_c_index, trial_index, self.n_type, self.nframe] = True
-            file['basics/simulated_redshift'][z_index, a_over_c_index,trial_index, self.n_type, self.nframe] = self.z_samp[c1[0][0][0]]
+                file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
+            file['basics/simulated_redshift'][z_index, a_over_c_index, trial_index] = \
+            self.z_samp[c1[0][0][0]]
             reconstructed_log_m = np.log10(
                 (dmapper.alphaR * dmapper._w)[c1[0][0][0], 0, c1[0][0][1], c1[0][0][2]]) + 14.
         except:
             print('error detected')
             reconstructed_log_m = -np.inf
-        file['basics/simulated_mass'][z_index, a_over_c_index,trial_index, self.n_type, self.nframe] = 10 ** reconstructed_log_m
+        file['basics/simulated_mass'][
+            z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
         if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
-            file['basics/mass_bias'][z_index, a_over_c_index,trial_index, self.n_type, self.nframe] = M_200 - 10 ** reconstructed_log_m
+            file['basics/mass_bias'][
+                z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
         else:
-            file['basics/mass_bias'][z_index, a_over_c_index,trial_index, self.n_type, self.nframe] = -np.inf
+            file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
             # just giving it a non-readable value for plotting
-        file['detail/alpha_R'][z_index, a_over_c_index, trial_index, self.n_type, :, :, :, :] = dmapper.alphaR
-        file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, self.n_type, :, :, :, :] = dmapper._w
+        file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
+        file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
         del dmapper
         file.close()
         return
