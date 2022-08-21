@@ -36,19 +36,20 @@ class Simulator:
     def __init__(self, parser):
         file_name_raw = parser.get('file', 'file_name')
         self.file_name = file_name_raw.split(", ")  # if the file names are separated by ", " this is how to split them
-        dictionary_name_raw = parser.get('file', 'dictionary_name')
-        self.dictionary_name = dictionary_name_raw.split(", ")
         self.n_a_over_c_sample = parser.getint('simulation', 'n_a_over_c_sample')
         self.init_file_name = parser.get('file', 'init_filename')  # do change the dictionary name
+        dictionary_name_raw = parser.get('file', 'dictionary_name')
+        self.dictionary_name = dictionary_name_raw.split(", ")
         another_parser = ConfigParser()
-        parser.read(self.init_file_name)
+        #print(self.init_file_name)
+        another_parser.read(self.init_file_name)
         self.Grid = Cartesian(another_parser)
         self.z_samp = self.Grid.zlcgrid  # z of mock data halo
         self.n_z_samp = len(self.z_samp)
         ellipticity_max = parser.getfloat('simulation', 'ellipticity_max')
         ellipticity_min = parser.getfloat('simulation', 'ellipticity_min')
-        self.nzl = parser.getint('lens', 'nlp')  # how many candidate layers of halos.
-        self.nframe = parser.getint('sparse', 'nframe')
+        self.nzl = another_parser.getint('lens', 'nlp')  # how many candidate layers of halos.
+        self.nframe = another_parser.getint('sparse', 'nframe')
         if np.abs(ellipticity_max - ellipticity_min) < 0.1:
             self.a_over_c_sample = np.array([ellipticity_max])  # in this case not producing triaxial halos.
             self.n_a_over_c_sample = 1
@@ -132,10 +133,11 @@ class Simulator:
                     for l in range(self.n_trials):
                         # which number of trials we are on
                         arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
-                                          halo_types[i], j, k, l])
+                                          halo_types[i], j, k, l, noise[i]])
+        return arguments
 
     def simulate(self, dictionary_name, log_m, lbd, save_file_name, halo_type, z_index, a_over_c_index, trial_index,
-                 noise):
+                noise):
         """
 
         :param dictionary_name: which file to use as dictionary
@@ -153,6 +155,9 @@ class Simulator:
         tri_nfw = False
         if halo_type == 'nfw':
             tri_nfw = True
+            print('nfw')
+        else:
+            print('cuspy')
         M_200 = 10. ** log_m
         conc = 4
         halo = hmod.triaxialJS02(mass=M_200, conc=conc, redshift=z_h, ra=0., dec=0., a_over_b=1,
@@ -162,11 +167,19 @@ class Simulator:
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
         file = h5py.File(save_file_name, 'r+')
+        file['basics/input_redshift'][z_index,a_over_c_index] = z_h
+        file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
         # now... only has capacity of 1 scale radius
         Grid = Cartesian(another_parser)
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
-        data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True)
+        if noise:
+            data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True)
+            print('noisy reconstruction')
+        else:
+            data2 = general_grid.add_halo(halo)[1]
+            gErrval = 0.05
+            print('noiseless reconstruction')
         gErr = np.ones(Grid.shape) * gErrval
         file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         file['basics/true_mass'] = M_200
