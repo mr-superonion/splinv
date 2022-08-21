@@ -136,10 +136,9 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i]])
         return arguments
 
-    def simulate(self, dictionary_name, log_m, lbd, save_file_name, halo_type, z_index, a_over_c_index, trial_index,
-                noise):
+    def simulate(self, args):
         """
-
+        :param args contains the following (and it is a list).
         :param dictionary_name: which file to use as dictionary
         :param log_m: log mass
         :param lbd: lbd in lasso
@@ -150,6 +149,17 @@ class Simulator:
         :param trial_index: which number of realization on (later to take average).
         :return: write in files.
         """
+        # Parsing argument
+        dictionary_name = args[0]
+        log_m = args[1]
+        lbd = args[2]
+        save_file_name = args[3]
+        halo_type = args[4]
+        z_index = args[5]
+        a_over_c_index = args[6]
+        trial_index = args[7]
+        noise = args[8]
+
         z_h = self.z_samp[z_index]
         a_over_c = self.a_over_c_sample[a_over_c_index]
         tri_nfw = False
