@@ -312,6 +312,7 @@ class Simulator:
             data['dmapper_w'][z_index,a_over_c_index,trial_index,:,:,:,:] = output[10]
             data['alpha_R'] [z_index,a_over_c_index,trial_index,:,:,:,:] = output[9]
             data['input_shear'][z_index,a_over_c_index,trial_index,:,:,:] = output[3]
+            print('writing data in')
             file.close()
 
 
