@@ -18,6 +18,7 @@ from splinv.grid import Cartesian
 from configparser import ConfigParser
 import splinv
 import h5py
+from astropy.io import fits
 # import time
 from schwimmbad import MPIPool
 import sys
@@ -61,7 +62,15 @@ class Simulator:
             self.n_type = int(1)
         self.n_trials = parser.getint('simulation', 'n_trials')
 
-    def create_files(self):
+        # shapes in which data are saved
+        self.shape_basic_input = (self.n_z_samp, self.n_a_over_c_sample)  # each trail uses same setup
+        self.shape_basic_simulation_result = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials)
+        self.shape_detail_input = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.Grid.ny, self.Grid.nx)
+        self.shape_detail_simulation_result = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
+                                          self.Grid.nx)
+
+    def create_files_h5(self):
+        """Not that supported under parallelization"""
         n_z_samp = self.n_z_samp
         n_trials = self.n_trials
         n_a_over_c_sample = self.n_a_over_c_sample
@@ -108,6 +117,49 @@ class Simulator:
                                                            shape=shape_detail_input,
                                                            dtype=np.complex64)
             file.close()
+
+    def create_files_fits(self):
+        # pretty self-explanatory, I think
+        input_redshift = np.zeros(self.shape_basic_input)
+        input_a_over_c = np.zeros(self.shape_basic_input)
+        true_mass = np.zeros(self.shape_basic_input)
+        simulated_mass = np.zeros(self.shape_basic_simulation_result)
+        same_redshift = np.zeros(self.shape_basic_simulation_result, dtype=bool)
+        mass_bias = np.zeros(self.shape_basic_simulation_result)
+        simulated_redshift = np.zeros(self.shape_basic_simulation_result)
+        dmapper_w = np.zeros(self.shape_detail_simulation_result)
+        alpha_R = np.zeros(self.shape_detail_simulation_result)
+        input_shear = np.zeros(self.shape_detail_input, dtype=np.complex64)
+        dim_basic_input = str(self.shape_basic_input[1:][::-1])
+        n_basic_input = str(np.prod(self.shape_basic_input[1:]))
+        dim_basic_simulation_result = str(self.shape_basic_simulation_result[1:][::-1])
+        n_basic_simulation_result = str(np.prod(self.shape_basic_simulation_result[1:]))
+        dim_detail_input = str(self.shape_detail_input[1:][::-1])
+        n_detail_input = str(np.prod(self.shape_detail_input[1:]))
+        dim_detail_simulation_result = str(self.shape_detail_simulation_result[1:][::-1])
+        n_detail_simulation_result = str(np.prod(self.shape_detail_simulation_result[1:]))
+        for name in self.file_name:
+            c1 = fits.Column(name='input_redshift', array=input_redshift, format=n_basic_input + 'E',
+                             dim=dim_basic_input)
+            c2 = fits.Column(name='input_a_over_c', array=input_a_over_c, format=n_basic_input + 'E',
+                             dim=dim_basic_input)
+            c3 = fits.Column(name='true_mass', array=true_mass, format=n_basic_input + 'D', dim=dim_basic_input)
+            c4 = fits.Column(name='simulated_mass', array=simulated_mass, format=n_basic_simulation_result + 'D',
+                             dim=dim_basic_simulation_result)
+            c5 = fits.Column(name='same_redshift', array=same_redshift, format=n_basic_simulation_result + 'L',
+                             dim=dim_basic_simulation_result)
+            c6 = fits.Column(name='mass_bias', array=mass_bias, format=n_basic_simulation_result + 'D',
+                             dim=dim_basic_simulation_result)
+            c7 = fits.Column(name='simulated_redshift', array=simulated_redshift,
+                             format=n_basic_simulation_result + 'E', dim=dim_basic_simulation_result)
+            c8 = fits.Column(name='dmapper_w', array=dmapper_w, format=n_detail_simulation_result + 'D',
+                             dim=dim_detail_simulation_result)
+            c9 = fits.Column(name='alpha_R', array=alpha_R, format=n_detail_simulation_result + 'D',
+                             dim=dim_detail_simulation_result)
+            c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
+            t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
+            t.writeto(name)
+
 
     def prepare_argument(self, halo_masses, halo_types, lbd, noise):
         """
@@ -176,9 +228,9 @@ class Simulator:
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
-        file = h5py.File(save_file_name, 'r+')
-        file['basics/input_redshift'][z_index,a_over_c_index] = z_h
-        file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
+        #file = h5py.File(save_file_name, 'r+')
+        #file['basics/input_redshift'][z_index,a_over_c_index] = z_h
+        #file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
         # now... only has capacity of 1 scale radius
         Grid = Cartesian(another_parser)
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
@@ -191,8 +243,8 @@ class Simulator:
             gErrval = 0.05
             print('noiseless reconstruction')
         gErr = np.ones(Grid.shape) * gErrval
-        file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
-        file['basics/true_mass'] = M_200
+        #file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
+        #file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
         dmapper.lbd = lbd  # Lasso penalty.
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
@@ -209,27 +261,56 @@ class Simulator:
         c1 = detect.local_maxima_3D(dmapper.deltaR)
 
         try:
-            if c1[0][0][0] != z_index:
-                file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
+            simulated_redshift_index = c1[0][0][0]
+            simulated_redshift = self.z_samp[simulated_redshift_index]
+            if simulated_redshift_index != z_index:
+                #file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
+                same_redshift = False
             else:
-                file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
-            file['basics/simulated_redshift'][z_index, a_over_c_index, trial_index] = \
-            self.z_samp[c1[0][0][0]]
+                #file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
+                same_redshift = True
             reconstructed_log_m = np.log10(
                 (dmapper.alphaR * dmapper._w)[c1[0][0][0], 0, c1[0][0][1], c1[0][0][2]]) + 14.
         except:
-            print('error detected')
+            print('detection failed')
             reconstructed_log_m = -np.inf
-        file['basics/simulated_mass'][
-            z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
+            same_redshift = False
+            simulated_redshift = -np.inf # impossible value
+        # file['basics/simulated_mass'][
+        #     z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
+        simulated_mass = 10**reconstructed_log_m
         if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
-            file['basics/mass_bias'][
-                z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
+            # file['basics/mass_bias'][
+            #     z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
+            mass_bias = M_200 - 10 ** reconstructed_log_m
         else:
-            file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
+            # file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
+            mass_bias = -np.inf
             # just giving it a non-readable value for plotting
-        file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
-        file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
-        del dmapper
-        file.close()
-        return
+        # file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
+        # file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
+        #file.close()
+        return [z_index, a_over_c_index, trial_index, data2, M_200, same_redshift, simulated_redshift, simulated_mass, mass_bias,
+                dmapper.alphaR, dmapper._w,save_file_name]
+
+    def write_files_fits(self,outputs):
+        """:param outputs: list of outputs"""
+        for output in outputs:
+            # this is going to be a very long for loop, but it cannot be help
+            file = fits.open(output[-1])
+            data = file[1].data
+            z_index = output[0]
+            a_over_c_index = output[1]
+            trial_index = output[2]
+            data['input_redshift'][z_index,a_over_c_index] = self.z_samp[output[0]]
+            data['input_a_over_c'][z_index, a_over_c_index] = self.a_over_c_sample[output[1]]
+            data['true_mass'][z_index, a_over_c_index] = output[4]
+            data['simulated_mass'][z_index,a_over_c_index,trial_index] = output[7]
+            data['same_redshift'][z_index,a_over_c_index,trial_index] = output[5]
+            data['mass_bias'][z_index,a_over_c_index,trial_index] = output[8]
+            data['simulated_redshift'][z_index,a_over_c_index,trial_index] = output[6]
+            data['dmapper_w'][z_index,a_over_c_index,trial_index,:,:,:,:] = output[10]
+            data['alpha_R'] [z_index,a_over_c_index,trial_index,:,:,:,:] = output[9]
+            data['input_shear'][z_index,a_over_c_index,trial_index,:,:,:] = output[3]
+
+
