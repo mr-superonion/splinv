@@ -158,7 +158,7 @@ class Simulator:
                              dim=dim_detail_simulation_result)
             c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
             t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
-            t.writeto(name)
+            t.writeto(name,overwrite=True)
 
 
     def prepare_argument(self, halo_masses, halo_types, lbd, noise):
@@ -312,5 +312,6 @@ class Simulator:
             data['dmapper_w'][z_index,a_over_c_index,trial_index,:,:,:,:] = output[10]
             data['alpha_R'] [z_index,a_over_c_index,trial_index,:,:,:,:] = output[9]
             data['input_shear'][z_index,a_over_c_index,trial_index,:,:,:] = output[3]
+            file.close()
 
 
