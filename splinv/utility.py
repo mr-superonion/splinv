@@ -297,7 +297,7 @@ class Simulator:
         """:param outputs: list of outputs"""
         for output in outputs:
             # this is going to be a very long for loop, but it cannot be help
-            file = fits.open(output[-1])
+            file = fits.open(output[-1],mode='update')
             data = file[1].data
             z_index = output[0]
             a_over_c_index = output[1]
