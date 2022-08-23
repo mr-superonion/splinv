@@ -2111,30 +2111,6 @@ class prepare_numerical_frame(Cartesian):
         del hdu2
         return
 
-    # def __create_semi_JS02_frames_fou(self):
-    #     for izl in range(self.nzl):
-    #         for im in reversed(range(len(self.halo_mass))):
-    #             logm = self.halo_mass[im]
-    #             M_200 = 10**logm
-    #             halo  =  triaxialJS02(mass=M_200,conc=4,redshift=self.zlBin[izl],ra=0.,dec=0.,a_over_c = 1.0, a_over_b=1.0)
-    #             sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
-    #                                                                    normalize=False)
-    #             sigma = self.pixelize_data(ra, dec, np.ones(nsamp)/10., sigma, method='FFT')[0]
-    #             fousigma = np.fft.fft2(np.fft.fftshift(sigma))
-    #             rpix = self.cosmo.angular_diameter_distance(self.zlBin[izl]).value / 180. * np.pi * self.scale
-    #             znorm = 1. / rpix ** 2
-    #             normTmp = fousigma[0, 0] / znorm
-    #             fousigma = fousigma / normTmp
-    #             self.rsBin[im] = halo.rs
-    #             self.fouaframesInter_real[izl, im] = fousigma.real
-    #             self.fouaframesInter_complex[izl, im] = fousigma.complex
-    #     hdu1 = fits.PrimaryHDU(self.fouaframesInter_real)
-    #     hdu1.writeto('WB00_real.fits')
-    #     hdu2 = fits.PrimaryHDU(self.fouaframesInter_complex)
-    #     hdu2.writeto('WB00_complex.fits')
-    #     del hdu1
-    #     del hdu2
-    #     return
     def create_frames(self, long_truncation=False, OLS03=False):
         if self.fou:
             return self.__create_frames_fou()  # fourier space

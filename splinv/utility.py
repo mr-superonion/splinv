@@ -269,8 +269,15 @@ class Simulator:
             else:
                 #file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
                 same_redshift = True
+            frame_index = 0
+            for i in range(self.nframe):
+                location = detect.local_maxima_3D(dmapper.alphaR[:, i, :, :])
+                if len(location[0]) > 0:  # max detected
+                    frame_index = i
+                    c1 = location
+                    break
             reconstructed_log_m = np.log10(
-                (dmapper.alphaR * dmapper._w)[c1[0][0][0], 0, c1[0][0][1], c1[0][0][2]]) + 14.
+                (dmapper.alphaR * dmapper._w)[c1[0][0][0], frame_index, c1[0][0][1], c1[0][0][2]]) + 14.
         except:
             print('detection failed')
             reconstructed_log_m = -np.inf
