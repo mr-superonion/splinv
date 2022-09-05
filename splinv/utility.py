@@ -24,6 +24,23 @@ from schwimmbad import MPIPool
 import sys
 
 
+def plot_biases(filenames,data_name):
+    return
+
+
+def average_across(filenames, data_name):
+    """filenames: list of strings for filename
+   data_name: string of which parameter you are checking"""
+    result = np.array([])
+    for filename in filenames:
+        file = fits.open(filename)  # default mode is read only
+        data = file[1].data
+        to_average = data[data_name]
+        result = np.append(result, np.average(to_average, axis=2))
+        file.close()
+    return result
+
+
 class Simulator:
     """
     A class to perform bias analysis and simulates reconstruction wih splinv.
@@ -42,7 +59,7 @@ class Simulator:
         dictionary_name_raw = parser.get('file', 'dictionary_name')
         self.dictionary_name = dictionary_name_raw.split(", ")
         another_parser = ConfigParser()
-        #print(self.init_file_name)
+        # print(self.init_file_name)
         another_parser.read(self.init_file_name)
         self.Grid = Cartesian(another_parser)
         self.z_samp = self.Grid.zlcgrid  # z of mock data halo
@@ -65,9 +82,11 @@ class Simulator:
         # shapes in which data are saved
         self.shape_basic_input = (self.n_z_samp, self.n_a_over_c_sample)  # each trail uses same setup
         self.shape_basic_simulation_result = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials)
-        self.shape_detail_input = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.Grid.ny, self.Grid.nx)
-        self.shape_detail_simulation_result = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
-                                          self.Grid.nx)
+        self.shape_detail_input = (
+            self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.Grid.ny, self.Grid.nx)
+        self.shape_detail_simulation_result = (
+            self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
+            self.Grid.nx)
 
     def create_files_h5(self):
         """Not that supported under parallelization"""
@@ -158,8 +177,7 @@ class Simulator:
                              dim=dim_detail_simulation_result)
             c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
             t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
-            t.writeto(name,overwrite=True)
-
+            t.writeto(name, overwrite=True)
 
     def prepare_argument(self, halo_masses, halo_types, lbd, noise):
         """
@@ -228,9 +246,9 @@ class Simulator:
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
-        #file = h5py.File(save_file_name, 'r+')
-        #file['basics/input_redshift'][z_index,a_over_c_index] = z_h
-        #file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
+        # file = h5py.File(save_file_name, 'r+')
+        # file['basics/input_redshift'][z_index,a_over_c_index] = z_h
+        # file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
         # now... only has capacity of 1 scale radius
         Grid = Cartesian(another_parser)
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
@@ -243,8 +261,8 @@ class Simulator:
             gErrval = 0.05
             print('noiseless reconstruction')
         gErr = np.ones(Grid.shape) * gErrval
-        #file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
-        #file['basics/true_mass'] = M_200
+        # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
+        # file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
         dmapper.lbd = lbd  # Lasso penalty.
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
@@ -264,17 +282,17 @@ class Simulator:
             simulated_redshift_index = c1[0][0][0]
             simulated_redshift = self.z_samp[simulated_redshift_index]
             if simulated_redshift_index != z_index:
-                #file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
+                # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
                 same_redshift = False
             else:
-                #file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
+                # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
                 same_redshift = True
             frame_index = 0
             for i in range(self.nframe):
                 location = detect.local_maxima_3D(dmapper.alphaR[:, i, :, :])
                 if len(location[0]) > 0:  # max detected
-                    frame_index = i
-                    c1 = location
+                    frame_index = i  # which "frame"
+                    c1 = location  # redshift plane, and position
                     break
             reconstructed_log_m = np.log10(
                 (dmapper.alphaR * dmapper._w)[c1[0][0][0], frame_index, c1[0][0][1], c1[0][0][2]]) + 14.
@@ -282,10 +300,10 @@ class Simulator:
             print('detection failed')
             reconstructed_log_m = -np.inf
             same_redshift = False
-            simulated_redshift = -np.inf # impossible value
+            simulated_redshift = -np.inf  # impossible value
         # file['basics/simulated_mass'][
         #     z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
-        simulated_mass = 10**reconstructed_log_m
+        simulated_mass = 10 ** reconstructed_log_m
         if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
             # file['basics/mass_bias'][
             #     z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
@@ -296,30 +314,29 @@ class Simulator:
             # just giving it a non-readable value for plotting
         # file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
         # file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
-        #file.close()
-        return [z_index, a_over_c_index, trial_index, data2, M_200, same_redshift, simulated_redshift, simulated_mass, mass_bias,
-                dmapper.alphaR, dmapper._w,save_file_name]
+        # file.close()
+        return [z_index, a_over_c_index, trial_index, data2, M_200, same_redshift, simulated_redshift, simulated_mass,
+                mass_bias,
+                dmapper.alphaR, dmapper._w, save_file_name]
 
-    def write_files_fits(self,outputs):
+    def write_files_fits(self, outputs):
         """:param outputs: list of outputs"""
         for output in outputs:
             # this is going to be a very long for loop, but it cannot be help
-            file = fits.open(output[-1],mode='update')
+            file = fits.open(output[-1], mode='update')
             data = file[1].data
             z_index = output[0]
             a_over_c_index = output[1]
             trial_index = output[2]
-            data['input_redshift'][z_index,a_over_c_index] = self.z_samp[output[0]]
+            data['input_redshift'][z_index, a_over_c_index] = self.z_samp[output[0]]
             data['input_a_over_c'][z_index, a_over_c_index] = self.a_over_c_sample[output[1]]
             data['true_mass'][z_index, a_over_c_index] = output[4]
-            data['simulated_mass'][z_index,a_over_c_index,trial_index] = output[7]
-            data['same_redshift'][z_index,a_over_c_index,trial_index] = output[5]
-            data['mass_bias'][z_index,a_over_c_index,trial_index] = output[8]
-            data['simulated_redshift'][z_index,a_over_c_index,trial_index] = output[6]
-            data['dmapper_w'][z_index,a_over_c_index,trial_index,:,:,:,:] = output[10]
-            data['alpha_R'] [z_index,a_over_c_index,trial_index,:,:,:,:] = output[9]
-            data['input_shear'][z_index,a_over_c_index,trial_index,:,:,:] = output[3]
+            data['simulated_mass'][z_index, a_over_c_index, trial_index] = output[7]
+            data['same_redshift'][z_index, a_over_c_index, trial_index] = output[5]
+            data['mass_bias'][z_index, a_over_c_index, trial_index] = output[8]
+            data['simulated_redshift'][z_index, a_over_c_index, trial_index] = output[6]
+            data['dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[10]
+            data['alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[9]
+            data['input_shear'][z_index, a_over_c_index, trial_index, :, :, :] = output[3]
             print('writing data in')
             file.close()
-
-
