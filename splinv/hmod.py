@@ -995,7 +995,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field, ra, dec, nsamp
 
 
-def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0):
+def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
     kappa field on a whole grid in fourier space. This is evident in
@@ -1006,17 +1006,32 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, r
     Note: whatever is being returned here is in configuration space.
     :param dec_0: offset (position of halo center)
     :param ra_0: offset (position of halo center)
+    :param nlp: used to generated random galaxies in each galaxy plane
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 2 #nx * ny * 2  # 2 to simulate realistic condition if nx*ny*10, reconstruction works better but too idealistic
-    ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
-    dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
-    dsigma_field = halo.DeltaSigmaComplex(ra * 3600.,
-                                          dec * 3600.)  # just a dSigma field. This is also a 1d array, so you would have to pxielize it.
-    if normalize:
-        return dsigma_field / (np.sum(np.abs(dsigma_field) ** 2.)) ** 0.5, ra, dec, nsamp  # I never use this anyways
-    else:
+    nsamp = nx * ny * 2  # nx * ny * 2  # 2 to simulate realistic condition if nx*ny*10, reconstruction works better
+    # but too idealistic
+    if nlp == 1:
+        ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
+        dec = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
+        dsigma_field = halo.DeltaSigmaComplex(ra * 3600.,
+                                              dec * 3600.)  # just a dSigma field. This is also a 1d array, so you
+        # would have to pxielize it.
+        if normalize:
+            return dsigma_field / (np.sum(np.abs(dsigma_field) ** 2.)) ** 0.5, ra, dec, nsamp  # I never use this
+            # anyways
+        else:
+            return dsigma_field, ra, dec, nsamp
+    else:  # generated nlp times random galaxies.
+        ra = np.zeros((nlp, nsamp), dtype=float)
+        dec = np.zeros((nlp, nsamp), dtype=float)
+        dsigma_field = np.zeros((nlp, nsamp), dtype=np.complex128)
+        for i in range(nlp):
+            ra[i] = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
+            dec[i] = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
+            dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
+                                                     dec[i] * 3600.)
         return dsigma_field, ra, dec, nsamp
 
 
@@ -1904,14 +1919,15 @@ class triaxialJS02_grid_mock(Cartesian):
 
     def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits'):
         lk = halo.lensKernel(self.zcgrid)
-        dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
-                                                                       normalize=False)
+
         if add_noise:
+            dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
+                                                                           normalize=False, nlp=lk.size)
             s19A = fits.open(shear_catalog_name)
             data = s19A[1].data
             s19A_table = Table(data)
             error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
-            shear = dsigma[None, :] * lk[:, None]
+            shear = dsigma * lk[:, None]
             random_ints1, random_ints2 = np.random.randint(0, high=error1.size, size=shear.size), np.random.randint(0,
                                                                                                                     high=error1.size,
                                                                                                                     size=shear.size)
@@ -1927,12 +1943,14 @@ class triaxialJS02_grid_mock(Cartesian):
             shearpixreal = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
             shearpixcomplex = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
             for i in range(len(self.zcgrid)):
-                shearpixreal[i, :, :] = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
+                shearpixreal[i, :, :] = self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
                 shearpixcomplex[i, :, :] = \
-                    self.pixelize_data(ra, dec, np.ones(nsamp) / 10, shear[i].imag, method='FFT')[0]
+                    self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].imag, method='FFT')[0]
             shearpix = shearpixreal + 1j * shearpixcomplex
-            return shearpix, np.std(np.abs(dg1 + 1j * dg2))
+            return shearpix, np.sqrt(np.std(dg1) ** 2 + np.std(dg2) ** 2)
         else:
+            dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
+                                                                           normalize=False)
             dsigmapixreal = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.real, method='FFT')[0]
             dsigmapiximag = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.imag, method='FFT')[0]
             dsigmapix = dsigmapixreal + 1j * dsigmapiximag
@@ -1950,7 +1968,7 @@ class triaxialJS02_grid_mock(Cartesian):
         kappa = sigma[None, :, :] * lk[:, None, None]
         s19A = fits.open(shear_catalog_name)
         data = s19A[1].data
-        s19A_table = Table(data) # better way to read in the data
+        s19A_table = Table(data)  # better way to read in the data
         error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
         random_ints1, random_ints2 = np.random.randint(0, high=error1.size, size=shear.size), np.random.randint(0,
                                                                                                                 high=error1.size,
@@ -1964,7 +1982,7 @@ class triaxialJS02_grid_mock(Cartesian):
         dg1 = dg1.reshape(shear.shape)
         dg2 = dg2.reshape(shear.shape)
         shear = shear + dg1 + 1j * dg2
-        return kappa, shear, sigma, dg1, dg2, np.std(np.abs(dg1 + 1j * dg2))
+        return kappa, shear, sigma, dg1, dg2, np.sqrt(np.std(dg1) ** 2 + np.std(dg2) ** 2)
 
 
 def make_mock(dat):
@@ -2069,7 +2087,8 @@ class prepare_numerical_frame(Cartesian):
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
                                         a_over_b=1.0, tri_nfw=True,
                                         long_truncation=long_truncation,
-                                        OLS03=OLS03)  # nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0.)
+                                        OLS03=OLS03)  # nfwWB00(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0.,
+                    # dec=0.)
                 else:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
                                         a_over_b=1.0, long_truncation=long_truncation, OLS03=OLS03)

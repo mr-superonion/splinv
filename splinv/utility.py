@@ -24,7 +24,7 @@ from schwimmbad import MPIPool
 import sys
 
 
-def plot_biases(filenames,data_name):
+def plot_biases(filenames, data_name):
     return
 
 
@@ -254,7 +254,7 @@ class Simulator:
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
-            data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True)
+            data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True) # add same random seed
             print('noisy reconstruction')
         else:
             data2 = general_grid.add_halo(halo)[1]
@@ -335,7 +335,7 @@ class Simulator:
             data['same_redshift'][z_index, a_over_c_index, trial_index] = output[5]
             data['mass_bias'][z_index, a_over_c_index, trial_index] = output[8]
             data['simulated_redshift'][z_index, a_over_c_index, trial_index] = output[6]
-            data['dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[10]
+            data['dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[10]  # not necessary
             data['alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[9]
             data['input_shear'][z_index, a_over_c_index, trial_index, :, :, :] = output[3]
             print('writing data in')
