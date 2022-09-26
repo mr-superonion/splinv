@@ -51,7 +51,7 @@ class Simulator:
     5. parser... is just a config parser.
     """
 
-    def __init__(self, parser):
+    def __init__(self, parser, short_file=False):
         file_name_raw = parser.get('file', 'file_name')
         self.file_name = file_name_raw.split(", ")  # if the file names are separated by ", " this is how to split them
         self.n_a_over_c_sample = parser.getint('simulation', 'n_a_over_c_sample')
@@ -78,7 +78,7 @@ class Simulator:
         else:
             self.n_type = int(1)
         self.n_trials = parser.getint('simulation', 'n_trials')
-
+        self.short_file = short_file
         # shapes in which data are saved
         self.shape_basic_input = (self.n_z_samp, self.n_a_over_c_sample)  # each trail uses same setup
         self.shape_basic_simulation_result = (self.n_z_samp, self.n_a_over_c_sample, self.n_trials)
@@ -102,40 +102,62 @@ class Simulator:
         shape_detail_input = (n_z_samp, n_a_over_c_sample, n_trials, self.nzl, self.Grid.ny, self.Grid.nx)
         shape_detail_simulation_result = (n_z_samp, n_a_over_c_sample, n_trials, self.nzl, n_frame, self.Grid.ny,
                                           self.Grid.nx)
-
-        for name in self.file_name:
-            file = h5py.File(name, 'w')
-            file_basics_group = file.create_group('basics')
-            # each trial has same input redshift and a_over_c
-            input_redshift = file_basics_group.create_dataset(name='input_redshift',
-                                                              shape=shape_basic_input,
-                                                              dtype=np.float32)
-            input_a_over_c = file_basics_group.create_dataset(name='input_a_over_c',
-                                                              shape=shape_basic_input,
-                                                              dtype=np.float32)
-            true_mass = file_basics_group.create_dataset(name='true_mass', shape=1,
-                                                         dtype=np.float64)  # only 1 true mass
-            simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
-                                                              shape=shape_basic_simulation_result,
-                                                              dtype=np.float64)
-            same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
-                                                             dtype=bool)
-            mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
-                                                         dtype=np.float64)
-            simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
-                                                                  shape=shape_basic_simulation_result, dtype=np.float32)
-            file_detail_group = file.create_group('detail')
-            # shape might be ny,nx but it doesn't matter for now....
-            dmapper_w = file_detail_group.create_dataset(name='dmapper_w',
-                                                         shape=shape_detail_simulation_result,
-                                                         dtype=np.float32)
-            alpha_R = file_detail_group.create_dataset(name='alphaR',
-                                                       shape=shape_detail_simulation_result,
-                                                       dtype=np.float32)
-            input_shear = file_detail_group.create_dataset(name='input_shear',
-                                                           shape=shape_detail_input,
-                                                           dtype=np.complex64)
-            file.close()
+        if self.short_file:
+            for name in self.file_name:
+                file = h5py.File(name, 'w')
+                file_basics_group = file.create_group('basics')
+                # each trial has same input redshift and a_over_c
+                input_redshift = file_basics_group.create_dataset(name='input_redshift',
+                                                                  shape=shape_basic_input,
+                                                                  dtype=np.float32)
+                input_a_over_c = file_basics_group.create_dataset(name='input_a_over_c',
+                                                                  shape=shape_basic_input,
+                                                                  dtype=np.float32)
+                true_mass = file_basics_group.create_dataset(name='true_mass', shape=1,
+                                                             dtype=np.float64)  # only 1 true mass
+                simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
+                                                                  shape=shape_basic_simulation_result,
+                                                                  dtype=np.float64)
+                same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
+                                                                 dtype=bool)
+                mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
+                                                             dtype=np.float64)
+                simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
+                                                                      shape=shape_basic_simulation_result, dtype=np.float32)
+        else:
+            for name in self.file_name:
+                file = h5py.File(name, 'w')
+                file_basics_group = file.create_group('basics')
+                # each trial has same input redshift and a_over_c
+                input_redshift = file_basics_group.create_dataset(name='input_redshift',
+                                                                  shape=shape_basic_input,
+                                                                  dtype=np.float32)
+                input_a_over_c = file_basics_group.create_dataset(name='input_a_over_c',
+                                                                  shape=shape_basic_input,
+                                                                  dtype=np.float32)
+                true_mass = file_basics_group.create_dataset(name='true_mass', shape=1,
+                                                             dtype=np.float64)  # only 1 true mass
+                simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
+                                                                  shape=shape_basic_simulation_result,
+                                                                  dtype=np.float64)
+                same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
+                                                                 dtype=bool)
+                mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
+                                                             dtype=np.float64)
+                simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
+                                                                      shape=shape_basic_simulation_result, dtype=np.float32)
+                file_detail_group = file.create_group('detail')
+                # shape might be ny,nx but it doesn't matter for now....
+                dmapper_w = file_detail_group.create_dataset(name='dmapper_w',
+                                                             shape=shape_detail_simulation_result,
+                                                             dtype=np.float32)
+                alpha_R = file_detail_group.create_dataset(name='alphaR',
+                                                           shape=shape_detail_simulation_result,
+                                                           dtype=np.float32)
+                input_shear = file_detail_group.create_dataset(name='input_shear',
+                                                               shape=shape_detail_input,
+                                                               dtype=np.complex64)
+                file.close()
 
     def create_files_fits(self):
         # pretty self-explanatory, I think
@@ -157,27 +179,45 @@ class Simulator:
         n_detail_input = str(np.prod(self.shape_detail_input[1:]))
         dim_detail_simulation_result = str(self.shape_detail_simulation_result[1:][::-1])
         n_detail_simulation_result = str(np.prod(self.shape_detail_simulation_result[1:]))
-        for name in self.file_name:
-            c1 = fits.Column(name='input_redshift', array=input_redshift, format=n_basic_input + 'E',
-                             dim=dim_basic_input)
-            c2 = fits.Column(name='input_a_over_c', array=input_a_over_c, format=n_basic_input + 'E',
-                             dim=dim_basic_input)
-            c3 = fits.Column(name='true_mass', array=true_mass, format=n_basic_input + 'D', dim=dim_basic_input)
-            c4 = fits.Column(name='simulated_mass', array=simulated_mass, format=n_basic_simulation_result + 'D',
-                             dim=dim_basic_simulation_result)
-            c5 = fits.Column(name='same_redshift', array=same_redshift, format=n_basic_simulation_result + 'L',
-                             dim=dim_basic_simulation_result)
-            c6 = fits.Column(name='mass_bias', array=mass_bias, format=n_basic_simulation_result + 'D',
-                             dim=dim_basic_simulation_result)
-            c7 = fits.Column(name='simulated_redshift', array=simulated_redshift,
-                             format=n_basic_simulation_result + 'E', dim=dim_basic_simulation_result)
-            c8 = fits.Column(name='dmapper_w', array=dmapper_w, format=n_detail_simulation_result + 'D',
-                             dim=dim_detail_simulation_result)
-            c9 = fits.Column(name='alpha_R', array=alpha_R, format=n_detail_simulation_result + 'D',
-                             dim=dim_detail_simulation_result)
-            c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
-            t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
-            t.writeto(name, overwrite=True)
+        if self.short_file:
+            for name in self.file_name:
+                c1 = fits.Column(name='input_redshift', array=input_redshift, format=n_basic_input + 'E',
+                                 dim=dim_basic_input)
+                c2 = fits.Column(name='input_a_over_c', array=input_a_over_c, format=n_basic_input + 'E',
+                                 dim=dim_basic_input)
+                c3 = fits.Column(name='true_mass', array=true_mass, format=n_basic_input + 'D', dim=dim_basic_input)
+                c4 = fits.Column(name='simulated_mass', array=simulated_mass, format=n_basic_simulation_result + 'D',
+                                 dim=dim_basic_simulation_result)
+                c5 = fits.Column(name='same_redshift', array=same_redshift, format=n_basic_simulation_result + 'L',
+                                 dim=dim_basic_simulation_result)
+                c6 = fits.Column(name='mass_bias', array=mass_bias, format=n_basic_simulation_result + 'D',
+                                 dim=dim_basic_simulation_result)
+                c7 = fits.Column(name='simulated_redshift', array=simulated_redshift,
+                                 format=n_basic_simulation_result + 'E', dim=dim_basic_simulation_result)
+                t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7])
+                t.writeto(name, overwrite=True)
+        else:
+            for name in self.file_name:
+                c1 = fits.Column(name='input_redshift', array=input_redshift, format=n_basic_input + 'E',
+                                 dim=dim_basic_input)
+                c2 = fits.Column(name='input_a_over_c', array=input_a_over_c, format=n_basic_input + 'E',
+                                 dim=dim_basic_input)
+                c3 = fits.Column(name='true_mass', array=true_mass, format=n_basic_input + 'D', dim=dim_basic_input)
+                c4 = fits.Column(name='simulated_mass', array=simulated_mass, format=n_basic_simulation_result + 'D',
+                                 dim=dim_basic_simulation_result)
+                c5 = fits.Column(name='same_redshift', array=same_redshift, format=n_basic_simulation_result + 'L',
+                                 dim=dim_basic_simulation_result)
+                c6 = fits.Column(name='mass_bias', array=mass_bias, format=n_basic_simulation_result + 'D',
+                                 dim=dim_basic_simulation_result)
+                c7 = fits.Column(name='simulated_redshift', array=simulated_redshift,
+                                 format=n_basic_simulation_result + 'E', dim=dim_basic_simulation_result)
+                c8 = fits.Column(name='dmapper_w', array=dmapper_w, format=n_detail_simulation_result + 'D',
+                                 dim=dim_detail_simulation_result)
+                c9 = fits.Column(name='alpha_R', array=alpha_R, format=n_detail_simulation_result + 'D',
+                                 dim=dim_detail_simulation_result)
+                c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
+                t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
+                t.writeto(name, overwrite=True)
 
     def prepare_argument(self, halo_masses, halo_types, lbd, noise):
         """
@@ -321,22 +361,40 @@ class Simulator:
 
     def write_files_fits(self, outputs):
         """:param outputs: list of outputs"""
-        for output in outputs:
-            # this is going to be a very long for loop, but it cannot be help
-            file = fits.open(output[-1], mode='update')
-            data = file[1].data
-            z_index = output[0]
-            a_over_c_index = output[1]
-            trial_index = output[2]
-            data['input_redshift'][z_index, a_over_c_index] = self.z_samp[output[0]]
-            data['input_a_over_c'][z_index, a_over_c_index] = self.a_over_c_sample[output[1]]
-            data['true_mass'][z_index, a_over_c_index] = output[4]
-            data['simulated_mass'][z_index, a_over_c_index, trial_index] = output[7]
-            data['same_redshift'][z_index, a_over_c_index, trial_index] = output[5]
-            data['mass_bias'][z_index, a_over_c_index, trial_index] = output[8]
-            data['simulated_redshift'][z_index, a_over_c_index, trial_index] = output[6]
-            data['dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[10]  # not necessary
-            data['alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[9]
-            data['input_shear'][z_index, a_over_c_index, trial_index, :, :, :] = output[3]
-            print('writing data in')
-            file.close()
+        if self.short_file:
+            for output in outputs:
+                # this is going to be a very long for loop, but it cannot be help
+                file = fits.open(output[-1], mode='update')
+                data = file[1].data
+                z_index = output[0]
+                a_over_c_index = output[1]
+                trial_index = output[2]
+                data['input_redshift'][z_index, a_over_c_index] = self.z_samp[output[0]]
+                data['input_a_over_c'][z_index, a_over_c_index] = self.a_over_c_sample[output[1]]
+                data['true_mass'][z_index, a_over_c_index] = output[4]
+                data['simulated_mass'][z_index, a_over_c_index, trial_index] = output[7]
+                data['same_redshift'][z_index, a_over_c_index, trial_index] = output[5]
+                data['mass_bias'][z_index, a_over_c_index, trial_index] = output[8]
+                data['simulated_redshift'][z_index, a_over_c_index, trial_index] = output[6]
+                print('writing data in')
+                file.close()
+        else:
+            for output in outputs:
+                # this is going to be a very long for loop, but it cannot be help
+                file = fits.open(output[-1], mode='update')
+                data = file[1].data
+                z_index = output[0]
+                a_over_c_index = output[1]
+                trial_index = output[2]
+                data['input_redshift'][z_index, a_over_c_index] = self.z_samp[output[0]]
+                data['input_a_over_c'][z_index, a_over_c_index] = self.a_over_c_sample[output[1]]
+                data['true_mass'][z_index, a_over_c_index] = output[4]
+                data['simulated_mass'][z_index, a_over_c_index, trial_index] = output[7]
+                data['same_redshift'][z_index, a_over_c_index, trial_index] = output[5]
+                data['mass_bias'][z_index, a_over_c_index, trial_index] = output[8]
+                data['simulated_redshift'][z_index, a_over_c_index, trial_index] = output[6]
+                data['dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[10]  # not necessary
+                data['alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = output[9]
+                data['input_shear'][z_index, a_over_c_index, trial_index, :, :, :] = output[3]
+                print('writing data in')
+                file.close()
