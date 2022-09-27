@@ -87,6 +87,7 @@ class Simulator:
         self.shape_detail_simulation_result = (
             self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
             self.Grid.nx)
+        self.noise_std = self.prepare_noise_std()
 
     def create_files_h5(self):
         """Not that supported under parallelization"""
@@ -246,6 +247,25 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i]])
         return arguments
 
+    def prepare_noise_std(self):
+        halo = hmod.triaxialJS02(mass=1, conc=4, redshift=0.2425, ra=0., dec=0., a_over_b=1,
+                                 a_over_c=1, tri_nfw=True,
+                                 long_truncation=True, OLS03=True)  # just a placeholder halo
+        another_parser = ConfigParser()  # parser for reconstruction
+        another_parser.read(self.init_file_name) # make sure noise is created with same smoothing etc.
+        general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
+        all_noise = np.zeros((100, 10, 48, 48), dtype=np.complex64)
+        for i in range(100):
+            all_noise[i, :, :, :] = general_grid.calc_noise(halo)
+        dg1 = all_noise.real
+        dg2 = all_noise.imag
+        noise_std = np.zeros((10, 48, 48))
+        for l in range(48):
+            for m in range(48):
+                for n in range(10):
+                    noise_std[n, l, m] = np.sqrt(np.std(dg1[:, n, l, m]) ** 2 + np.std(dg2[:, n, l, m]) ** 2)
+        return noise_std
+
     def simulate(self, args):
         """
         :param args contains the following (and it is a list).
@@ -295,12 +315,14 @@ class Simulator:
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
             data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True) # add same random seed
+            gErr = self.noise_std
             print('noisy reconstruction')
         else:
             data2 = general_grid.add_halo(halo)[1]
             gErrval = 0.05
+            gErr = np.ones(Grid.shape) * gErrval
             print('noiseless reconstruction')
-        gErr = np.ones(Grid.shape) * gErrval
+        # gErr = np.ones(Grid.shape) * gErrval
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         # file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
