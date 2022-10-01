@@ -23,6 +23,23 @@ from astropy.io import fits
 from schwimmbad import MPIPool
 import sys
 
+def extract_valid_values(mass_bias_array):
+    '''Mass_bias_array: array based on which you will be extracting valid values'''
+    shape = mass_bias_array.shape
+    mask = np.full(shape, False) # where valid values lies
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            bias_array_masked = np.ma.masked_invalid(mass_bias_array[i,j])
+            mask[i,j,:] = ~bias_array_masked.mask
+    return mask
+
+def average_bias(value_array, mask):
+    shape = value_array.shape
+    average_vals = np.zeros((shape[0], shape[1]))
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            average_vals[i,j] = np.average(value_array[i,j][mask[i,j]])
+    return average_vals
 
 def plot_biases(filenames, data_name):
     return
@@ -88,6 +105,12 @@ class Simulator:
             self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
             self.Grid.nx)
         self.noise_std = self.prepare_noise_std()
+        if parser.has_option('false_detection','enable_false_detection'):
+            self.enable_false_detection = parser.getboolean('false_detection','enable_false_detection')
+            self.distance_limit = parser.getint('false_detection', 'distance_limit')
+            self.redshift_limit = parser.getint('false_detection', 'redshift_limit')
+        else:
+            self.enable_false_detection = False
 
     def create_files_h5(self):
         """Not that supported under parallelization"""
