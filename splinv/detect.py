@@ -39,7 +39,7 @@ def local_maxima_3D(data,npixt=2,npixp=1,threshold=1.):
     footprint[npixp, npixt, npixt] = 1
     smoothed    =   ndi.convolve(data,weights=footprint,mode='constant')
     values = smoothed[mask_local_maxima]
-    return coords, values
+    return np.array(coords), values
 
 def local_minima_3D(data,npixt=2,npixp=2,threshold=1.):
     """Detects local minima in a 3D array
@@ -64,4 +64,4 @@ def local_minima_3D(data,npixt=2,npixp=2,threshold=1.):
     mask_local_minima = (data < filtered)& (data<-threshold)
     coords = np.int_(np.asarray(np.where(mask_local_minima)).T)
     values = data[mask_local_minima]
-    return coords, values
+    return np.array(coords), values

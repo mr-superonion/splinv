@@ -10,18 +10,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
+import h5py
+import splinv
 import numpy as np
-from splinv import detect
 from splinv import hmod
+from splinv import detect
+from astropy.io import fits
+from astropy.table import Table
 from splinv import darkmapper
 from splinv.grid import Cartesian
 from configparser import ConfigParser
-import splinv
-import h5py
-from astropy.io import fits
-# import time
-from schwimmbad import MPIPool
-import sys
 
 def extract_valid_values(mass_bias_array):
     '''Mass_bias_array: array based on which you will be extracting valid values'''
@@ -361,48 +359,88 @@ class Simulator:
             w = dmapper.adaptive_lasso_weight(gamma=2.)
             dmapper.fista_gradient_descent(3000, w=w)
         dmapper.reconstruct()
-        c1 = detect.local_maxima_3D(dmapper.deltaR)
+        c1 = detect.local_maxima_3D(dmapper.deltaR)[0] # the peak value is not important
+        print(c1)
+        ndet    =   c1.shape[0]
+        print('Detected %d clusters!' %ndet)
+        z_col   =   c1[:,0]
+        y_col   =   c1[:,1]
+        x_col   =   c1[:,2]
+        mass_est=   np.array([np.sum((dmapper.alphaR * dmapper._w)\
+                        [z_col[i], :, y_col[i], x_col[i]]) \
+                        for i in range(ndet)])
+        log_m_est=  np.log10(mass_est) + 14.
+        print(log_m_est)
 
-        try:
-            simulated_redshift_index = c1[0][0][0]
-            simulated_redshift = self.z_samp[simulated_redshift_index]
-            if simulated_redshift_index != z_index:
-                # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
-                same_redshift = False
-            else:
-                # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
-                same_redshift = True
-            frame_index = 0
-            for i in range(self.nframe):
-                location = detect.local_maxima_3D(dmapper.alphaR[:, i, :, :])
-                if len(location[0]) > 0:  # max detected
-                    frame_index = i  # which "frame"
-                    c1 = location  # redshift plane, and position
-                    break
-            reconstructed_log_m = np.log10(
-                (dmapper.alphaR * dmapper._w)[c1[0][0][0], frame_index, c1[0][0][1], c1[0][0][2]]) + 14.
-        except:
-            print('detection failed')
-            reconstructed_log_m = -np.inf
-            same_redshift = False
-            simulated_redshift = -np.inf  # impossible value
+        out_table= Table()
+        # XL:
+        # for each simulation, we write a detected catalog to disk
+        # this is also what we do in real observation -- read shear map and
+        # generate halo catalog and write to disk
+        out_table['z']=z_col
+        out_table['y']=y_col
+        out_table['x']=x_col
+        out_table['log10m']=log_m_est
+        print(out_table)
+        #save_file_name='outputs/src_z%02d_m%02d_n%03d.fits' %(sim_zid,sim_mid,sim_nid)
+        #out_table.write()
+
+        # XL:
+        # the following parameters can be derived from the detected cluster
+        # catalog and the saved parameters of input halo, we do not need to
+        # save them:
+        # z_index, a_over_c_index, trial_index
+        # M_200, same_redshift, simulated_redshift, simulated_mass,
+        # mass_bias, dmapper.alphaR, dmapper._w
+
+        # XL: data2 is not useful!
+        # data2
+
+
+        # try:
+        #     simulated_redshift_index = c1[0][0] # need to save all the elements
+        #     simulated_redshift = self.z_samp[simulated_redshift_index]
+        #     if simulated_redshift_index != z_index:
+        #         # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
+        #         same_redshift = False
+        #     else:
+        #         # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
+        #         same_redshift = True
+        #     print('stop here!!')
+        #     return
+
+        #     # XL: I do not think the following code does the job you want so comment it out
+        #     # frame_index = 0
+        #     # for i in range(self.nframe):
+        #     #     location = detect.local_maxima_3D(dmapper.alphaR[:, i, :, :])
+        #     #     if len(location[0]) > 0:  # max detected
+        #     #         frame_index = i  # which "frame"
+        #     #         c1 = location  # redshift plane, and position
+        #     #         break
+        #     # See the example below
+        #     reconstructed_log_m = np.log10(
+        #         (dmapper.alphaR * dmapper._w)[c1[0][0][0], frame_index, c1[0][0][1], c1[0][0][2]]) + 14.
+        # except:
+        #     print('detection failed')
+        #     reconstructed_log_m = -np.inf
+        #     same_redshift = False
+        #     simulated_redshift = -np.inf  # impossible value
+
         # file['basics/simulated_mass'][
         #     z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
-        simulated_mass = 10 ** reconstructed_log_m
-        if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
-            # file['basics/mass_bias'][
-            #     z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
-            mass_bias = M_200 - 10 ** reconstructed_log_m
-        else:
-            # file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
-            mass_bias = -np.inf
-            # just giving it a non-readable value for plotting
+        # simulated_mass = 10 ** reconstructed_log_m
+        # if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
+        #     # file['basics/mass_bias'][
+        #     #     z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
+        #     mass_bias = M_200 - 10 ** reconstructed_log_m
+        # else:
+        #     # file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
+        #     mass_bias = -np.inf
+        #     # just giving it a non-readable value for plotting
         # file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
         # file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
         # file.close()
-        return [z_index, a_over_c_index, trial_index, data2, M_200, same_redshift, simulated_redshift, simulated_mass,
-                mass_bias,
-                dmapper.alphaR, dmapper._w, save_file_name]
+        return
 
     def write_files_fits(self, outputs):
         """:param outputs: list of outputs"""
