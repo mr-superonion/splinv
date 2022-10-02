@@ -1920,7 +1920,7 @@ class triaxialJS02_grid_mock(Cartesian):
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear, sigma
 
-    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits'):
+    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed = None):
         lk = halo.lensKernel(self.zcgrid)
 
         if add_noise:
@@ -1931,9 +1931,12 @@ class triaxialJS02_grid_mock(Cartesian):
             s19A_table = Table(data)
             error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
             shear = dsigma * lk[:, None]
-            random_ints1, random_ints2 = np.random.randint(0, high=error1.size, size=shear.size), np.random.randint(0,
-                                                                                                                    high=error1.size,
-                                                                                                                    size=shear.size)
+            if seed != None:
+                np.random.seed(seed)
+            random_ints1 = np.random.randint(0, high=error1.size, size=shear.size)
+            if seed != None:
+                np.random.seed(993 - seed)
+            random_ints2 = np.random.randint(0, high=error1.size, size=shear.size)
             dg1 = np.zeros(shear.size)
             dg2 = np.zeros(shear.size)
             for i in range(shear.size):  # compute errors

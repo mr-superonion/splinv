@@ -10,6 +10,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
+import os
 import h5py
 import splinv
 import numpy as np
@@ -20,24 +21,28 @@ from astropy.table import Table
 from splinv import darkmapper
 from splinv.grid import Cartesian
 from configparser import ConfigParser
+import pandas as pd
+
 
 def extract_valid_values(mass_bias_array):
     '''Mass_bias_array: array based on which you will be extracting valid values'''
     shape = mass_bias_array.shape
-    mask = np.full(shape, False) # where valid values lies
+    mask = np.full(shape, False)  # where valid values lies
     for i in range(shape[0]):
         for j in range(shape[1]):
-            bias_array_masked = np.ma.masked_invalid(mass_bias_array[i,j])
-            mask[i,j,:] = ~bias_array_masked.mask
+            bias_array_masked = np.ma.masked_invalid(mass_bias_array[i, j])
+            mask[i, j, :] = ~bias_array_masked.mask
     return mask
+
 
 def average_bias(value_array, mask):
     shape = value_array.shape
     average_vals = np.zeros((shape[0], shape[1]))
     for i in range(shape[0]):
         for j in range(shape[1]):
-            average_vals[i,j] = np.average(value_array[i,j][mask[i,j]])
+            average_vals[i, j] = np.average(value_array[i, j][mask[i, j]])
     return average_vals
+
 
 def plot_biases(filenames, data_name):
     return
@@ -103,8 +108,8 @@ class Simulator:
             self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
             self.Grid.nx)
         self.noise_std = self.prepare_noise_std()
-        if parser.has_option('false_detection','enable_false_detection'):
-            self.enable_false_detection = parser.getboolean('false_detection','enable_false_detection')
+        if parser.has_option('false_detection', 'enable_false_detection'):
+            self.enable_false_detection = parser.getboolean('false_detection', 'enable_false_detection')
             self.distance_limit = parser.getint('false_detection', 'distance_limit')
             self.redshift_limit = parser.getint('false_detection', 'redshift_limit')
         else:
@@ -140,12 +145,14 @@ class Simulator:
                 simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
                                                                   shape=shape_basic_simulation_result,
                                                                   dtype=np.float64)
-                same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
+                same_redshift = file_basics_group.create_dataset(name='same_redshift',
+                                                                 shape=shape_basic_simulation_result,
                                                                  dtype=bool)
                 mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
                                                              dtype=np.float64)
                 simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
-                                                                      shape=shape_basic_simulation_result, dtype=np.float32)
+                                                                      shape=shape_basic_simulation_result,
+                                                                      dtype=np.float32)
         else:
             for name in self.file_name:
                 file = h5py.File(name, 'w')
@@ -162,12 +169,14 @@ class Simulator:
                 simulated_mass = file_basics_group.create_dataset(name='simulated_mass',
                                                                   shape=shape_basic_simulation_result,
                                                                   dtype=np.float64)
-                same_redshift = file_basics_group.create_dataset(name='same_redshift', shape=shape_basic_simulation_result,
+                same_redshift = file_basics_group.create_dataset(name='same_redshift',
+                                                                 shape=shape_basic_simulation_result,
                                                                  dtype=bool)
                 mass_bias = file_basics_group.create_dataset(name='mass_bias', shape=shape_basic_simulation_result,
                                                              dtype=np.float64)
                 simulated_redshift = file_basics_group.create_dataset(name='simulated_redshift',
-                                                                      shape=shape_basic_simulation_result, dtype=np.float32)
+                                                                      shape=shape_basic_simulation_result,
+                                                                      dtype=np.float32)
                 file_detail_group = file.create_group('detail')
                 # shape might be ny,nx but it doesn't matter for now....
                 dmapper_w = file_detail_group.create_dataset(name='dmapper_w',
@@ -237,7 +246,8 @@ class Simulator:
                                  dim=dim_detail_simulation_result)
                 c9 = fits.Column(name='alpha_R', array=alpha_R, format=n_detail_simulation_result + 'D',
                                  dim=dim_detail_simulation_result)
-                c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C', dim=dim_detail_input)
+                c10 = fits.Column(name='input_shear', array=input_shear, format=n_detail_input + 'C',
+                                  dim=dim_detail_input)
                 t = fits.BinTableHDU.from_columns([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10])
                 t.writeto(name, overwrite=True)
 
@@ -273,7 +283,7 @@ class Simulator:
                                  a_over_c=1, tri_nfw=True,
                                  long_truncation=True, OLS03=True)  # just a placeholder halo
         another_parser = ConfigParser()  # parser for reconstruction
-        another_parser.read(self.init_file_name) # make sure noise is created with same smoothing etc.
+        another_parser.read(self.init_file_name)  # make sure noise is created with same smoothing etc.
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         all_noise = np.zeros((100, 10, 48, 48), dtype=np.complex64)
         for i in range(100):
@@ -335,7 +345,8 @@ class Simulator:
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
-            data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True) # add same random seed
+            data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True,
+                                                               seed=trial_index)  # add same random seed
             gErr = self.noise_std
             print('noisy reconstruction')
         else:
@@ -359,31 +370,63 @@ class Simulator:
             w = dmapper.adaptive_lasso_weight(gamma=2.)
             dmapper.fista_gradient_descent(3000, w=w)
         dmapper.reconstruct()
-        c1 = detect.local_maxima_3D(dmapper.deltaR)[0] # the peak value is not important
+        c1 = detect.local_maxima_3D(dmapper.deltaR)[0]  # the peak value is not important
         print(c1)
-        ndet    =   c1.shape[0]
-        print('Detected %d clusters!' %ndet)
-        z_col   =   c1[:,0]
-        y_col   =   c1[:,1]
-        x_col   =   c1[:,2]
-        mass_est=   np.array([np.sum((dmapper.alphaR * dmapper._w)\
-                        [z_col[i], :, y_col[i], x_col[i]]) \
-                        for i in range(ndet)])
-        log_m_est=  np.log10(mass_est) + 14.
-        print(log_m_est)
+        ndet = c1.shape[0]
+        print('Detected %d clusters!' % ndet)
+        z_col = c1[:, 0]
+        y_col = c1[:, 1]
+        x_col = c1[:, 2]
+        x_center = np.ones_like(y_col) * 24.
+        y_center = np.ones_like(y_col) * 24.
 
-        out_table= Table()
-        # XL:
-        # for each simulation, we write a detected catalog to disk
-        # this is also what we do in real observation -- read shear map and
-        # generate halo catalog and write to disk
-        out_table['z']=z_col
-        out_table['y']=y_col
-        out_table['x']=x_col
-        out_table['log10m']=log_m_est
-        print(out_table)
-        #save_file_name='outputs/src_z%02d_m%02d_n%03d.fits' %(sim_zid,sim_mid,sim_nid)
-        #out_table.write()
+        mass_est = np.zeros_like(z_col, dtype=np.float128)
+        frame_counter = np.zeros_like(z_col, dtype=int)
+        for i in range(ndet):
+            for j in range(self.nframe):
+                mass_at_loc = (dmapper.alphaR * dmapper._w)[z_col[i], j, y_col[i], x_col[i]]
+                if mass_at_loc > 10:  # mass detected
+                    frame_counter = frame_counter + 2 ** j
+                mass_est[i] = mass_est[i] + mass_at_loc
+        log_m_est = np.log10(mass_est) + 14.
+        # original halo info
+        input_z_index = np.ones_like(z_col, dtype=int) * z_index
+        input_a_over_c_index = np.ones_like(z_col, dtype=int) * a_over_c_index
+        halo_id = np.ones_like(z_col, dtype=int) * int(trial_index)
+
+        distance_from_center = np.sqrt((x_col - x_center) ** 2 + (y_col - y_center) ** 2)
+        redshift_bias = np.abs(z_col - input_z_index)
+        print('distance', distance_from_center)
+        print('bias', redshift_bias)
+        valid_distance = np.ma.masked_less_equal(distance_from_center, 3).mask
+        valid_redshift = np.ma.masked_less_equal(redshift_bias, 2).mask
+        print('valid distance', valid_distance)
+        print('valid_redshift', valid_redshift)
+        successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
+
+        # out_table = Table()
+        # # XL:
+        # # for each simulation, we write a detected catalog to disk
+        # # this is also what we do in real observation -- read shear map and
+        # # generate halo catalog and write to disk
+        # out_table['z'] = z_col
+        # out_table['y'] = y_col
+        # out_table['x'] = x_col
+        # out_table['log10m'] = log_m_est
+
+        os.makedirs(save_file_name, exist_ok=True)
+        df = pd.DataFrame({'reconstructed_z': z_col,
+                           'reconstructed_x': x_col,
+                           'reconstructed_y': y_col,
+                           'reconstructed_log10m': log_m_est,
+                           'input_z': input_z_index,
+                           'input_a_over_c': input_a_over_c_index,
+                           'successful_reconstruction': successful_reconstruction.astype(int),
+                           'halo_id': halo_id})
+        file_name = str(z_index) + str(a_over_c_index) + str(trial_index) + '.csv'
+        df.to_csv(save_file_name + '/' + file_name, index=False)
+        # save_file_name='outputs/src_z%02d_m%02d_n%03d.fits' %(sim_zid,sim_mid,sim_nid)
+        # out_table.write()
 
         # XL:
         # the following parameters can be derived from the detected cluster
@@ -395,7 +438,6 @@ class Simulator:
 
         # XL: data2 is not useful!
         # data2
-
 
         # try:
         #     simulated_redshift_index = c1[0][0] # need to save all the elements
