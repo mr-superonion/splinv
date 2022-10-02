@@ -17,7 +17,6 @@ import numpy as np
 from splinv import hmod
 from splinv import detect
 from astropy.io import fits
-from astropy.table import Table
 from splinv import darkmapper
 from splinv.grid import Cartesian
 from configparser import ConfigParser
@@ -371,7 +370,6 @@ class Simulator:
             dmapper.fista_gradient_descent(3000, w=w)
         dmapper.reconstruct()
         c1 = detect.local_maxima_3D(dmapper.deltaR)[0]  # the peak value is not important
-        print(c1)
         ndet = c1.shape[0]
         print('Detected %d clusters!' % ndet)
         z_col = c1[:, 0]
@@ -385,8 +383,8 @@ class Simulator:
         for i in range(ndet):
             for j in range(self.nframe):
                 mass_at_loc = (dmapper.alphaR * dmapper._w)[z_col[i], j, y_col[i], x_col[i]]
-                if mass_at_loc > 10:  # mass detected
-                    frame_counter = frame_counter + 2 ** j
+                if mass_at_loc > 0.01:  # mass detected (our minimal threshold of halo mass is 10^12 )
+                    frame_counter[i] = frame_counter[i] + 2 ** j
                 mass_est[i] = mass_est[i] + mass_at_loc
         log_m_est = np.log10(mass_est) + 14.
         # original halo info
@@ -404,16 +402,6 @@ class Simulator:
         print('valid_redshift', valid_redshift)
         successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
 
-        # out_table = Table()
-        # # XL:
-        # # for each simulation, we write a detected catalog to disk
-        # # this is also what we do in real observation -- read shear map and
-        # # generate halo catalog and write to disk
-        # out_table['z'] = z_col
-        # out_table['y'] = y_col
-        # out_table['x'] = x_col
-        # out_table['log10m'] = log_m_est
-
         os.makedirs(save_file_name, exist_ok=True)
         df = pd.DataFrame({'reconstructed_z': z_col,
                            'reconstructed_x': x_col,
@@ -425,20 +413,6 @@ class Simulator:
                            'halo_id': halo_id})
         file_name = str(z_index) + str(a_over_c_index) + str(trial_index) + '.csv'
         df.to_csv(save_file_name + '/' + file_name, index=False)
-        # save_file_name='outputs/src_z%02d_m%02d_n%03d.fits' %(sim_zid,sim_mid,sim_nid)
-        # out_table.write()
-
-        # XL:
-        # the following parameters can be derived from the detected cluster
-        # catalog and the saved parameters of input halo, we do not need to
-        # save them:
-        # z_index, a_over_c_index, trial_index
-        # M_200, same_redshift, simulated_redshift, simulated_mass,
-        # mass_bias, dmapper.alphaR, dmapper._w
-
-        # XL: data2 is not useful!
-        # data2
-
         # try:
         #     simulated_redshift_index = c1[0][0] # need to save all the elements
         #     simulated_redshift = self.z_samp[simulated_redshift_index]
