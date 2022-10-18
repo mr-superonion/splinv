@@ -277,6 +277,33 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i]])
         return arguments
 
+    def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index):
+        """
+        Caution: Right now it does not support multiple types of halo yet.
+        :param halo_masses: an array of log masses
+        :param halo_types: a list of strings dictating halo types
+        :param lbd: an array of lbd in sparse reconstruction
+        :param noise: whether noisy construction
+        :return: the arguments to start multipool processing
+        """
+        arguments = []
+        if not len(halo_masses) == len(self.file_name):
+            raise ValueError('there should be as many files as there are masses')
+        if not len(halo_masses) == len(lbd):
+            raise ValueError('there should be as many mass as there are lbds')
+        if not len(halo_masses) == len(halo_types):
+            raise ValueError('halo types correspond to halo shapes')
+        # all simulation
+        for i in range(len(halo_masses)):
+            # iterating through files, which uses same lbd, mass, and types of halo
+            # for j in range(self.n_z_samp):
+            # for k in range(self.n_a_over_c_sample):
+            for l in range(self.n_trials):
+                # which number of trials we are on
+                arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
+                                  halo_types[i], z_index, a_over_c_index, l, noise[i]])
+        return arguments
+
     def prepare_noise_std(self):
         halo = hmod.triaxialJS02(mass=1, conc=4, redshift=0.2425, ra=0., dec=0., a_over_b=1,
                                  a_over_c=1, tri_nfw=True,
