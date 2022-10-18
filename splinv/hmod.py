@@ -995,7 +995,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field, ra, dec, nsamp
 
 
-def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1, null_halo = False):
+def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1, null_halo=False):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
     kappa field on a whole grid in fourier space. This is evident in
@@ -1030,11 +1030,11 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, r
         for i in range(nlp):
             ra[i] = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
             dec[i] = np.random.rand(nsamp) * Ly - Ly / 2 + dec_0
-            if null_halo: # don't compute the shear field.
+            if null_halo:  # don't compute the shear field.
                 dsigma_field[i] = np.zeros(nsamp)
             else:
                 dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
-                                                     dec[i] * 3600.)
+                                                         dec[i] * 3600.)
         return dsigma_field, ra, dec, nsamp
 
 
@@ -1920,7 +1920,7 @@ class triaxialJS02_grid_mock(Cartesian):
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear, sigma
 
-    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed = None):
+    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed=None):
         lk = halo.lensKernel(self.zcgrid)
 
         if add_noise:
@@ -1935,7 +1935,7 @@ class triaxialJS02_grid_mock(Cartesian):
                 np.random.seed(seed)
             random_ints1 = np.random.randint(0, high=error1.size, size=shear.size)
             if seed != None:
-                np.random.seed(993 - seed)
+                np.random.seed(seed*2)  # was 993-seed
             random_ints2 = np.random.randint(0, high=error1.size, size=shear.size)
             dg1 = np.zeros(shear.size)
             dg2 = np.zeros(shear.size)
@@ -1949,7 +1949,8 @@ class triaxialJS02_grid_mock(Cartesian):
             shearpixreal = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
             shearpixcomplex = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
             for i in range(len(self.zcgrid)):
-                shearpixreal[i, :, :] = self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
+                shearpixreal[i, :, :] = \
+                self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
                 shearpixcomplex[i, :, :] = \
                     self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].imag, method='FFT')[0]
             shearpix = shearpixreal + 1j * shearpixcomplex
@@ -1966,7 +1967,7 @@ class triaxialJS02_grid_mock(Cartesian):
     def calc_noise(self, halo, shear_catalog_name='9347.fits'):
         lk = halo.lensKernel(self.zcgrid)
         dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
-                                                                       normalize=False, nlp=lk.size, null_halo = True)
+                                                                       normalize=False, nlp=lk.size, null_halo=True)
         s19A = fits.open(shear_catalog_name)
         data = s19A[1].data
         s19A_table = Table(data)
