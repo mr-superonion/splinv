@@ -437,8 +437,9 @@ class Simulator:
                            'input_z': input_z_index,
                            'input_a_over_c': input_a_over_c_index,
                            'successful_reconstruction': successful_reconstruction.astype(int),
+                           'frame_counter': frame_counter.astype(int),
                            'halo_id': halo_id})
-        file_name = str(z_index) + str(a_over_c_index) + str(trial_index) + '.csv'
+        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv'
         df.to_csv(save_file_name + '/' + file_name, index=False)
         # try:
         #     simulated_redshift_index = c1[0][0] # need to save all the elements

@@ -2053,7 +2053,8 @@ def make_mock(dat):
     erms = dat['ishape_hsm_regauss_derived_rms_e']  # RMS of shape noise
     sigma_e2 = (dat['ishape_hsm_regauss_derived_shape_weight']) ** (-1) - erms ** 2
     esigma = np.sqrt(sigma_e2) * (2 * np.random.randint(0, 2, size=(
-        sigma_e2.shape)) - 1)  # my dataset does not have this dat['ishape_hsm_regauss_derived_sigma_e'] # 1 sigma of measurment error
+        sigma_e2.shape)) - 1)  # my dataset does not have this dat['ishape_hsm_regauss_derived_sigma_e'] # 1 sigma of
+    # measurment error
     eres = 1. - np.average(erms ** 2.)  # shear response (no shape weight)
 
     # rotate galaxy
