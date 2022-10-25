@@ -280,7 +280,7 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i], noise_level[i]])
         return arguments
 
-    def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index):
+    def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,noise_level=None):
         """
         Caution: Right now it does not support multiple types of halo yet.
         :param halo_masses: an array of log masses
@@ -289,6 +289,8 @@ class Simulator:
         :param noise: whether noisy construction
         :return: the arguments to start multipool processing
         """
+        if noise_level is None:
+            noise_level = np.ones_like(lbd)
         arguments = []
         if not len(halo_masses) == len(self.file_name):
             raise ValueError('there should be as many files as there are masses')
@@ -304,7 +306,7 @@ class Simulator:
             for l in range(self.n_trials):
                 # which number of trials we are on
                 arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
-                                  halo_types[i], z_index, a_over_c_index, l, noise[i]])
+                                  halo_types[i], z_index, a_over_c_index, l, noise[i],noise_level[i]])
         return arguments
 
     def prepare_noise_std(self):
