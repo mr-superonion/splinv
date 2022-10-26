@@ -543,8 +543,8 @@ class TwoHaloSimulator:
         self.dictionary_name = dictionary_name_raw.split(", ")
         self.n_steps = parser.getint('file', 'n_steps')
         another_parser = ConfigParser()
-        start_distance = parser.getfloat('file', 'start_distance')
-        end_distance = parser.getfloat('file', 'end_distance')
+        start_distance = parser.getfloat('simulation', 'start_distance')
+        end_distance = parser.getfloat('simulation', 'end_distance')
         self.distance = np.linspace(start_distance, end_distance, self.n_steps)  # a list of possible distances
         # print(self.init_file_name)
         another_parser.read(self.init_file_name)
@@ -565,16 +565,13 @@ class TwoHaloSimulator:
         else:
             self.enable_false_detection = False
 
-    def prepare_argument(self, halo_masses, halo_types, start_distance, end_distance, lbd, redshifts):
+    def prepare_argument(self, halo_masses, halo_types, lbd, redshifts):
         """
         Caution: Right now it does not support multiple types of halo yet.
         :param redshifts: redshift of the two halos
-        :param end_distance: the initial distance between 2 halos
-        :param start_distance: the final distance between 2 halos
         :param halo_masses: an array of log masses
         :param halo_types: a list of strings dictating halo types
         :param lbd: an array of lbd in sparse reconstruction
-        :param noise: whether noisy construction
         :return: the arguments to start multipool processing
         """
         arguments = []
@@ -626,6 +623,7 @@ class TwoHaloSimulator:
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
+        print(dictionary_name)
         # file = h5py.File(save_file_name, 'r+')
         # file['basics/input_redshift'][z_index,a_over_c_index] = z_h
         # file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
