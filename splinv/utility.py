@@ -541,7 +541,7 @@ class TwoHaloSimulator:
         self.init_file_name = parser.get('file', 'init_filename')  # do change the dictionary name
         dictionary_name_raw = parser.get('file', 'dictionary_name')
         self.dictionary_name = dictionary_name_raw.split(", ")
-        self.n_steps = parser.getint('file', 'n_steps')
+        self.n_steps = parser.getint('simulation', 'n_steps')
         another_parser = ConfigParser()
         start_distance = parser.getfloat('simulation', 'start_distance')
         end_distance = parser.getfloat('simulation', 'end_distance')
