@@ -378,7 +378,7 @@ class Simulator:
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
             data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True,
-                                                               seed=trial_index)  # add same random seed
+                                                               seed=trial_index, noise_level = noise_level)  # add same random seed
             gErr = self.noise_std*noise_level
             print('noisy reconstruction')
         else:
