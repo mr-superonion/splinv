@@ -326,6 +326,9 @@ class Simulator:
             for m in range(48):
                 for n in range(10):
                     noise_std[n, l, m] = np.sqrt(np.std(dg1[:, n, l, m]) ** 2 + np.std(dg2[:, n, l, m]) ** 2)
+        print("AVERAGE NOISE STD IS")
+        print(np.average(noise_std))
+        print("AVERAGE NOISE STD IS")
         return noise_std
 
     def simulate(self, args):
