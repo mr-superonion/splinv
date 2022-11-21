@@ -386,8 +386,9 @@ class Simulator:
             print('noisy reconstruction')
         else:
             data2 = general_grid.add_halo(halo)[1]
-            gErrval = 0.05
-            gErr = np.ones(Grid.shape) * gErrval
+            #gErrval = 0.05
+            #gErr = np.ones(Grid.shape) * gErrval
+            gErr = self.noise_std
             print('noiseless reconstruction')
         # gErr = np.ones(Grid.shape) * gErrval
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
