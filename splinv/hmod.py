@@ -2131,6 +2131,7 @@ class prepare_numerical_frame(Cartesian):
                 else:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
                                         a_over_b=1.0, long_truncation=long_truncation, OLS03=OLS03)
+                print(self.scale)
                 sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
                                                                        normalize=False)
                 sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
@@ -2138,7 +2139,7 @@ class prepare_numerical_frame(Cartesian):
         hdu1 = fits.PrimaryHDU(self.sigmaAtom)
         hdu1.writeto(self.filename)
         del hdu1
-        return
+        return self.sigmaAtom
 
     def __create_frames_fou(self):
         for izl in range(self.nzl):
