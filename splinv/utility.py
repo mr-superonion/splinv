@@ -316,14 +316,14 @@ class Simulator:
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)  # make sure noise is created with same smoothing etc.
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
-        all_noise = np.zeros((100, 10, 48, 48), dtype=np.complex64)
+        all_noise = np.zeros((100, 10, 96, 96), dtype=np.complex64)
         for i in range(100):
             all_noise[i, :, :, :] = general_grid.calc_noise(halo)
         dg1 = all_noise.real
         dg2 = all_noise.imag
-        noise_std = np.zeros((10, 48, 48))
-        for l in range(48):
-            for m in range(48):
+        noise_std = np.zeros((10, 96, 96))
+        for l in range(96):
+            for m in range(96):
                 for n in range(10):
                     noise_std[n, l, m] = np.sqrt(np.std(dg1[:, n, l, m]) ** 2 + np.std(dg2[:, n, l, m]) ** 2)
         print("AVERAGE NOISE STD IS")
