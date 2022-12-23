@@ -280,7 +280,8 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i], noise_level[i]])
         return arguments
 
-    def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,noise_level=None):
+    def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,
+                                     noise_level=None):
         """
         Caution: Right now it does not support multiple types of halo yet.
         :param halo_masses: an array of log masses
@@ -306,7 +307,7 @@ class Simulator:
             for l in range(self.n_trials):
                 # which number of trials we are on
                 arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
-                                  halo_types[i], z_index, a_over_c_index, l, noise[i],noise_level[i]])
+                                  halo_types[i], z_index, a_over_c_index, l, noise[i], noise_level[i]])
         return arguments
 
     def prepare_noise_std(self):
@@ -355,7 +356,11 @@ class Simulator:
         trial_index = args[7]
         noise = args[8]
         noise_level = args[9]
-
+        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv' # name of simulation data
+        path = save_file_name + '/' + file_name
+        if os.path.isfile((os.path.join(os.getcwd(), path))):
+            print('already done this simulation')
+            return
         z_h = self.z_samp[z_index]
         a_over_c = self.a_over_c_sample[a_over_c_index]
         tri_nfw = False
@@ -381,13 +386,14 @@ class Simulator:
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
             data2, gErrval = general_grid.add_halo_from_dsigma(halo, add_noise=True,
-                                                               seed=trial_index, noise_level = noise_level)  # add same random seed
-            gErr = self.noise_std*noise_level
+                                                               seed=trial_index,
+                                                               noise_level=noise_level)  # add same random seed
+            gErr = self.noise_std * noise_level
             print('noisy reconstruction')
         else:
             data2 = general_grid.add_halo(halo)[1]
-            #gErrval = 0.05
-            #gErr = np.ones(Grid.shape) * gErrval
+            # gErrval = 0.05
+            # gErr = np.ones(Grid.shape) * gErrval
             gErr = self.noise_std
             print('noiseless reconstruction')
         # gErr = np.ones(Grid.shape) * gErrval
@@ -439,7 +445,6 @@ class Simulator:
         print('valid_redshift', valid_redshift)
         successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
 
-        os.makedirs(save_file_name, exist_ok=True)
         df = pd.DataFrame({'reconstructed_z': z_col,
                            'reconstructed_x': x_col,
                            'reconstructed_y': y_col,
@@ -449,7 +454,6 @@ class Simulator:
                            'successful_reconstruction': successful_reconstruction.astype(int),
                            'frame_counter': frame_counter.astype(int),
                            'halo_id': halo_id})
-        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv'
         df.to_csv(save_file_name + '/' + file_name, index=False)
         # try:
         #     simulated_redshift_index = c1[0][0] # need to save all the elements
