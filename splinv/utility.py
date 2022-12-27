@@ -362,6 +362,7 @@ class Simulator:
         if os.path.isfile((os.path.join(os.getcwd(), path))):
             print('already done this simulation')
             return
+        os.makedirs(save_file_name, exist_ok=True)
         z_h = self.z_samp[z_index]
         a_over_c = self.a_over_c_sample[a_over_c_index]
         tri_nfw = False
@@ -457,49 +458,6 @@ class Simulator:
                            'frame_counter': frame_counter.astype(int),
                            'halo_id': halo_id})
         df.to_csv(save_file_name + '/' + file_name, index=False)
-        # try:
-        #     simulated_redshift_index = c1[0][0] # need to save all the elements
-        #     simulated_redshift = self.z_samp[simulated_redshift_index]
-        #     if simulated_redshift_index != z_index:
-        #         # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = False
-        #         same_redshift = False
-        #     else:
-        #         # file['basics/same_redshift'][z_index, a_over_c_index, trial_index] = True
-        #         same_redshift = True
-        #     print('stop here!!')
-        #     return
-
-        #     # XL: I do not think the following code does the job you want so comment it out
-        #     # frame_index = 0
-        #     # for i in range(self.nframe):
-        #     #     location = detect.local_maxima_3D(dmapper.alphaR[:, i, :, :])
-        #     #     if len(location[0]) > 0:  # max detected
-        #     #         frame_index = i  # which "frame"
-        #     #         c1 = location  # redshift plane, and position
-        #     #         break
-        #     # See the example below
-        #     reconstructed_log_m = np.log10(
-        #         (dmapper.alphaR * dmapper._w)[c1[0][0][0], frame_index, c1[0][0][1], c1[0][0][2]]) + 14.
-        # except:
-        #     print('detection failed')
-        #     reconstructed_log_m = -np.inf
-        #     same_redshift = False
-        #     simulated_redshift = -np.inf  # impossible value
-
-        # file['basics/simulated_mass'][
-        #     z_index, a_over_c_index, trial_index] = 10 ** reconstructed_log_m
-        # simulated_mass = 10 ** reconstructed_log_m
-        # if reconstructed_log_m > 12:  # otherwise considered as a failed reconstruction
-        #     # file['basics/mass_bias'][
-        #     #     z_index, a_over_c_index, trial_index] = M_200 - 10 ** reconstructed_log_m
-        #     mass_bias = M_200 - 10 ** reconstructed_log_m
-        # else:
-        #     # file['basics/mass_bias'][z_index, a_over_c_index, trial_index] = -np.inf
-        #     mass_bias = -np.inf
-        #     # just giving it a non-readable value for plotting
-        # file['detail/alpha_R'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper.alphaR
-        # file['detail/dmapper_w'][z_index, a_over_c_index, trial_index, :, :, :, :] = dmapper._w
-        # file.close()
         return
 
     def write_files_fits(self, outputs):
