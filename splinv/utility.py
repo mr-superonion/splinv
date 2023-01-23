@@ -402,6 +402,7 @@ class Simulator:
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         # file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
+        dmapper.mu = 3e-4
         dmapper.lbd = lbd  # Lasso penalty.
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
         dmapper.nonNeg = True  # using non-negative Lasso
@@ -410,7 +411,7 @@ class Simulator:
         dmapper.fista_gradient_descent(nsteps)  # run 3000 steps
         w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
         dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
-        dmapper.mu = 3e-3  # step size for gradient descent
+        # dmapper.mu = 3e-3  # step size for gradient descent
         for _ in range(3):  # redo apaptive lasso
             w = dmapper.adaptive_lasso_weight(gamma=2.)
             dmapper.fista_gradient_descent(nsteps, w=w)
@@ -421,8 +422,8 @@ class Simulator:
         z_col = c1[:, 0]
         y_col = c1[:, 1]
         x_col = c1[:, 2]
-        x_center = np.ones_like(y_col) * 48.
-        y_center = np.ones_like(y_col) * 48.
+        x_center = np.ones_like(y_col) * 24.
+        y_center = np.ones_like(y_col) * 24.
 
         mass_est = np.zeros_like(z_col, dtype=np.float128)
         frame_counter = np.zeros_like(z_col, dtype=int)
@@ -442,7 +443,7 @@ class Simulator:
         redshift_bias = np.abs(z_col - input_z_index)
         print('distance', distance_from_center)
         print('bias', redshift_bias)
-        valid_distance = np.ma.masked_less_equal(distance_from_center, 3).mask
+        valid_distance = np.ma.masked_less_equal(distance_from_center, 2.5).mask
         valid_redshift = np.ma.masked_less_equal(redshift_bias, 2).mask
         print('valid distance', valid_distance)
         print('valid_redshift', valid_redshift)
