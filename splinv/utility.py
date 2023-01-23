@@ -293,6 +293,10 @@ class Simulator:
         if noise_level is None:
             noise_level = np.ones_like(lbd)
         arguments = []
+        print('file numbers')
+        print(len(self.file_name))
+        print('mass numbers')
+        print(len(halo_masses))
         if not len(halo_masses) == len(self.file_name):
             raise ValueError('there should be as many files as there are masses')
         if not len(halo_masses) == len(lbd):
