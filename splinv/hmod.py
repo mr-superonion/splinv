@@ -1010,7 +1010,7 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, r
     """
     Lx = nx * scale
     Ly = ny * scale
-    nsamp = nx * ny * 2  # nx * ny * 2  # 2 to simulate realistic condition if nx*ny*10, reconstruction works better
+    nsamp = Lx * Ly * 2  # nx * ny * 2  # 2 to simulate realistic condition if nx*ny*10, reconstruction works better
     # but too idealistic
     if nlp == 1:
         ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
