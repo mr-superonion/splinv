@@ -995,7 +995,7 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field, ra, dec, nsamp
 
 
-def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1, null_halo=False):
+def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1, null_halo=False, density = 2):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
     kappa field on a whole grid in fourier space. This is evident in
@@ -1007,10 +1007,11 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, r
     :param dec_0: offset (position of halo center)
     :param ra_0: offset (position of halo center)
     :param nlp: used to generated random galaxies in each galaxy plane
+    :param density: how many per arcmin per redshift plane
     """
-    Lx = nx * scale
+    Lx = nx * scale  # Lx and Ly are in unit of degrees
     Ly = ny * scale
-    nsamp = int(Lx * Ly * 2)  # nx * ny * 2  # 2 to simulate realistic condition if nx*ny*10, reconstruction works better
+    nsamp = int(Lx * Ly * density * 60 * 60)  # *60 to get nsamp in terms of arcmin
     # but too idealistic
     if nlp == 1:
         ra = np.random.rand(nsamp) * Lx - Lx / 2. + ra_0
@@ -1034,7 +1035,7 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, r
                 dsigma_field[i] = np.zeros(nsamp)
             else:
                 dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
-                                                         dec[i] * 3600.)
+                                                         dec[i] * 3600.) # 3600 is for degree->arcsec
         return dsigma_field, ra, dec, nsamp
 
 
@@ -2077,8 +2078,9 @@ class prepare_numerical_frame(Cartesian):
     '''A Class that takes in parameters including redshifts, scale radius, (ellipticity may be in the future)to create
     FOURIER frames of SIGMA field. Important numbers are passed in from .ini files'''
 
-    def __init__(self, parser, halo_mass, filename, alpha=1, fou=False):
+    def __init__(self, parser, halo_mass, filename, alpha=1, fou=False, from_dsigma = False):
         # halo_mass is the log mass of the halo.
+        # from_dsigma: whether generate frame using dsigma or from sigma field and then transform
         self.fou = fou
         Cartesian.__init__(self, parser)
         self.nframe = parser.getint('sparse', 'nframe')
@@ -2115,6 +2117,7 @@ class prepare_numerical_frame(Cartesian):
             self.ratio = 1. / 60. / 60.
         self.scale = parser.getfloat('transPlane', 'scale') * self.ratio
         self.filename = filename
+        self.from_dsigma = from_dsigma
         return
 
     def __create_frames(self, long_truncation=False, OLS03=False):
@@ -2131,10 +2134,18 @@ class prepare_numerical_frame(Cartesian):
                 else:
                     halo = triaxialJS02(mass=M_200, conc=4, redshift=self.zlBin[izl], ra=0., dec=0., a_over_c=1.0,
                                         a_over_b=1.0, long_truncation=long_truncation, OLS03=OLS03)
-                print(self.scale)
-                sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
+                if self.from_dsigma:
+                    dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
+                                                                                   normalize=False, density=200)
+                    dsigmapixreal = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.real, method='FFT')[0]
+                    dsigmapiximag = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.imag, method='FFT')[0]
+                    dsigmapix = dsigmapixreal + 1j * dsigmapiximag
+                    ks2D = ksmap(self.ny, self.nx)
+                    sigma = ks2D.itransform(dsigmapix).real
+                else:
+                    sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
                                                                        normalize=False)
-                sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
+                    sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
                 self.sigmaAtom[izl, im] = sigma / M_200
         hdu1 = fits.PrimaryHDU(self.sigmaAtom)
         hdu1.writeto(self.filename)
