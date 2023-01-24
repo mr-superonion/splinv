@@ -10,6 +10,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 # GNU General Public License for more details.
 #
+import gc
+import pyfftw
 import numpy as np
 from .default import *
 from .grid import Cartesian
@@ -19,7 +21,6 @@ import astropy.io.fits as pyfits
 from astropy.cosmology import FlatLambdaCDM as Cosmo
 from scipy.misc import derivative
 from scipy.integrate import quad
-import pyfftw
 from astropy.io import fits
 from astropy.table import Table
 
@@ -995,7 +996,9 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
         return sigma_field, ra, dec, nsamp
 
 
-def haloJS02SigmaAtom_mock_catalog_dsigma(halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0, nlp=1, null_halo=False, density = 2):
+def haloJS02SigmaAtom_mock_catalog_dsigma(
+    halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0,
+    nlp=1, null_halo=False, density = 2):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
     kappa field on a whole grid in fourier space. This is evident in
@@ -1925,30 +1928,29 @@ class triaxialJS02_grid_mock(Cartesian):
         lk = halo.lensKernel(self.zcgrid)
 
         if add_noise:
-            dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
-                                                                           normalize=False, nlp=lk.size)
-            s19A = fits.open(shear_catalog_name)
-            data = s19A[1].data
-            s19A_table = Table(data)
+            dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(
+                halo, self.scale, self.ny, self.nx,
+                normalize=False, nlp=lk.size)
+            #s19A = fits.open(shear_catalog_name)
+            #data = s19A[1].data
+            s19A_table = Table.read(shear_catalog_name)
             error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
             shear = dsigma * lk[:, None]
             if seed != None:
                 np.random.seed(seed)
-            random_ints1 = np.random.randint(0, high=error1.size, size=shear.size)
-            if seed != None:
-                np.random.seed(seed * 2)  # was 993-seed
-            random_ints2 = np.random.randint(0, high=error1.size, size=shear.size)
-            dg1 = np.zeros(shear.size)
-            dg2 = np.zeros(shear.size)
-            for i in range(shear.size):  # compute errors
-                dg1[i] = error1[random_ints1[i]] * noise_level
-                dg2[i] = error2[random_ints2[i]] * noise_level
+            random_ints = np.random.randint(0, high=error1.size, size=shear.size)
+            # dg1 = np.zeros(shear.size)
+            # dg2 = np.zeros(shear.size)
+            # for i in range(shear.size):  # compute errors
+            #     dg1[i] = error1[random_ints[i]] * noise_level
+            #     dg2[i] = error2[random_ints[i]] * noise_level
+            dg1 = error1[random_ints] * noise_level
+            dg2 = error2[random_ints] * noise_level
             dg1 = dg1.reshape(shear.shape)
             dg2 = dg2.reshape(shear.shape)
             shear = shear + dg1 + 1j * dg2  # added noise in this step
-            shear_shape = (len(self.zcgrid))
-            shearpixreal = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
-            shearpixcomplex = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float128)
+            shearpixreal = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float64)
+            shearpixcomplex = np.zeros((len(self.zcgrid), self.ny, self.nx), dtype=np.float64)
             for i in range(len(self.zcgrid)):
                 shearpixreal[i, :, :] = \
                     self.pixelize_data(ra[i], dec[i], np.ones(nsamp) / 10, shear[i].real, method='FFT')[0]
