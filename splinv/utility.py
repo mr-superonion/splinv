@@ -297,7 +297,7 @@ class Simulator:
         # all simulation
         for i in range(len(halo_masses)):
             # iterating through files, which uses same lbd, mass, and types of halo
-            for j in z_list:
+            for j in range(len(halo_masses)):
                 for k in range(self.n_a_over_c_sample):
                     for l in range(self.n_trials):
                         # which number of trials we are on
