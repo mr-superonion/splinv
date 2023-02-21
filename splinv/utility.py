@@ -506,10 +506,12 @@ class Simulator:
         # Parsing argument
         dictionary_name = args[0]
         log_m = args[1]
+        log_m = np.array(log_m)
         lbd = args[2]
         save_file_name = args[3]
         halo_type = args[4]
-        z_index = args[5]
+        z_index = [self.z_samp[a] for a in args[5]]
+        z_index = np.array(z_index)
         a_over_c_index = args[6] # just try 1 in this case.
         trial_index = args[7]
         noise = args[8]
