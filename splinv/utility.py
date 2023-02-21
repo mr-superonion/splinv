@@ -281,6 +281,30 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i], noise_level[i]])
         return arguments
 
+    def prepare_argument_multi_halo(self, halo_masses, halo_types, lbd, noise, z_list, noise_level=None):
+        """
+        Caution: Right now it does not support multiple types of halo yet.
+        :param halo_masses: an array of log masses
+        :param halo_types: a list of strings dictating halo types
+        :param lbd: an array of lbd in sparse reconstruction
+        :param noise: whether noisy construction
+        :param noise_level: ratio of this noise to HSC noise.
+        :return: the arguments to start multipool processing
+        """
+        if noise_level is None:
+            noise_level = np.ones_like(lbd)
+        arguments = []
+        # all simulation
+        for i in range(len(halo_masses)):
+            # iterating through files, which uses same lbd, mass, and types of halo
+            for j in z_list:
+                for k in range(self.n_a_over_c_sample):
+                    for l in range(self.n_trials):
+                        # which number of trials we are on
+                        arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
+                                          halo_types[i], z_list[j], k, l, noise[i], noise_level[i]])
+        return arguments
+
     def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,
                                      noise_level=None):
         """
