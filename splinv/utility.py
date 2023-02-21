@@ -510,8 +510,10 @@ class Simulator:
         lbd = args[2]
         save_file_name = args[3]
         halo_type = args[4]
-        z_index = [self.z_samp[a] for a in args[5]]
+        z_index = [a for a in args[5]]
         z_index = np.array(z_index)
+        z_h = [self.z_samp[a] for a in args[5]]
+        z_h = np.array(z_h)
         a_over_c_index = args[6] # just try 1 in this case.
         trial_index = args[7]
         noise = args[8]
@@ -522,7 +524,7 @@ class Simulator:
             print('already done this simulation')
             return
         os.makedirs(save_file_name, exist_ok=True)
-        z_h = self.z_samp[z_index]
+
         a_over_c = self.a_over_c_sample[a_over_c_index]
         tri_nfw = False
         if halo_type == 'nfw':
