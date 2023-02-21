@@ -77,6 +77,7 @@ class Simulator:
         self.init_file_name = parser.get('file', 'init_filename')  # do change the dictionary name
         dictionary_name_raw = parser.get('file', 'dictionary_name')
         self.dictionary_name = dictionary_name_raw.split(", ")
+        self.noise_std_name = parser.get('file','noise_std_name')
         another_parser = ConfigParser()
         # print(self.init_file_name)
         another_parser.read(self.init_file_name)
@@ -106,7 +107,7 @@ class Simulator:
         self.shape_detail_simulation_result = (
             self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
             self.Grid.nx)
-        self.noise_std = self.prepare_noise_std()
+        self.noise_std = fits.getdata(self.noise_std_name)
         if parser.has_option('false_detection', 'enable_false_detection'):
             self.enable_false_detection = parser.getboolean('false_detection', 'enable_false_detection')
             self.distance_limit = parser.getint('false_detection', 'distance_limit')
@@ -398,6 +399,142 @@ class Simulator:
             print('noisy reconstruction')
         else:
             data2 = general_grid.add_halo(halo)[1]
+            # gErrval = 0.05
+            # gErr = np.ones(Grid.shape) * gErrval
+            gErr = self.noise_std
+            print('noiseless reconstruction')
+        # gErr = np.ones(Grid.shape) * gErrval
+        # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
+        # file['basics/true_mass'] = M_200
+        dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
+        dmapper.mu = 3e-4
+        dmapper.lbd = lbd  # Lasso penalty.
+        dmapper.lcd = 0.  # Ridge penalty in Elastic net
+        dmapper.nonNeg = True  # using non-negative Lasso
+        dmapper.clean_outcomes()
+        nsteps = 3000
+        dmapper.fista_gradient_descent(nsteps)  # run 3000 steps
+        w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
+        dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
+        # dmapper.mu = 3e-3  # step size for gradient descent
+        for _ in range(3):  # redo apaptive lasso
+            w = dmapper.adaptive_lasso_weight(gamma=2.)
+            dmapper.fista_gradient_descent(nsteps, w=w)
+        dmapper.reconstruct()
+        c1 = detect.local_maxima_3D(dmapper.deltaR)[0]  # the peak value is not important
+        ndet = c1.shape[0]
+        print('Detected %d clusters!' % ndet)
+        z_col = c1[:, 0]
+        y_col = c1[:, 1]
+        x_col = c1[:, 2]
+        x_center = np.ones_like(y_col) * 24.
+        y_center = np.ones_like(y_col) * 24.
+
+        mass_est = np.zeros_like(z_col, dtype=np.float128)
+        frame_counter = np.zeros_like(z_col, dtype=int)
+        for i in range(ndet):
+            for j in range(self.nframe):
+                mass_at_loc = (dmapper.alphaR * dmapper._w)[z_col[i], j, y_col[i], x_col[i]]
+                if mass_at_loc > 0.01:  # mass detected (our minimal threshold of halo mass is 10^12 )
+                    frame_counter[i] = frame_counter[i] + 2 ** j
+                mass_est[i] = mass_est[i] + mass_at_loc
+        log_m_est = np.log10(mass_est) + 14.
+        # original halo info
+        input_z_index = np.ones_like(z_col, dtype=int) * z_index
+        input_a_over_c_index = np.ones_like(z_col, dtype=int) * a_over_c_index
+        halo_id = np.ones_like(z_col, dtype=int) * int(trial_index)
+
+        distance_from_center = np.sqrt((x_col - x_center) ** 2 + (y_col - y_center) ** 2)
+        redshift_bias = np.abs(z_col - input_z_index)
+        print('distance', distance_from_center)
+        print('bias', redshift_bias)
+        valid_distance = np.ma.masked_less_equal(distance_from_center, 2.5).mask
+        valid_redshift = np.ma.masked_less_equal(redshift_bias, 2).mask
+        print('valid distance', valid_distance)
+        print('valid_redshift', valid_redshift)
+        successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
+
+        df = pd.DataFrame({'reconstructed_z': z_col,
+                           'reconstructed_x': x_col,
+                           'reconstructed_y': y_col,
+                           'reconstructed_log10m': log_m_est,
+                           'input_z': input_z_index,
+                           'input_a_over_c': input_a_over_c_index,
+                           'successful_reconstruction': successful_reconstruction.astype(int),
+                           'frame_counter': frame_counter.astype(int),
+                           'halo_id': halo_id})
+        df.to_csv(save_file_name + '/' + file_name, index=False)
+        return
+
+    def simulate_3halos(self, args):
+        """
+        :param args contains the following (and it is a list).
+        :param dictionary_name: which file to use as dictionary
+        :param log_m: log mass, need to pass in a numerical array
+        :param lbd: lbd in lasso
+        :param save_file_name: open this file and write in it
+        :param halo_type: nfw or cuspy
+        :param z_index:
+        :param a_over_c_index:
+        :param trial_index: which number of realization on (later to take average).
+        :return: write in files.
+        """
+        # Parsing argument
+        dictionary_name = args[0]
+        log_m = args[1]
+        lbd = args[2]
+        save_file_name = args[3]
+        halo_type = args[4]
+        z_index = args[5]
+        a_over_c_index = args[6] # just try 1 in this case.
+        trial_index = args[7]
+        noise = args[8]
+        noise_level = args[9]
+        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv' # name of simulation data
+        path = save_file_name + '/' + file_name
+        if os.path.isfile((os.path.join(os.getcwd(), path))):
+            print('already done this simulation')
+            return
+        os.makedirs(save_file_name, exist_ok=True)
+        z_h = self.z_samp[z_index]
+        a_over_c = self.a_over_c_sample[a_over_c_index]
+        tri_nfw = False
+        if halo_type == 'nfw':
+            tri_nfw = True
+            print('nfw')
+        else:
+            print('cuspy')
+        M_200 = 10. ** log_m
+        conc = 4
+        #simulating 3 halos right now
+        halo0 = hmod.triaxialJS02(mass=M_200[0], conc=conc, redshift=z_h[0], ra=0., dec=0., a_over_b=1,
+                                 a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                 long_truncation=True, OLS03=True)
+        halo1 = hmod.triaxialJS02(mass=M_200[1], conc=conc, redshift=z_h[1], ra=0., dec=0., a_over_b=1,
+                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                  long_truncation=True, OLS03=True)
+        halo2 = hmod.triaxialJS02(mass=M_200[2], conc=conc, redshift=z_h[2], ra=0., dec=0., a_over_b=1,
+                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                  long_truncation=True, OLS03=True)
+
+        another_parser = ConfigParser()  # parser for reconstruction
+        another_parser.read(self.init_file_name)
+        another_parser.set('lens', 'SigmaFname', dictionary_name)
+        # file = h5py.File(save_file_name, 'r+')
+        # file['basics/input_redshift'][z_index,a_over_c_index] = z_h
+        # file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
+        # now... only has capacity of 1 scale radius
+        Grid = Cartesian(another_parser)
+        lensKer1 = Grid.lensing_kernel(deltaIn=False)
+        general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
+        if noise:
+            data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2], add_noise=True,
+                                                               seed=trial_index,
+                                                               noise_level=noise_level)  # add same random seed
+            gErr = self.noise_std * noise_level
+            print('noisy reconstruction')
+        else:
+            data2 = general_grid.add_halo([halo0, halo1, halo2])[1]
             # gErrval = 0.05
             # gErr = np.ones(Grid.shape) * gErrval
             gErr = self.noise_std

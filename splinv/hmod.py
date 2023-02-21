@@ -1037,7 +1037,12 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(
             if null_halo:  # don't compute the shear field.
                 dsigma_field[i] = np.zeros(nsamp)
             else:
-                dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
+                if isinstance(halo,list):
+                    for single_halo in halo:
+                        dsigma_field[i] = dsigma_field[i] + single_halo.DeltaSigmaComplex(ra[i] * 3600.,
+                                                         dec[i] * 3600.)
+                else:
+                    dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
                                                          dec[i] * 3600.) # 3600 is for degree->arcsec
         return dsigma_field, ra, dec, nsamp
 
