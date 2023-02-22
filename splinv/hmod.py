@@ -997,8 +997,8 @@ def haloJS02SigmaAtom_mock_catalog(halo, scale, ny, nx, normalize=True, ra_0=0, 
 
 
 def haloJS02SigmaAtom_mock_catalog_dsigma(
-    halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0,
-    nlp=1, null_halo=False, density = 2):
+        halo, scale, ny, nx, normalize=True, ra_0=0, dec_0=0,
+        nlp=1, null_halo=False, density=2):
     """
     Make a JS02 SigmaAtom. It seems the NFW counterpart, haloCS02SigmaAtom, takes in parameters of a halo and then outputs
     kappa field on a whole grid in fourier space. This is evident in
@@ -1037,13 +1037,13 @@ def haloJS02SigmaAtom_mock_catalog_dsigma(
             if null_halo:  # don't compute the shear field.
                 dsigma_field[i] = np.zeros(nsamp)
             else:
-                if isinstance(halo,list):
+                if isinstance(halo, list):
                     for single_halo in halo:
                         dsigma_field[i] = dsigma_field[i] + single_halo.DeltaSigmaComplex(ra[i] * 3600.,
-                                                         dec[i] * 3600.)
+                                                                                          dec[i] * 3600.)
                 else:
                     dsigma_field[i] = halo.DeltaSigmaComplex(ra[i] * 3600.,
-                                                         dec[i] * 3600.) # 3600 is for degree->arcsec
+                                                             dec[i] * 3600.)  # 3600 is for degree->arcsec
         return dsigma_field, ra, dec, nsamp
 
 
@@ -1930,17 +1930,27 @@ class triaxialJS02_grid_mock(Cartesian):
         return kappa, shear, sigma
 
     def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed=None, noise_level=1):
-        lk = halo.lensKernel(self.zcgrid)
 
         if add_noise:
-            dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(
-                halo, self.scale, self.ny, self.nx,
-                normalize=False, nlp=lk.size)
-            #s19A = fits.open(shear_catalog_name)
-            #data = s19A[1].data
+            if isinstance(halo, list):
+                lk = halo[0].lensKernel(self.zcgrid)
+                dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(
+                    halo[0], self.scale, self.ny, self.nx,
+                    normalize=False, nlp=lk.size)  # just need the position (ra, dec) of the first halo
+                shear = dsigma * lk[:, None]
+                for single_halo in halo[1:]:
+                    dsigma_field = single_halo.DeltaSigmaComplex(ra * 3600.,
+                                                                 dec * 3600.)
+                    lk = single_halo.lensKernel(self.zcgrid)
+                    shear = shear + dsigma_field * lk[:, None]
+            else:
+                lk = halo.lensKernel(self.zcgrid)
+                dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(
+                    halo, self.scale, self.ny, self.nx,
+                    normalize=False, nlp=lk.size)
+                shear = dsigma * lk[:, None]
             s19A_table = Table.read(shear_catalog_name)
-            error1, error2 = make_mock(s19A_table)  # the realistic error from HSC shear catalog
-            shear = dsigma * lk[:, None]
+            error1, error2 = make_mock(s19A_table)
             if seed != None:
                 np.random.seed(seed)
             random_ints = np.random.randint(0, high=error1.size, size=shear.size)
@@ -1964,6 +1974,7 @@ class triaxialJS02_grid_mock(Cartesian):
             shearpix = shearpixreal + 1j * shearpixcomplex
             return shearpix, np.sqrt(np.std(dg1) ** 2 + np.std(dg2) ** 2)
         else:
+            lk = halo.lensKernel(self.zcgrid)
             dsigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog_dsigma(halo, self.scale, self.ny, self.nx,
                                                                            normalize=False)
             dsigmapixreal = self.pixelize_data(ra, dec, np.ones(nsamp) / 10, dsigma.real, method='FFT')[0]
@@ -2085,7 +2096,7 @@ class prepare_numerical_frame(Cartesian):
     '''A Class that takes in parameters including redshifts, scale radius, (ellipticity may be in the future)to create
     FOURIER frames of SIGMA field. Important numbers are passed in from .ini files'''
 
-    def __init__(self, parser, halo_mass, filename, alpha=1, fou=False, from_dsigma = False):
+    def __init__(self, parser, halo_mass, filename, alpha=1, fou=False, from_dsigma=False):
         # halo_mass is the log mass of the halo.
         # from_dsigma: whether generate frame using dsigma or from sigma field and then transform
         self.fou = fou
@@ -2151,7 +2162,7 @@ class prepare_numerical_frame(Cartesian):
                     sigma = ks2D.itransform(dsigmapix).real
                 else:
                     sigma, ra, dec, nsamp = haloJS02SigmaAtom_mock_catalog(halo, self.scale, self.ny, self.nx,
-                                                                       normalize=False)
+                                                                           normalize=False)
                     sigma = self.pixelize_data(ra, dec, np.ones(nsamp) / 10., sigma, method='FFT')[0]
                 self.sigmaAtom[izl, im] = sigma / M_200
         hdu1 = fits.PrimaryHDU(self.sigmaAtom)
