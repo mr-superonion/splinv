@@ -77,7 +77,7 @@ class Simulator:
         self.init_file_name = parser.get('file', 'init_filename')  # do change the dictionary name
         dictionary_name_raw = parser.get('file', 'dictionary_name')
         self.dictionary_name = dictionary_name_raw.split(", ")
-        self.noise_std_name = parser.get('file','noise_std_name')
+        self.noise_std_name = parser.get('file', 'noise_std_name')
         another_parser = ConfigParser()
         # print(self.init_file_name)
         another_parser.read(self.init_file_name)
@@ -281,7 +281,8 @@ class Simulator:
                                           halo_types[i], j, k, l, noise[i], noise_level[i]])
         return arguments
 
-    def prepare_argument_multi_halo(self, halo_masses, halo_types, lbd, noise, z_list, noise_level=None):
+    def prepare_argument_multi_halo(self, halo_masses, halo_types, lbd, noise, z_list, ra_list, dec_list,
+                                    noise_level=None):
         """
         Caution: Right now it does not support multiple types of halo yet.
         :param halo_masses: an array of log masses
@@ -289,6 +290,8 @@ class Simulator:
         :param lbd: an array of lbd in sparse reconstruction
         :param noise: whether noisy construction
         :param noise_level: ratio of this noise to HSC noise.
+        :param z_list an LIST for redshift indices
+        :param ra_list, dec_list are position lists in arcsecs.
         :return: the arguments to start multipool processing
         """
         if noise_level is None:
@@ -302,7 +305,8 @@ class Simulator:
                     for l in range(self.n_trials):
                         # which number of trials we are on
                         arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
-                                          halo_types[i], z_list[j], k, l, noise[i], noise_level[i]])
+                                          halo_types[i], z_list[j], k, l, noise[i], ra_list[i], dec_list[i],
+                                          noise_level[i]])
         return arguments
 
     def prepare_argument_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,
@@ -386,7 +390,8 @@ class Simulator:
         trial_index = args[7]
         noise = args[8]
         noise_level = args[9]
-        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv' # name of simulation data
+        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(
+            trial_index) + '.csv'  # name of simulation data
         path = save_file_name + '/' + file_name
         if os.path.isfile((os.path.join(os.getcwd(), path))):
             print('already done this simulation')
@@ -514,11 +519,14 @@ class Simulator:
         z_index = np.array(z_index)
         z_h = [self.z_samp[a] for a in args[5]]
         z_h = np.array(z_h)
-        a_over_c_index = args[6] # just try 1 in this case.
+        a_over_c_index = args[6]  # just try 1 in this case.
         trial_index = args[7]
         noise = args[8]
-        noise_level = args[9]
-        file_name = 'z' + str(z_index) + 'aoc' + str(a_over_c_index) + str(trial_index) + '.csv' # name of simulation data
+        ra_array = np.array(args[9])
+        dec_array = np.array(args[10])
+        noise_level = args[11]
+        file_name = 'z' + str(z_index) + 'trial' + str(trial_index) + 'lbd' + str(
+            lbd) + '.csv'  # name of simulation data
         path = save_file_name + '/' + file_name
         if os.path.isfile((os.path.join(os.getcwd(), path))):
             print('already done this simulation')
@@ -534,14 +542,17 @@ class Simulator:
             print('cuspy')
         M_200 = 10. ** log_m
         conc = 4
-        #simulating 3 halos right now
-        halo0 = hmod.triaxialJS02(mass=M_200[0], conc=conc, redshift=z_h[0], ra=0., dec=0., a_over_b=1,
-                                 a_over_c=a_over_c, tri_nfw=tri_nfw,
-                                 long_truncation=True, OLS03=True)
-        halo1 = hmod.triaxialJS02(mass=M_200[1], conc=conc, redshift=z_h[1], ra=0., dec=0., a_over_b=1,
+        # simulating 3 halos right now
+        halo0 = hmod.triaxialJS02(mass=M_200[0], conc=conc, redshift=z_h[0], ra=ra_array[0], dec=dec_array[0],
+                                  a_over_b=1,
                                   a_over_c=a_over_c, tri_nfw=tri_nfw,
                                   long_truncation=True, OLS03=True)
-        halo2 = hmod.triaxialJS02(mass=M_200[2], conc=conc, redshift=z_h[2], ra=0., dec=0., a_over_b=1,
+        halo1 = hmod.triaxialJS02(mass=M_200[1], conc=conc, redshift=z_h[1], ra=ra_array[1], dec=dec_array[1],
+                                  a_over_b=1,
+                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                  long_truncation=True, OLS03=True)
+        halo2 = hmod.triaxialJS02(mass=M_200[2], conc=conc, redshift=z_h[2], ra=ra_array[2], dec=ra_array[2],
+                                  a_over_b=1,
                                   a_over_c=a_over_c, tri_nfw=tri_nfw,
                                   long_truncation=True, OLS03=True)
 
@@ -591,8 +602,8 @@ class Simulator:
         z_col = c1[:, 0]
         y_col = c1[:, 1]
         x_col = c1[:, 2]
-        x_center = np.ones_like(y_col) * 24.
-        y_center = np.ones_like(y_col) * 24.
+        x_center = np.ones_like(y_col) * 64.
+        y_center = np.ones_like(y_col) * 64.
 
         mass_est = np.zeros_like(z_col, dtype=np.float128)
         frame_counter = np.zeros_like(z_col, dtype=int)
