@@ -615,27 +615,22 @@ class Simulator:
                 mass_est[i] = mass_est[i] + mass_at_loc
         log_m_est = np.log10(mass_est) + 14.
         # original halo info
-        input_z_index = np.ones_like(z_col, dtype=int) * z_index
-        input_a_over_c_index = np.ones_like(z_col, dtype=int) * a_over_c_index
         halo_id = np.ones_like(z_col, dtype=int) * int(trial_index)
 
         distance_from_center = np.sqrt((x_col - x_center) ** 2 + (y_col - y_center) ** 2)
-        redshift_bias = np.abs(z_col - input_z_index)
-        print('distance', distance_from_center)
-        print('bias', redshift_bias)
-        valid_distance = np.ma.masked_less_equal(distance_from_center, 2.5).mask
-        valid_redshift = np.ma.masked_less_equal(redshift_bias, 2).mask
-        print('valid distance', valid_distance)
-        print('valid_redshift', valid_redshift)
-        successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
+        # redshift_bias = np.abs(z_col - input_z_index)
+        # print('distance', distance_from_center)
+        # print('bias', redshift_bias)
+        # valid_distance = np.ma.masked_less_equal(distance_from_center, 2.5).mask
+        # valid_redshift = np.ma.masked_less_equal(redshift_bias, 2).mask
+        # print('valid distance', valid_distance)
+        # print('valid_redshift', valid_redshift)
+        # successful_reconstruction = np.logical_and(valid_distance, valid_redshift)  # important info on successful recon
 
         df = pd.DataFrame({'reconstructed_z': z_col,
                            'reconstructed_x': x_col,
                            'reconstructed_y': y_col,
                            'reconstructed_log10m': log_m_est,
-                           'input_z': input_z_index,
-                           'input_a_over_c': input_a_over_c_index,
-                           'successful_reconstruction': successful_reconstruction.astype(int),
                            'frame_counter': frame_counter.astype(int),
                            'halo_id': halo_id})
         df.to_csv(save_file_name + '/' + file_name, index=False)
