@@ -495,7 +495,7 @@ class Simulator:
         df.to_csv(save_file_name + '/' + file_name, index=False)
         return
 
-    def simulate_3halos(self, args):
+    def simulate_4halos(self, args):
         """
         :param args contains the following (and it is a list).
         :param dictionary_name: which file to use as dictionary
@@ -555,6 +555,10 @@ class Simulator:
                                   a_over_b=1,
                                   a_over_c=a_over_c, tri_nfw=tri_nfw,
                                   long_truncation=True, OLS03=True)
+        halo3 = hmod.triaxialJS02(mass=M_200[3], conc=conc, redshift=z_h[3], ra=ra_array[3], dec=ra_array[3],
+                                  a_over_b=1,
+                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                  long_truncation=True, OLS03=True)
 
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
@@ -567,13 +571,13 @@ class Simulator:
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
-            data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2], add_noise=True,
+            data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2, halo3], add_noise=True,
                                                                seed=trial_index,
                                                                noise_level=noise_level)  # add same random seed
             gErr = self.noise_std * noise_level
             print('noisy reconstruction')
         else:
-            data2 = general_grid.add_halo([halo0, halo1, halo2])[1]
+            data2 = general_grid.add_halo([halo0, halo1, halo2, halo3])[1]
             # gErrval = 0.05
             # gErr = np.ones(Grid.shape) * gErrval
             gErr = self.noise_std
@@ -592,7 +596,7 @@ class Simulator:
         w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
         dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
         # dmapper.mu = 3e-3  # step size for gradient descent
-        for _ in range(5):  # redo apaptive lasso
+        for _ in range(6):  # redo apaptive lasso
             w = dmapper.adaptive_lasso_weight(gamma=2.)
             dmapper.fista_gradient_descent(nsteps, w=w)
         dmapper.reconstruct()
