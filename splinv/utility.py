@@ -587,12 +587,12 @@ class Simulator:
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
         dmapper.nonNeg = True  # using non-negative Lasso
         dmapper.clean_outcomes()
-        nsteps = 3000
+        nsteps = 5000
         dmapper.fista_gradient_descent(nsteps)  # run 3000 steps
         w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
         dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
         # dmapper.mu = 3e-3  # step size for gradient descent
-        for _ in range(3):  # redo apaptive lasso
+        for _ in range(5):  # redo apaptive lasso
             w = dmapper.adaptive_lasso_weight(gamma=2.)
             dmapper.fista_gradient_descent(nsteps, w=w)
         dmapper.reconstruct()
