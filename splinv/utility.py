@@ -555,10 +555,10 @@ class Simulator:
                                   a_over_b=1,
                                   a_over_c=a_over_c, tri_nfw=tri_nfw,
                                   long_truncation=True, OLS03=True)
-        halo3 = hmod.triaxialJS02(mass=M_200[3], conc=conc, redshift=z_h[3], ra=ra_array[3], dec=ra_array[3],
-                                  a_over_b=1,
-                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
-                                  long_truncation=True, OLS03=True)
+        # halo3 = hmod.triaxialJS02(mass=M_200[3], conc=conc, redshift=z_h[3], ra=ra_array[3], dec=ra_array[3],
+        #                           a_over_b=1,
+        #                           a_over_c=a_over_c, tri_nfw=tri_nfw,
+        #                           long_truncation=True, OLS03=True)
 
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
@@ -577,7 +577,7 @@ class Simulator:
             gErr = self.noise_std * noise_level
             print('noisy reconstruction')
         else:
-            data2 = general_grid.add_halo([halo0, halo1, halo2, halo3])[1]
+            data2 = general_grid.add_halo([halo0, halo1, halo2])[1]
             # gErrval = 0.05
             # gErr = np.ones(Grid.shape) * gErrval
             gErr = self.noise_std

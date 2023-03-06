@@ -1929,7 +1929,8 @@ class triaxialJS02_grid_mock(Cartesian):
         kappa = sigma[None, :, :] * lk[:, None, None]
         return kappa, shear, sigma
 
-    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed=None, noise_level=1):
+    def add_halo_from_dsigma(self, halo, add_noise=False, shear_catalog_name='9347.fits', seed=None, noise_level=1,
+                             delete_halo = None):
 
         if add_noise:
             if isinstance(halo, list):
@@ -1949,6 +1950,12 @@ class triaxialJS02_grid_mock(Cartesian):
                     halo, self.scale, self.ny, self.nx,
                     normalize=False, nlp=lk.size)
                 shear = dsigma * lk[:, None]
+            if delete_halo != None:
+                for single_halo in delete_halo:
+                    dsigma_field = single_halo.DeltaSigmaComplex(ra * 3600.,
+                                                                 dec * 3600.)
+                    lk = single_halo.lensKernel(self.zcgrid)
+                    shear = shear - dsigma_field * lk[:, None]  # deleting halo that has already been detected.
             s19A_table = Table.read(shear_catalog_name)
             error1, error2 = make_mock(s19A_table)
             if seed != None:
