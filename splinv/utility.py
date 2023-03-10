@@ -495,7 +495,7 @@ class Simulator:
         df.to_csv(save_file_name + '/' + file_name, index=False)
         return
 
-    def simulate_4halos(self, args, halo_subtract = None):
+    def simulate_4halos(self, args):
         """
         :param args contains the following (and it is a list).
         :param dictionary_name: which file to use as dictionary
@@ -526,6 +526,7 @@ class Simulator:
         ra_array = np.array(args[9])
         dec_array = np.array(args[10])
         noise_level = args[11]
+        halo_subtract = args[12]
         file_name = 'z' + str(z_index) + 'trial' + str(trial_index) + 'lbd' + str(
             lbd) + '.csv'  # name of simulation data
         path = save_file_name + '/' + file_name
