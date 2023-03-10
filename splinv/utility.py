@@ -70,7 +70,7 @@ class Simulator:
     5. parser... is just a config parser.
     """
 
-    def __init__(self, parser, short_file=False):
+    def __init__(self, parser, short_file=False, halo_subtract = None):
         file_name_raw = parser.get('file', 'file_name')
         self.file_name = file_name_raw.split(", ")  # if the file names are separated by ", " this is how to split them
         self.n_a_over_c_sample = parser.getint('simulation', 'n_a_over_c_sample')
@@ -108,6 +108,7 @@ class Simulator:
             self.n_z_samp, self.n_a_over_c_sample, self.n_trials, self.nzl, self.nframe, self.Grid.ny,
             self.Grid.nx)
         self.noise_std = fits.getdata(self.noise_std_name)
+        self.halo_subtract = halo_subtract
         if parser.has_option('false_detection', 'enable_false_detection'):
             self.enable_false_detection = parser.getboolean('false_detection', 'enable_false_detection')
             self.distance_limit = parser.getint('false_detection', 'distance_limit')
@@ -526,7 +527,6 @@ class Simulator:
         ra_array = np.array(args[9])
         dec_array = np.array(args[10])
         noise_level = args[11]
-        halo_subtract = args[12]
         file_name = 'z' + str(z_index) + 'trial' + str(trial_index) + 'lbd' + str(
             lbd) + '.csv'  # name of simulation data
         path = save_file_name + '/' + file_name
@@ -575,7 +575,7 @@ class Simulator:
         if noise:
             data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2], add_noise=True,
                                                                seed=trial_index,
-                                                               noise_level=noise_level, delete_halo = halo_subtract)
+                                                               noise_level=noise_level, delete_halo = self.halo_subtract)
             gErr = self.noise_std * noise_level
             print('noisy reconstruction')
         else:
