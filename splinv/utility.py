@@ -495,7 +495,7 @@ class Simulator:
         df.to_csv(save_file_name + '/' + file_name, index=False)
         return
 
-    def simulate_4halos(self, args):
+    def simulate_4halos(self, args, halo_subtract = None):
         """
         :param args contains the following (and it is a list).
         :param dictionary_name: which file to use as dictionary
@@ -506,6 +506,7 @@ class Simulator:
         :param z_index:
         :param a_over_c_index:
         :param trial_index: which number of realization on (later to take average).
+        :param halo_subtract: a list of halo to be subtracted from shear field
         :return: write in files.
         """
         # Parsing argument
@@ -573,7 +574,7 @@ class Simulator:
         if noise:
             data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2], add_noise=True,
                                                                seed=trial_index,
-                                                               noise_level=noise_level)  # add same random seed
+                                                               noise_level=noise_level, delete_halo = halo_subtract)
             gErr = self.noise_std * noise_level
             print('noisy reconstruction')
         else:
