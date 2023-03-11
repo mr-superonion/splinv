@@ -112,7 +112,7 @@ class Simulator:
         if parser.has_option('rotation', 'rotation_ini'):
             self.rotation_ini = parser.getfloat('rotation', 'rotation_ini')
             self.rotation_fin = parser.getfloat('rotation', 'rotation_fin')
-            self.rotation_num = parser.getfint('rotation', 'rotation_num')
+            self.rotation_num = parser.getint('rotation', 'rotation_num')
         if parser.has_option('false_detection', 'enable_false_detection'):
             self.enable_false_detection = parser.getboolean('false_detection', 'enable_false_detection')
             self.distance_limit = parser.getint('false_detection', 'distance_limit')
