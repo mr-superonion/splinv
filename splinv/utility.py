@@ -471,7 +471,7 @@ class Simulator:
             data2 = general_grid.add_halo(halo)[1]
             # gErrval = 0.05
             # gErr = np.ones(Grid.shape) * gErrval
-            gErr = self.noise_std
+            gErr = np.ones_like(self.noise_std) * 0.05
             print('noiseless reconstruction')
         # gErr = np.ones(Grid.shape) * gErrval
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
@@ -735,7 +735,7 @@ class Simulator:
         lensKer1 = Grid.lensing_kernel(deltaIn=False)
         general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
         if noise:
-            data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1, halo2], add_noise=True,
+            data2, gErrval = general_grid.add_halo_from_dsigma([halo0, halo1], add_noise=True,
                                                                seed=trial_index,
                                                                noise_level=noise_level, delete_halo=self.halo_subtract)
             gErr = self.noise_std * noise_level
