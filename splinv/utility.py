@@ -750,12 +750,12 @@ class Simulator:
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         # file['basics/true_mass'] = M_200
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
-        dmapper.mu = 3e-4
+        dmapper.mu = 3e-6
         dmapper.lbd = lbd  # Lasso penalty.
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
         dmapper.nonNeg = True  # using non-negative Lasso
         dmapper.clean_outcomes()
-        nsteps = 5000
+        nsteps = 50000
         dmapper.fista_gradient_descent(nsteps)  # run 3000 steps
         w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
         dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
