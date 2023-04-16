@@ -21,6 +21,19 @@ from splinv import darkmapper
 from splinv.grid import Cartesian
 from configparser import ConfigParser
 import pandas as pd
+from astropy.table import Table
+import numpy.ma as ma
+
+
+def put_in_z_bin(redshifts, reconstructed_value, redshift_upper_limit):
+    binned_array = []
+    for i in range(redshift_upper_limit + 1):
+        # print(i)
+        masks = ma.masked_equal(redshifts, i).mask
+        to_add_binned = reconstructed_value[masks]
+        to_add_binned = 10 ** to_add_binned[~ma.masked_invalid(to_add_binned).mask]
+        binned_array.append(list(to_add_binned))
+    return binned_array
 
 
 def extract_valid_values(mass_bias_array):
@@ -32,6 +45,27 @@ def extract_valid_values(mass_bias_array):
             bias_array_masked = np.ma.masked_invalid(mass_bias_array[i, j])
             mask[i, j, :] = ~bias_array_masked.mask
     return mask
+
+
+def add_noise_to_map(shear, shear_catalog_name='9347.fits', seed=None, noise_level=1.0):
+    """
+    :param shear: a NOISELESS shear map
+    :param shear_catalog_name: shear catalog name
+    :param seed: random seed for generation
+    :param noise_level: noise_level, between 0 to 1
+    :return: NOISY shear map
+    """
+    s19A_table = Table.read(shear_catalog_name)
+    error1, error2 = hmod.make_mock(s19A_table)
+    if seed != None:
+        np.random.seed(seed)
+    random_ints = np.random.randint(0, high=error1.size, size=shear.size)
+    dg1 = error1[random_ints] * noise_level
+    dg2 = error2[random_ints] * noise_level
+    dg1 = dg1.reshape(shear.shape)
+    dg2 = dg2.reshape(shear.shape)
+    shear = shear + dg1 + 1j * dg2  # added noise in this step
+    return shear
 
 
 def average_bias(value_array, mask):
@@ -287,7 +321,7 @@ class Simulator:
         return arguments
 
     def prepare_argument_rotation_single_halo(self, halo_masses, halo_types, lbd, noise, z_index, a_over_c_index,
-                                     noise_level=None):
+                                              noise_level=None):
         """
                 Caution: Right now it does not support multiple types of halo yet.
                 :param halo_masses: an array of log masses
@@ -310,7 +344,7 @@ class Simulator:
         if not len(halo_masses) == len(halo_types):
             raise ValueError('halo types correspond to halo shapes')
         # all simulation
-        rotation_angles = np.linspace(self.rotation_ini,self.rotation_fin,self.rotation_num) * 2*np.pi/360
+        rotation_angles = np.linspace(self.rotation_ini, self.rotation_fin, self.rotation_num) * 2 * np.pi / 360
         # converting degree to radian
         for i in range(len(halo_masses)):
             # iterating through files, which uses same lbd, mass, and types of halo
@@ -319,7 +353,8 @@ class Simulator:
             for l in range(self.n_trials):
                 # which number of trials we are on
                 arguments.append([self.dictionary_name[i], halo_masses[i], lbd[i], self.file_name[i],
-                                  halo_types[i], z_index, a_over_c_index, l, noise[i], noise_level[i], rotation_angles[i]])
+                                  halo_types[i], z_index, a_over_c_index, l, noise[i], noise_level[i],
+                                  rotation_angles[i]])
         return arguments
 
     def prepare_argument_multi_halo(self, halo_masses, halo_types, lbd, noise, z_list, ra_list, dec_list,
@@ -406,6 +441,87 @@ class Simulator:
         print(np.average(noise_std))
         print("AVERAGE NOISE STD IS")
         return noise_std
+
+    def prepare_shear_map(self, args):
+        """
+                :param args contains the following (and it is a list).
+                :param dictionary_name: which file to use as dictionary
+                :param log_m: log mass
+                :param lbd: lbd in lasso
+                :param save_file_name: open this file and write in it
+                :param halo_type: nfw or cuspy
+                :param z_index:
+                :param a_over_c_index:
+                :param trial_index: which number of realization on (later to take average).
+                :return: write in files.
+                """
+        dictionary_name = args[0]
+        log_m = args[1]
+        log_m = np.array(log_m)
+        lbd = args[2]
+        save_file_name = args[3]
+        halo_type = args[4]
+        z_index = [a for a in args[5]]
+        z_index = np.array(z_index)
+        z_h = [self.z_samp[a] for a in args[5]]
+        z_h = np.array(z_h)
+        a_over_c_index = args[6]  # just try 1 in this case.
+        trial_index = args[7]
+        noise = args[8]
+        ra_array = np.array(args[9])
+        dec_array = np.array(args[10])
+        noise_level = args[11]
+        file_name = 'z' + str(z_index) + 'trial' + str(trial_index) + 'lbd' + str(
+            lbd) + '.csv'  # name of simulation data
+        path = save_file_name + '/' + file_name
+        if os.path.isfile((os.path.join(os.getcwd(), path))):
+            print('already done this simulation')
+            return
+        os.makedirs(save_file_name, exist_ok=True)
+
+        a_over_c = self.a_over_c_sample[a_over_c_index]
+        tri_nfw = False
+        if halo_type == 'nfw':
+            tri_nfw = True
+            print('nfw')
+        else:
+            print('cuspy')
+        M_200 = 10. ** log_m
+        conc = 4
+        halo_list = []
+        for i in range(len(M_200)):
+            halo = hmod.triaxialJS02(mass=M_200[i], conc=conc, redshift=z_h[i], ra=ra_array[i], dec=dec_array[i],
+                                     a_over_b=1,
+                                     a_over_c=a_over_c, tri_nfw=tri_nfw,
+                                     long_truncation=True, OLS03=True)
+            halo_list.append(halo)
+
+        another_parser = ConfigParser()  # parser for reconstruction
+        another_parser.read(self.init_file_name)
+        another_parser.set('lens', 'SigmaFname', dictionary_name)
+        # file = h5py.File(save_file_name, 'r+')
+        # file['basics/input_redshift'][z_index,a_over_c_index] = z_h
+        # file['basics/input_a_over_c'][z_index, a_over_c_index] = a_over_c
+        # now... only has capacity of 1 scale radius
+        Grid = Cartesian(another_parser)
+        lensKer1 = Grid.lensing_kernel(deltaIn=False)
+        general_grid = splinv.hmod.triaxialJS02_grid_mock(another_parser)
+        if noise:
+            data2, gErrval = general_grid.add_halo_from_dsigma(halo_list, add_noise=True,
+                                                               seed=trial_index,
+                                                               noise_level=noise_level, delete_halo=self.halo_subtract)
+            gErr = self.noise_std * noise_level
+            print('noisy reconstruction')
+        else:
+            data2 = general_grid.add_halo(halo_list)[1]
+            # gErrval = 0.05
+            # gErr = np.ones(Grid.shape) * gErrval
+            gErr = self.noise_std
+            print('noiseless reconstruction')
+        hdu1 = fits.PrimaryHDU(data2)
+        hdu1.writeto('save_file_name' + '/' + 'file_name_shear.fits')
+
+        return
 
     def simulate(self, args):
         """
@@ -579,7 +695,7 @@ class Simulator:
         M_200 = 10. ** log_m
         conc = 4
         halo = hmod.triaxialJS02(mass=M_200, conc=conc, redshift=z_h, ra=0., dec=0., a_over_b=1,
-                                 a_over_c=a_over_c, tri_nfw=tri_nfw, theta_prime = rotation_angle,
+                                 a_over_c=a_over_c, tri_nfw=tri_nfw, theta_prime=rotation_angle,
                                  long_truncation=True, OLS03=True)
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
