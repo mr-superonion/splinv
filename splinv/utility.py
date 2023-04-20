@@ -567,6 +567,10 @@ class Simulator:
         halo = hmod.triaxialJS02(mass=M_200, conc=conc, redshift=z_h, ra=0., dec=0., a_over_b=1,
                                  a_over_c=a_over_c, tri_nfw=tri_nfw,
                                  long_truncation=True, OLS03=True)
+        print("M_200=", M_200)
+        print('conc=', conc)
+        print('z=',  z_h)
+        print('tri_nfw', tri_nfw)
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
