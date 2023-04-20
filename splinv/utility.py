@@ -571,6 +571,7 @@ class Simulator:
         print('conc=', conc)
         print('z=',  z_h)
         print('tri_nfw', tri_nfw)
+        print('a_over_c',a_over_c)
         another_parser = ConfigParser()  # parser for reconstruction
         another_parser.read(self.init_file_name)
         another_parser.set('lens', 'SigmaFname', dictionary_name)
