@@ -589,16 +589,19 @@ class Simulator:
             # gErr = np.ones(Grid.shape) * gErrval
             gErr = np.ones_like(self.noise_std) * 0.05
             print('noiseless reconstruction')
+
         # gErr = np.ones(Grid.shape) * gErrval
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         # file['basics/true_mass'] = M_200
+        hdu1 = fits.PrimaryHDU(data2)
+        hdu1.writeto(save_file_name + '/' + file_name + '_shear.fits')
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
         dmapper.mu = 3e-4
         dmapper.lbd = lbd  # Lasso penalty.
         dmapper.lcd = 0.  # Ridge penalty in Elastic net
         dmapper.nonNeg = True  # using non-negative Lasso
         dmapper.clean_outcomes()
-        nsteps = 3000
+        nsteps = 4000
         dmapper.fista_gradient_descent(nsteps)  # run 3000 steps
         w = dmapper.adaptive_lasso_weight(gamma=2.)  # determine the apaptive weight
         dmapper.fista_gradient_descent(nsteps, w=w)  # run adaptive lasso
