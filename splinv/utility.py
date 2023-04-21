@@ -598,10 +598,10 @@ class Simulator:
         # gErr = np.ones(Grid.shape) * gErrval
         # file['detail/input_shear'][z_index, a_over_c_index, trial_index, trial_index, :, :, :] = data2
         # file['basics/true_mass'] = M_200
-        hdu1 = fits.PrimaryHDU(data2.real)
-        hdu1.writeto(save_file_name + '/' + file_name + '_shear_real.fits')
-        hdu1 = fits.PrimaryHDU(data2.imag)
-        hdu1.writeto(save_file_name + '/' + file_name + '_shear_imag.fits')
+        # hdu1 = fits.PrimaryHDU(data2.real)
+        # hdu1.writeto(save_file_name + '/' + file_name + '_shear_real.fits')
+        # hdu1 = fits.PrimaryHDU(data2.imag)
+        # hdu1.writeto(save_file_name + '/' + file_name + '_shear_imag.fits')
         dmapper = darkmapper(another_parser, data2.real, data2.imag, gErr, lensKer1)
         dmapper.mu = 3e-4
         dmapper.lbd = lbd  # Lasso penalty.
