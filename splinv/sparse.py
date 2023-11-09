@@ -1,4 +1,4 @@
-# Copyright 20211226 Xiangchong Li.
+# Copyright 20220820 Xiangchong Li and Shouzhuo Yang.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,10 +13,14 @@
 import json
 import numpy as np
 from .hmod import nfwShearlet2D
+import numba
+from numba import float64
+from numba.experimental import jitclass
 
 def zMeanBin(zMin,dz,nz):
     return np.arange(zMin,zMin+dz*nz,dz)+dz/2.
 
+@numba.njit
 def soft_thresholding(dum,thresholds):
     """
     Soft-Threshold Function
@@ -27,6 +31,7 @@ def soft_thresholding(dum,thresholds):
     """
     return np.sign(dum)*np.maximum(np.abs(dum)-thresholds,0.)
 
+@numba.njit
 def soft_thresholding_nn(dum,thresholds):
     """
     Non-negative Soft-Threshold Function
@@ -371,6 +376,39 @@ class darkmapper():
             tn  =   tnTmp
             Xp0 =   Xp1
             self.diff.append(error)
+        return
+    #@numba.njit
+    def fista_gradient_descent_fast(self,niter,w=1.00, tn0=1.00):
+        """
+        FISTA gradient descent solver of loss fucntion
+        (Beck & Teboulle 2009)
+        Parameters:
+            niter (int):      number of iteration
+            w (float):        adaptive weight [default: 1.]
+        """
+        tn  =  tn0
+        # The thresholds
+        thresholds  =   float64(self.lbd*self.mu*w)
+        # FISTA algorithms
+        Xp0         =   self.alphaR
+        self.diff   =   np.zeros(niter)
+        #error = np.array([])
+        for i in range(niter):
+            # (.real means no B-mode)
+            dalphaR =   -self.mu*self.gradient_Quad(self.alphaR).real
+            Xp1 =   self.alphaR+dalphaR
+            if self.nonNeg:
+                Xp1 =   soft_thresholding_nn(Xp1,thresholds)
+            else:
+                Xp1 =   soft_thresholding(Xp1,thresholds)
+            tnTmp= (1.+np.sqrt(1.+4*tn**2.))/2.
+            ratio= (tn-1.)/tnTmp
+            diff=   Xp1-Xp0
+            error=  np.sqrt(np.sum(diff**2.)/np.sum(Xp1**2.))
+            self.alphaR=Xp1+(ratio*(diff))
+            tn  =   tnTmp
+            Xp0 =   Xp1
+            self.diff[i] = error
         return
 
     def optimized_gradient_descent(self,niter,tn0=1.):
